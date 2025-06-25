@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import './FileUpload.css';
 import { Paperclip, Loader2 } from 'lucide-react';
-
-const API_BASE_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:8000' 
-  : 'http://localhost:8000';
+import { API_BASE_URL } from './config';
 
 function FileUpload({ onUploadSuccess, onDocumentsUpdate }) {
   const [dragActive, setDragActive] = useState(false);

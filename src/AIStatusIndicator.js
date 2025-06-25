@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './AIStatusIndicator.css';
-
-const API_BASE_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:8000' 
-  : 'http://localhost:8000';
+import { API_BASE_URL } from './config';
 
 function AIStatusIndicator() {
   const [aiStatus, setAiStatus] = useState(null);
