@@ -1,3 +1,4 @@
+// Force deployment trigger - avatar spacing fix
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 import FileUpload from './FileUpload';
