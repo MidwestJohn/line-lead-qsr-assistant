@@ -399,12 +399,12 @@ body, .app {
   }
   
   .assistant-avatar {
-    margin-right: 10px; /* Slightly less margin on mobile */
+    margin-right: 12px; /* Consistent mobile spacing */
   }
   
   /* ======== MOBILE OPTIMIZED LAYOUT ======== */
   .assistant-message.aui-assistant-message .message-content-wrapper {
-    max-width: calc(90% - 38px); /* Increased for better readability */
+    max-width: calc(96% - 38px); /* Maximize mobile readability */
   }
   
   .assistant-message.aui-assistant-message .loading-content {
@@ -413,8 +413,8 @@ body, .app {
   
   /* Mobile user messages - optimize for readability */
   .user-message.aui-user-message .message-content-wrapper {
-    margin-left: 8px; /* Minimal left margin for better readability */
-    max-width: calc(90% - 8px); /* Increase max-width for better space usage */
+    margin-left: 6px; /* Minimal left margin for better readability */
+    max-width: calc(96% - 6px); /* Maximize mobile space usage */
     padding-bottom: 32px; /* Match mobile action button space */
   }
   
@@ -598,7 +598,7 @@ body, .app {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);
   object-fit: cover;
   transition: all 0.2s ease;
-  margin-right: 12px; /* Ensure proper spacing between avatar and message */
+  margin-right: 16px; /* Increased spacing for better separation */
 }
 
 .assistant-avatar:hover {
@@ -656,7 +656,7 @@ body, .app {
 .chat-messages {
   max-width: 100%;
   margin: 0 auto;
-  padding: 0 12px; /* Reduced padding for better space usage */
+  padding: 0 8px; /* Minimal padding for maximum space usage */
 }
 
 /* Assistant message layout - establishes left boundary */
@@ -667,7 +667,7 @@ body, .app {
 }
 
 .assistant-message.aui-assistant-message .message-content-wrapper {
-  max-width: calc(90% - 44px); /* Increased for better readability */
+  max-width: calc(95% - 44px); /* Maximize for better readability */
   flex: 1;
   /* This establishes the conversation column left boundary */
 }
@@ -681,8 +681,8 @@ body, .app {
 
 .user-message.aui-user-message .message-content-wrapper {
   /* OPTIMIZED: Better readability with minimal margins */
-  margin-left: 12px; /* Minimal left margin for better space usage */
-  max-width: calc(90% - 12px); /* Increased max-width for better readability */
+  margin-left: 8px; /* Minimal left margin for better space usage */
+  max-width: calc(95% - 8px); /* Maximize for better readability */
   display: flex;
   flex-direction: column;
   padding-bottom: 28px; /* Match assistant message action button space */
@@ -948,11 +948,11 @@ body, .app {
   }
   
   .message-bubble {
-    max-width: 85%;
+    max-width: 95%; /* Maximize mobile readability */
   }
   
   .messages-scroll {
-    padding: 12px;
+    padding: 8px; /* Minimal padding for maximum space */
   }
   
   .input-container {
@@ -963,7 +963,7 @@ body, .app {
 /* Handle keyboard appearing on mobile */
 @media (max-height: 500px) {
   .messages-scroll {
-    padding: 8px;
+    padding: 4px; /* Minimal padding when space is very constrained */
   }
   
   .message {
