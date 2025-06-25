@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './DocumentList.css';
 import { FileText, Loader2, Trash2, AlertTriangle } from 'lucide-react';
-import { API_BASE_URL } from './config';
+import { apiUtils } from './apiUtils';
 
 function DocumentList({ refreshTrigger, onDocumentDeleted }) {
   const [documents, setDocuments] = useState([]);
@@ -13,18 +13,14 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
   const fetchDocuments = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/documents`);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch documents');
-      }
-      
-      const data = await response.json();
-      setDocuments(data.documents);
       setError('');
+      
+      const data = await apiUtils.getDocuments();
+      setDocuments(data.documents);
+      
     } catch (err) {
       console.error('Error fetching documents:', err);
-      setError('Failed to load documents');
+      setError('Failed to load documents. Check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -59,15 +55,9 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
     
     try {
       setDeleting(deleteConfirm.id);
-      const response = await fetch(`${API_BASE_URL}/documents/${deleteConfirm.id}`, {
-        method: 'DELETE',
-      });
+      setError('');
       
-      if (!response.ok) {
-        throw new Error('Failed to delete document');
-      }
-      
-      const result = await response.json();
+      const result = await apiUtils.deleteDocument(deleteConfirm.id);
       
       // Remove the document from local state
       setDocuments(prev => prev.filter(doc => doc.id !== deleteConfirm.id));
@@ -147,9 +137,7 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
                     {formatDate(doc.upload_timestamp)}
                   </div>
                 </div>
-                <div className="document-preview">
-                  {doc.text_preview}
-                </div>
+
               </div>
               <div className="document-actions">
                 <button

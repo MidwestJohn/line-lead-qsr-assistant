@@ -151,8 +151,16 @@ class DocumentInfo(BaseModel):
     pages_count: int
     text_preview: str
 
+class DocumentSummary(BaseModel):
+    id: str
+    filename: str
+    original_filename: str
+    upload_timestamp: str
+    file_size: int
+    pages_count: int
+
 class DocumentListResponse(BaseModel):
-    documents: List[DocumentInfo]
+    documents: List[DocumentSummary]
     total_count: int
 
 class SearchStatsResponse(BaseModel):
@@ -399,29 +407,30 @@ async def upload_file(file: UploadFile = File(...)):
 # List documents endpoint
 @app.get("/documents", response_model=DocumentListResponse)
 async def list_documents():
-    """Get list of uploaded documents"""
+    """Get list of uploaded documents (optimized - no text preview)"""
     try:
         docs_db = load_documents_db()
         
         documents = []
         for doc_id, doc_info in docs_db.items():
-            documents.append(DocumentInfo(
+            documents.append(DocumentSummary(
                 id=doc_info["id"],
                 filename=doc_info["filename"],
                 original_filename=doc_info["original_filename"],
                 upload_timestamp=doc_info["upload_timestamp"],
                 file_size=doc_info["file_size"],
-                pages_count=doc_info["pages_count"],
-                text_preview=doc_info["text_preview"]
+                pages_count=doc_info["pages_count"]
             ))
         
         # Sort by upload timestamp (newest first)
         documents.sort(key=lambda x: x.upload_timestamp, reverse=True)
         
-        return DocumentListResponse(
+        response = DocumentListResponse(
             documents=documents,
             total_count=len(documents)
         )
+        
+        return response
         
     except Exception as e:
         logger.error(f"Error listing documents: {str(e)}")
@@ -441,6 +450,34 @@ async def get_search_stats():
     except Exception as e:
         logger.error(f"Error getting search stats: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to get search statistics")
+
+# Get document details endpoint
+@app.get("/documents/{document_id}", response_model=DocumentInfo)
+async def get_document_details(document_id: str):
+    """Get detailed information about a specific document including text preview"""
+    try:
+        docs_db = load_documents_db()
+        
+        if document_id not in docs_db:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        doc_info = docs_db[document_id]
+        
+        return DocumentInfo(
+            id=doc_info["id"],
+            filename=doc_info["filename"],
+            original_filename=doc_info["original_filename"],
+            upload_timestamp=doc_info["upload_timestamp"],
+            file_size=doc_info["file_size"],
+            pages_count=doc_info["pages_count"],
+            text_preview=doc_info["text_preview"]
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting document details for {document_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to retrieve document details")
 
 # Delete document endpoint
 @app.delete("/documents/{document_id}", response_model=DeleteDocumentResponse)

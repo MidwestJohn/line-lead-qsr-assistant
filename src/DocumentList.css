@@ -71,11 +71,12 @@
   border-radius: 12px;
   padding: 16px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   position: relative;
+  min-height: 72px;
 }
 
 .document-card:hover {
@@ -98,6 +99,9 @@
 .document-info {
   flex: 1;
   min-width: 0; /* Allow text truncation */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .document-name {
@@ -111,7 +115,7 @@
 }
 
 .document-details {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .document-meta {
@@ -128,19 +132,7 @@
   color: #888;
 }
 
-.document-preview {
-  font-size: 13px;
-  color: #555;
-  line-height: 1.4;
-  background: #f8f9fa;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border-left: 3px solid #667eea;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-}
+
 
 /* Document actions */
 .document-actions {
@@ -345,11 +337,7 @@
     font-size: 11px;
   }
   
-  .document-preview {
-    font-size: 12px;
-    padding: 6px 10px;
-    -webkit-line-clamp: 2;
-  }
+
   
   .delete-button {
     padding: 4px;
