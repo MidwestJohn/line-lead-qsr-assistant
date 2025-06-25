@@ -245,7 +245,6 @@ function App() {
     // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = '40px';
-      textareaRef.current.style.overflowY = 'hidden';
     }
 
     // If offline, queue the message
@@ -524,13 +523,9 @@ function App() {
     const maxHeight = 120; // ~3 lines
     const minHeight = 40;
     
-    if (scrollHeight <= maxHeight) {
-      textarea.style.height = Math.max(scrollHeight, minHeight) + 'px';
-      textarea.style.overflowY = 'hidden';
-    } else {
-      textarea.style.height = maxHeight + 'px';
-      textarea.style.overflowY = 'auto';
-    }
+    // Set height (scrollbar space is always reserved via CSS)
+    const newHeight = Math.min(Math.max(scrollHeight, minHeight), maxHeight);
+    textarea.style.height = newHeight + 'px';
   };
 
   // Handle input changes
@@ -821,7 +816,7 @@ function App() {
               placeholder={getLoadingText()}
               rows="1"
               disabled={isInputDisabled}
-              style={{ minHeight: '40px', height: '40px', overflowY: 'hidden' }}
+              style={{ minHeight: '40px', height: '40px' }}
             />
             <button
               className="send-button aui-composer-send"

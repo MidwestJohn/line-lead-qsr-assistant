@@ -792,8 +792,35 @@ body, .app {
 /* Auto-expanding textarea */
 .message-input.auto-expand {
   transition: height 0.2s ease-out;
-  overflow-y: hidden;
   box-sizing: border-box;
+  
+  /* Always reserve space for scrollbar to prevent layout shift */
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
+/* Custom scrollbar styling for better integration */
+.message-input.auto-expand::-webkit-scrollbar {
+  width: 6px;
+}
+
+.message-input.auto-expand::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.message-input.auto-expand::-webkit-scrollbar-thumb {
+  background: var(--aui-border);
+  border-radius: 3px;
+}
+
+.message-input.auto-expand::-webkit-scrollbar-thumb:hover {
+  background: var(--aui-muted-foreground);
+}
+
+/* Firefox scrollbar styling */
+.message-input.auto-expand {
+  scrollbar-width: thin;
+  scrollbar-color: var(--aui-border) transparent;
 }
 
 .message-input.aui-composer-input::placeholder {
