@@ -767,6 +767,9 @@ body, .app {
   padding: 8px;
   box-shadow: var(--aui-shadow-sm);
   transition: all 0.2s ease;
+  
+  /* Ensure proper alignment during textarea expansion */
+  min-height: fit-content;
 }
 
 .input-wrapper:focus-within {
@@ -785,10 +788,21 @@ body, .app {
   resize: none;
   outline: none;
   line-height: 1.5;
-  max-height: 120px;
-  overflow-y: auto;
   background: transparent;
   color: var(--aui-foreground);
+  
+  /* Auto-expanding behavior */
+  transition: height 0.2s ease-out;
+  overflow-y: hidden;
+  
+  /* Ensure consistent box-sizing */
+  box-sizing: border-box;
+  
+  /* Prevent horizontal resize */
+  resize: none;
+  
+  /* Smooth scrolling when content exceeds max height */
+  scroll-behavior: smooth;
 }
 
 .message-input.aui-composer-input::placeholder {

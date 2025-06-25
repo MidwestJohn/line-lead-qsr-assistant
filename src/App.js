@@ -72,6 +72,9 @@ function App() {
   const streamingTimeoutRef = useRef(null);
   const lastUpdateTimeRef = useRef(0);
   const pendingChunksRef = useRef('');
+  
+  // Auto-expanding textarea refs
+  const textareaRef = useRef(null);
 
   // Effects and event handlers
   const scrollToBottom = useCallback(() => {
@@ -93,6 +96,26 @@ function App() {
       scrollToBottom();
     }
   }, [messages, isStreaming, scrollToBottom]);
+
+  // Initialize textarea height and handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (inputText) {
+        // Recalculate height on window resize
+        requestAnimationFrame(() => {
+          adjustTextareaHeight();
+        });
+      }
+    };
+
+    // Initial setup
+    if (textareaRef.current) {
+      adjustTextareaHeight();
+    }
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [adjustTextareaHeight, inputText]);
 
   // Check service status on startup and periodically
   useEffect(() => {
@@ -238,6 +261,9 @@ function App() {
     const currentMessage = inputText;
     const messageId = Date.now();
     setInputText('');
+    
+    // Reset textarea height after sending
+    resetTextareaHeight();
 
     // If offline, queue the message
     if (!isOnline) {
@@ -501,6 +527,61 @@ function App() {
       error: null
     });
   };
+
+  // Auto-expanding textarea functionality
+  const adjustTextareaHeight = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = 'auto';
+    
+    // Calculate the new height based on content
+    const scrollHeight = textarea.scrollHeight;
+    const lineHeight = parseInt(window.getComputedStyle(textarea).lineHeight);
+    const paddingTop = parseInt(window.getComputedStyle(textarea).paddingTop);
+    const paddingBottom = parseInt(window.getComputedStyle(textarea).paddingBottom);
+    const padding = paddingTop + paddingBottom;
+    
+    // Calculate max height (approximately 3 lines)
+    const maxHeight = (lineHeight * 3) + padding;
+    const minHeight = 40; // Match initial min-height from CSS
+    
+    // Set the new height
+    if (scrollHeight <= maxHeight) {
+      textarea.style.height = Math.max(scrollHeight, minHeight) + 'px';
+      textarea.style.overflowY = 'hidden';
+    } else {
+      textarea.style.height = maxHeight + 'px';
+      textarea.style.overflowY = 'auto';
+    }
+  }, []);
+
+  // Handle input changes with auto-expansion
+  const handleInputChange = useCallback((e) => {
+    setInputText(e.target.value);
+    // Small delay to ensure the text is rendered before measuring
+    requestAnimationFrame(() => {
+      adjustTextareaHeight();
+    });
+  }, [adjustTextareaHeight]);
+
+  // Reset textarea height when message is sent
+  const resetTextareaHeight = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    
+    textarea.style.height = '40px'; // Reset to initial height
+    textarea.style.overflowY = 'hidden';
+  }, []);
+
+  // Handle paste operations
+  const handlePaste = useCallback((e) => {
+    // Let the default paste behavior happen, then adjust height
+    requestAnimationFrame(() => {
+      adjustTextareaHeight();
+    });
+  }, [adjustTextareaHeight]);
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -776,13 +857,16 @@ function App() {
         <div className="input-container aui-composer">
           <div className="input-wrapper">
             <textarea
+              ref={textareaRef}
               className="message-input aui-composer-input"
               value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
+              onChange={handleInputChange}
               onKeyPress={handleKeyPress}
+              onPaste={handlePaste}
               placeholder={getLoadingText()}
               rows="1"
               disabled={isInputDisabled}
+              style={{ minHeight: '40px', height: '40px', overflowY: 'hidden' }}
             />
             <button
               className="send-button aui-composer-send"
