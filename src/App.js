@@ -72,6 +72,9 @@ function App() {
   const streamingTimeoutRef = useRef(null);
   const lastUpdateTimeRef = useRef(0);
   const pendingChunksRef = useRef('');
+  
+  // Auto-expanding textarea ref
+  const textareaRef = useRef(null);
 
   // Effects and event handlers
   const scrollToBottom = useCallback(() => {
@@ -238,6 +241,12 @@ function App() {
     const currentMessage = inputText;
     const messageId = Date.now();
     setInputText('');
+    
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '40px';
+      textareaRef.current.style.overflowY = 'hidden';
+    }
 
     // If offline, queue the message
     if (!isOnline) {
@@ -500,6 +509,34 @@ function App() {
       retryAttempt: 0,
       error: null
     });
+  };
+
+  // Simple auto-expanding textarea function
+  const autoExpandTextarea = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // Reset height to measure scroll height
+    textarea.style.height = 'auto';
+    
+    // Calculate new height with max constraint
+    const scrollHeight = textarea.scrollHeight;
+    const maxHeight = 120; // ~3 lines
+    const minHeight = 40;
+    
+    if (scrollHeight <= maxHeight) {
+      textarea.style.height = Math.max(scrollHeight, minHeight) + 'px';
+      textarea.style.overflowY = 'hidden';
+    } else {
+      textarea.style.height = maxHeight + 'px';
+      textarea.style.overflowY = 'auto';
+    }
+  };
+
+  // Handle input changes
+  const handleInputChange = (e) => {
+    setInputText(e.target.value);
+    setTimeout(autoExpandTextarea, 0); // Use setTimeout instead of requestAnimationFrame
   };
 
   const handleKeyPress = (e) => {
@@ -776,13 +813,15 @@ function App() {
         <div className="input-container aui-composer">
           <div className="input-wrapper">
             <textarea
-              className="message-input aui-composer-input"
+              ref={textareaRef}
+              className="message-input aui-composer-input auto-expand"
               value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
+              onChange={handleInputChange}
               onKeyPress={handleKeyPress}
               placeholder={getLoadingText()}
               rows="1"
               disabled={isInputDisabled}
+              style={{ minHeight: '40px', height: '40px', overflowY: 'hidden' }}
             />
             <button
               className="send-button aui-composer-send"

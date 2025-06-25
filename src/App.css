@@ -785,10 +785,15 @@ body, .app {
   resize: none;
   outline: none;
   line-height: 1.5;
-  max-height: 120px;
-  overflow-y: auto;
   background: transparent;
   color: var(--aui-foreground);
+}
+
+/* Auto-expanding textarea */
+.message-input.auto-expand {
+  transition: height 0.2s ease-out;
+  overflow-y: hidden;
+  box-sizing: border-box;
 }
 
 .message-input.aui-composer-input::placeholder {
