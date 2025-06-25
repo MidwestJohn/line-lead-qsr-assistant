@@ -1,0 +1,32 @@
+# Ignore frontend files and dependencies
+node_modules/
+package.json
+package-lock.json
+craco.config.js
+public/
+src/
+build/
+
+# Ignore frontend-specific files
+*.js
+*.jsx
+*.css
+*.html
+
+# But include backend files (exceptions)
+!backend/**
+backend/node_modules/
+backend/package*.json
+
+# Ignore development files
+.env
+frontend.log
+*.log
+
+# Ignore documentation (optional for deployment)
+*.md
+*.txt
+
+# Ignore test files
+test_*
+*.test.*

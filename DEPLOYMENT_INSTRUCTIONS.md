@@ -19,9 +19,12 @@
 Name: line-lead-qsr-backend
 Branch: main
 Region: Oregon (US West) or your preferred region
-Build Command: cd backend && pip install -r requirements.txt
-Start Command: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+Root Directory: backend
+Build Command: pip install -r requirements.txt
+Start Command: uvicorn main:app --host 0.0.0.0 --port $PORT
 ```
+
+**⚠️ IMPORTANT**: Set the "Root Directory" to `backend` in the Render dashboard to avoid conflicts with frontend files.
 
 ### Step 3: Set Environment Variables
 ```
@@ -148,6 +151,19 @@ Both platforms are configured for automatic deployment:
 3. **HTTPS**: Both platforms provide automatic HTTPS
 4. **Custom Domain**: Can be configured in both platforms
 5. **Environment Updates**: Require redeployment
+
+## 🔧 Troubleshooting
+
+### **Backend Deploy Fails with "craco: not found"**
+This happens when Render detects the frontend package.json. Solution:
+1. **Set Root Directory**: In Render dashboard, set "Root Directory" to `backend`
+2. **Verify Commands**: Build Command: `pip install -r requirements.txt`
+3. **Verify Commands**: Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+4. **No cd commands**: Commands should NOT include `cd backend &&`
+
+### **Environment Variable Issues**
+- Ensure OPENAI_API_KEY is set correctly in Render dashboard
+- CORS_ORIGINS should include your actual Vercel URL once deployed
 
 ---
 
