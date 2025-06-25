@@ -93,10 +93,14 @@ app = FastAPI(
 )
 
 # Configure CORS
-cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=[
+        "https://linelead.io",                    # Your custom domain
+        "https://line-lead-qsr-assistant.vercel.app",  # Default Vercel URL
+        "http://localhost:3000",                  # Local development
+        "http://localhost:8000",                  # Local backend testing
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
