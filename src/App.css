@@ -400,17 +400,17 @@ body, .app {
   
   /* ======== MOBILE OPTIMIZED LAYOUT ======== */
   .assistant-message.aui-assistant-message .message-content-wrapper {
-    max-width: calc(80% - 38px); /* Account for smaller avatar (28px) + gap (10px) */
+    max-width: calc(85% - 38px); /* Increased for better readability */
   }
   
   .assistant-message.aui-assistant-message .loading-content {
     max-width: 100%;
   }
   
-  /* Mobile user messages - maintain consistent column alignment */
+  /* Mobile user messages - optimize for readability */
   .user-message.aui-user-message .message-content-wrapper {
-    margin-left: calc(28px + 10px); /* Mobile avatar width + gap = assistant content start */
-    max-width: calc(80% - 38px); /* Same max-width as assistant for consistency */
+    margin-left: 16px; /* Minimal left margin for better readability */
+    max-width: calc(85% - 16px); /* Increase max-width for better space usage */
     padding-bottom: 32px; /* Match mobile action button space */
   }
   
@@ -662,7 +662,7 @@ body, .app {
 }
 
 .assistant-message.aui-assistant-message .message-content-wrapper {
-  max-width: calc(80% - 44px); /* Account for avatar width (32px) + gap (12px) */
+  max-width: calc(85% - 44px); /* Increased for better readability */
   flex: 1;
   /* This establishes the conversation column left boundary */
 }
@@ -675,9 +675,9 @@ body, .app {
 }
 
 .user-message.aui-user-message .message-content-wrapper {
-  /* KEY OPTIMIZATION: Align left edge with assistant message start */
-  margin-left: calc(32px + 12px); /* Avatar width + gap = assistant content start */
-  max-width: calc(80% - 44px); /* Same max-width as assistant for consistency */
+  /* OPTIMIZED: Better readability with minimal margins */
+  margin-left: 20px; /* Reduced margin for better space usage */
+  max-width: calc(85% - 20px); /* Increased max-width for better readability */
   display: flex;
   flex-direction: column;
   padding-bottom: 28px; /* Match assistant message action button space */
