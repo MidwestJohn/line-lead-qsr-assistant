@@ -9,5 +9,5 @@ services:
       - key: OPENAI_API_KEY
         sync: false
       - key: CORS_ORIGINS
-        value: "https://line-lead-qsr-assistant.vercel.app,http://localhost:3000"
+        value: "https://linelead.io,http://localhost:3000"
     healthCheckPath: "/health"

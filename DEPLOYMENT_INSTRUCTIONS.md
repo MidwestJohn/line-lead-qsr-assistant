@@ -30,7 +30,7 @@ Start Command: uvicorn main:app --host 0.0.0.0 --port $PORT
 ```
 OPENAI_API_KEY = [Your OpenAI API Key - provided separately for security]
 
-CORS_ORIGINS = https://line-lead-qsr-assistant.vercel.app,http://localhost:3000
+CORS_ORIGINS = https://linelead.io,http://localhost:3000
 
 PYTHON_VERSION = 3.11
 ```
