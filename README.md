@@ -1,6 +1,6 @@
-# Line Lead QSR MVP
+# Line Lead QSR Assistant 🍟
 
-A mobile-first chat interface for QSR (Quick Service Restaurant) workers to get assistance with equipment maintenance and troubleshooting.
+A mobile-first AI assistant for Quick Service Restaurant (QSR) workers, providing instant help with equipment maintenance by intelligently searching uploaded equipment manuals.
 
 ## 🚀 Quick Start
 

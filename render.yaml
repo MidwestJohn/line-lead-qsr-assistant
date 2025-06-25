@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: line-lead-qsr-backend
+    env: python
+    plan: starter
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: "https://line-lead-qsr-assistant.vercel.app,http://localhost:3000"
+      - key: PYTHON_VERSION
+        value: "3.11"
+    healthCheckPath: "/health"
