@@ -5,9 +5,15 @@ OpenAI integration for intelligent QSR assistant responses
 import os
 import logging
 from typing import List, Dict, Optional
-import keyring
 from openai import OpenAI
 from dotenv import load_dotenv
+
+# Import keyring optionally (for local development)
+try:
+    import keyring
+    KEYRING_AVAILABLE = True
+except ImportError:
+    KEYRING_AVAILABLE = False
 
 # Load environment variables from .env file
 load_dotenv()
@@ -27,14 +33,14 @@ class QSRAssistant:
         self._initialize_openai()
     
     def _initialize_openai(self):
-        """Initialize OpenAI client with API key from keyring or environment"""
+        """Initialize OpenAI client with API key from environment or keyring"""
         try:
-            # Try to get API key from keyring first
-            api_key = keyring.get_password("memex", "OPENAI_API_KEY")
+            # Get API key from environment variable first (production)
+            api_key = os.getenv("OPENAI_API_KEY")
             
-            # Fallback to environment variable
-            if not api_key:
-                api_key = os.getenv("OPENAI_API_KEY")
+            # Fallback to keyring if available (local development)
+            if not api_key and KEYRING_AVAILABLE:
+                api_key = keyring.get_password("memex", "OPENAI_API_KEY")
             
             if api_key:
                 if api_key.startswith("demo-") or api_key == "demo":
