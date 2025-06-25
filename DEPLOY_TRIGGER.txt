@@ -1,0 +1,3 @@
+Deployment trigger for delete functionality
+Timestamp: 2025-06-25T20:15:00Z
+Trigger reason: Force Render redeploy with delete endpoint
