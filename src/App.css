@@ -398,6 +398,7 @@ body, .app {
     gap: 10px;
   }
   
+  /* ======== MOBILE OPTIMIZED LAYOUT ======== */
   .assistant-message.aui-assistant-message .message-content-wrapper {
     max-width: calc(80% - 38px); /* Account for smaller avatar (28px) + gap (10px) */
   }
@@ -406,7 +407,10 @@ body, .app {
     max-width: 100%;
   }
   
+  /* Mobile user messages - maintain consistent column alignment */
   .user-message.aui-user-message .message-content-wrapper {
+    margin-left: calc(28px + 10px); /* Mobile avatar width + gap = assistant content start */
+    max-width: calc(80% - 38px); /* Same max-width as assistant for consistency */
     padding-bottom: 32px; /* Match mobile action button space */
   }
   
@@ -640,23 +644,43 @@ body, .app {
   color: var(--aui-card-foreground);
 }
 
-/* User message layout - no avatar, right aligned */
-.user-message.aui-user-message {
-  justify-content: flex-end;
+/* ======== OPTIMIZED CHAT BUBBLE LAYOUT ======== */
+/* Creates consistent conversation column with proper alignment */
+
+/* Container for the entire conversation area */
+.chat-messages {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* Assistant message layout - establishes left boundary */
+.assistant-message.aui-assistant-message {
+  justify-content: flex-start;
   width: 100%;
+  margin-bottom: 16px;
 }
 
-.user-message.aui-user-message .message-content-wrapper {
-  max-width: 80%;
-  display: flex;
-  flex-direction: column;
-  padding-bottom: 28px; /* Match assistant message action button space */
-}
-
-/* Assistant message with avatar - account for avatar space */
 .assistant-message.aui-assistant-message .message-content-wrapper {
   max-width: calc(80% - 44px); /* Account for avatar width (32px) + gap (12px) */
   flex: 1;
+  /* This establishes the conversation column left boundary */
+}
+
+/* User message layout - respects same left boundary as assistant messages */
+.user-message.aui-user-message {
+  justify-content: flex-end;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.user-message.aui-user-message .message-content-wrapper {
+  /* KEY OPTIMIZATION: Align left edge with assistant message start */
+  margin-left: calc(32px + 12px); /* Avatar width + gap = assistant content start */
+  max-width: calc(80% - 44px); /* Same max-width as assistant for consistency */
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 28px; /* Match assistant message action button space */
 }
 
 .assistant-message.aui-assistant-message .loading-content {
@@ -668,8 +692,8 @@ body, .app {
   color: var(--aui-foreground);
   border: 1px solid var(--aui-border);
   border-bottom-right-radius: 8px;
-  max-width: 80%;
-  margin-left: auto;
+  width: 100%; /* Use full available width within the constrained container */
+  /* Remove margin-left: auto since container handles positioning */
 }
 
 .assistant-message.aui-assistant-message .message-bubble.aui-message-content {
