@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './AIStatusIndicator.css';
-import { API_BASE_URL } from './config';
+import { apiUtils } from './apiUtils';
 
 function AIStatusIndicator() {
   const [aiStatus, setAiStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchAIStatus();
@@ -13,14 +14,12 @@ function AIStatusIndicator() {
   const fetchAIStatus = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/ai-status`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        setAiStatus(data);
-      }
+      setError(null);
+      const data = await apiUtils.getAIStatus();
+      setAiStatus(data);
     } catch (error) {
       console.error('Error fetching AI status:', error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
