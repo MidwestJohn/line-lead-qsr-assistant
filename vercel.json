@@ -6,11 +6,11 @@
   "installCommand": "npm install",
   "framework": "create-react-app",
   "env": {
-    "REACT_APP_API_URL": "@react_app_api_url"
+    "REACT_APP_API_URL": "https://line-lead-qsr-backend.onrender.com"
   },
   "build": {
     "env": {
-      "REACT_APP_API_URL": "@react_app_api_url"
+      "REACT_APP_API_URL": "https://line-lead-qsr-backend.onrender.com"
     }
   },
   "functions": {},

@@ -40,7 +40,7 @@ PYTHON_VERSION = 3.11
 - **Plan**: Starter (free tier)
 - **Auto-Deploy**: Yes (deploy on git push)
 
-**Expected Backend URL**: `https://line-lead-qsr-backend.onrender.com`
+**✅ DEPLOYED Backend URL**: `https://line-lead-qsr-backend.onrender.com`
 
 ---
 
@@ -68,6 +68,8 @@ Install Command: npm install
 ```
 REACT_APP_API_URL = https://line-lead-qsr-backend.onrender.com
 ```
+
+**✅ NOTE**: Frontend is already configured with your Render backend URL.
 
 ### Step 5: Deploy
 - Click "Deploy" to build and deploy
