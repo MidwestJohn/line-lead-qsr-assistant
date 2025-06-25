@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import './DocumentList.css';
-import { FileText, Loader2 } from 'lucide-react';
+import { FileText, Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import { API_BASE_URL } from './config';
 
-function DocumentList({ refreshTrigger }) {
+function DocumentList({ refreshTrigger, onDocumentDeleted }) {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [deleting, setDeleting] = useState(null);
 
   const fetchDocuments = async () => {
     try {
@@ -46,6 +48,46 @@ function DocumentList({ refreshTrigger }) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const handleDeleteClick = (doc) => {
+    setDeleteConfirm(doc);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
+    
+    try {
+      setDeleting(deleteConfirm.id);
+      const response = await fetch(`${API_BASE_URL}/documents/${deleteConfirm.id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete document');
+      }
+      
+      const result = await response.json();
+      
+      // Remove the document from local state
+      setDocuments(prev => prev.filter(doc => doc.id !== deleteConfirm.id));
+      
+      // Call the callback to refresh other components if needed
+      if (onDocumentDeleted) {
+        onDocumentDeleted(result);
+      }
+      
+      setDeleteConfirm(null);
+    } catch (err) {
+      console.error('Error deleting document:', err);
+      setError('Failed to delete document: ' + err.message);
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirm(null);
   };
 
   if (loading) {
@@ -109,8 +151,67 @@ function DocumentList({ refreshTrigger }) {
                   {doc.text_preview}
                 </div>
               </div>
+              <div className="document-actions">
+                <button
+                  className="delete-button"
+                  onClick={() => handleDeleteClick(doc)}
+                  disabled={deleting === doc.id}
+                  title="Delete document"
+                >
+                  {deleting === doc.id ? (
+                    <Loader2 className="delete-icon loading" />
+                  ) : (
+                    <Trash2 className="delete-icon" />
+                  )}
+                </button>
+              </div>
             </div>
           ))}
+        </div>
+      )}
+      
+      {deleteConfirm && (
+        <div className="delete-modal-overlay">
+          <div className="delete-modal">
+            <div className="delete-modal-icon">
+              <AlertTriangle className="warning-icon" />
+            </div>
+            <div className="delete-modal-content">
+              <h3>Delete Document</h3>
+              <p>
+                Are you sure you want to delete "<strong>{deleteConfirm.original_filename}</strong>"?
+              </p>
+              <p className="delete-warning">
+                This action cannot be undone. The document will be permanently removed from the system.
+              </p>
+            </div>
+            <div className="delete-modal-actions">
+              <button 
+                className="cancel-button" 
+                onClick={cancelDelete}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button 
+                className="confirm-delete-button" 
+                onClick={confirmDelete}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="button-icon loading" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="button-icon" />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

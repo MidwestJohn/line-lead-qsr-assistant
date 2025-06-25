@@ -647,7 +647,10 @@ function App() {
                   onUploadSuccess={handleUploadSuccess}
                   onDocumentsUpdate={handleDocumentsUpdate}
                 />
-                <DocumentList refreshTrigger={documentsRefresh} />
+                <DocumentList 
+                  refreshTrigger={documentsRefresh}
+                  onDocumentDeleted={handleDocumentsUpdate}
+                />
               </ErrorBoundary>
             </div>
           ) : (

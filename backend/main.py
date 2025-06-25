@@ -165,6 +165,12 @@ class AIStatusResponse(BaseModel):
     model_name: str
     status_message: str
 
+class DeleteDocumentResponse(BaseModel):
+    success: bool
+    message: str
+    document_id: str
+    original_filename: str
+
 # Health check endpoint
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
@@ -435,6 +441,61 @@ async def get_search_stats():
     except Exception as e:
         logger.error(f"Error getting search stats: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to get search statistics")
+
+# Delete document endpoint
+@app.delete("/documents/{document_id}", response_model=DeleteDocumentResponse)
+async def delete_document(document_id: str):
+    """Delete a document from the system"""
+    try:
+        # Load documents database
+        docs_db = load_documents_db()
+        
+        # Check if document exists
+        if document_id not in docs_db:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        doc_info = docs_db[document_id]
+        filename = doc_info.get('filename', '')
+        original_filename = doc_info.get('original_filename', 'Unknown')
+        
+        # Remove file from filesystem
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+                logger.info(f"Deleted file: {file_path}")
+            except Exception as e:
+                logger.warning(f"Failed to delete file {file_path}: {e}")
+        
+        # Remove from documents database
+        del docs_db[document_id]
+        
+        # Save updated database
+        if not save_documents_db(docs_db):
+            raise HTTPException(status_code=500, detail="Failed to update document database")
+        
+        # Rebuild search engine index without this document
+        try:
+            load_documents_into_search_engine(docs_db)
+            logger.info(f"Rebuilt search index after deleting document {document_id}")
+        except Exception as search_error:
+            logger.error(f"Failed to rebuild search index: {search_error}")
+            # Continue anyway - document is deleted, search will just be stale
+        
+        logger.info(f"Successfully deleted document: {original_filename} (ID: {document_id})")
+        
+        return DeleteDocumentResponse(
+            success=True,
+            message=f"Successfully deleted document: {original_filename}",
+            document_id=document_id,
+            original_filename=original_filename
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting document {document_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to delete document")
 
 # AI status endpoint
 @app.get("/ai-status", response_model=AIStatusResponse)
