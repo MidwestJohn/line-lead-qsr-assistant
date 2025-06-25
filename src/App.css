@@ -400,7 +400,7 @@ body, .app {
   
   /* ======== MOBILE OPTIMIZED LAYOUT ======== */
   .assistant-message.aui-assistant-message .message-content-wrapper {
-    max-width: calc(85% - 38px); /* Increased for better readability */
+    max-width: calc(90% - 38px); /* Increased for better readability */
   }
   
   .assistant-message.aui-assistant-message .loading-content {
@@ -409,8 +409,8 @@ body, .app {
   
   /* Mobile user messages - optimize for readability */
   .user-message.aui-user-message .message-content-wrapper {
-    margin-left: 16px; /* Minimal left margin for better readability */
-    max-width: calc(85% - 16px); /* Increase max-width for better space usage */
+    margin-left: 8px; /* Minimal left margin for better readability */
+    max-width: calc(90% - 8px); /* Increase max-width for better space usage */
     padding-bottom: 32px; /* Match mobile action button space */
   }
   
@@ -525,7 +525,7 @@ body, .app {
 .messages-scroll.aui-thread-viewport {
   flex: 1;
   -webkit-overflow-scrolling: touch;
-  padding: 16px;
+  padding: 8px 0; /* Remove horizontal padding - handled by chat-messages container */
   background: var(--aui-background);
   
   /* Clean scrollbar matching homepage demo */
@@ -651,7 +651,7 @@ body, .app {
 .chat-messages {
   max-width: 100%;
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 12px; /* Reduced padding for better space usage */
 }
 
 /* Assistant message layout - establishes left boundary */
@@ -662,7 +662,7 @@ body, .app {
 }
 
 .assistant-message.aui-assistant-message .message-content-wrapper {
-  max-width: calc(85% - 44px); /* Increased for better readability */
+  max-width: calc(90% - 44px); /* Increased for better readability */
   flex: 1;
   /* This establishes the conversation column left boundary */
 }
@@ -676,8 +676,8 @@ body, .app {
 
 .user-message.aui-user-message .message-content-wrapper {
   /* OPTIMIZED: Better readability with minimal margins */
-  margin-left: 20px; /* Reduced margin for better space usage */
-  max-width: calc(85% - 20px); /* Increased max-width for better readability */
+  margin-left: 12px; /* Minimal left margin for better space usage */
+  max-width: calc(90% - 12px); /* Increased max-width for better readability */
   display: flex;
   flex-direction: column;
   padding-bottom: 28px; /* Match assistant message action button space */
