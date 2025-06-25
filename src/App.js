@@ -10,7 +10,6 @@ import { Send, Square, Upload, MessageCircle, WifiOff, Copy, RefreshCw, Check, B
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { API_BASE_URL } from './config';
-import DebugInfo from './DebugInfo';
 
 function App() {
   
@@ -806,7 +805,6 @@ function App() {
           )}
         </div>
         </div>
-        <DebugInfo />
       </ErrorBoundary>
     </AssistantRuntimeProvider>
   );
