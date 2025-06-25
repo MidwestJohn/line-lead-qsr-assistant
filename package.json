@@ -1,0 +1,46 @@
+{
+  "name": "line_lead_qsr_mvp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Line Lead QSR Assistant - Mobile-first chat interface",
+  "scripts": {
+    "start": "craco start",
+    "build": "craco build", 
+    "test": "craco test",
+    "eject": "react-scripts eject"
+  },
+  "keywords": [
+    "qsr",
+    "assistant",
+    "chat",
+    "mobile"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@assistant-ui/react": "^0.10.24",
+    "@assistant-ui/styles": "^0.1.13",
+    "lucide-react": "^0.523.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-markdown": "^10.1.0",
+    "react-scripts": "^5.0.1",
+    "remark-gfm": "^4.0.1"
+  },
+  "proxy": "http://localhost:8000",
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@craco/craco": "^7.1.0"
+  }
+}

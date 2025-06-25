@@ -1,0 +1,95 @@
+.ai-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 6px 12px;
+  position: relative;
+  cursor: help;
+  transition: all 0.3s ease;
+}
+
+.ai-status-indicator.active {
+  background: rgba(102, 126, 234, 0.2);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+.ai-status-indicator.inactive {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.ai-status-indicator.loading {
+  background: rgba(255, 165, 0, 0.2);
+  border-color: rgba(255, 165, 0, 0.3);
+}
+
+.ai-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.ai-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  white-space: nowrap;
+}
+
+.ai-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  margin-bottom: 8px;
+  z-index: 1000;
+}
+
+.ai-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.9);
+}
+
+.ai-status-indicator:hover .ai-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Mobile optimizations */
+@media (max-width: 414px) {
+  .ai-status-indicator {
+    padding: 4px 8px;
+    gap: 4px;
+  }
+  
+  .ai-icon {
+    font-size: 12px;
+  }
+  
+  .ai-text {
+    font-size: 11px;
+  }
+  
+  .ai-tooltip {
+    font-size: 10px;
+    max-width: 200px;
+    white-space: normal;
+    text-align: center;
+  }
+}

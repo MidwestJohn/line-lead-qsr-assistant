@@ -1,0 +1,1036 @@
+/* Assistant-UI Homepage Demo Styling with Line Lead Branding */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Line Lead Brand Colors */
+  --aui-primary: #DC1111;
+  --aui-primary-foreground: #ffffff;
+  --aui-accent: #DC1111;
+  --aui-accent-foreground: #ffffff;
+  
+  /* Clean Homepage Demo Colors */
+  --aui-background: #ffffff;
+  --aui-foreground: #0f172a;
+  --aui-muted: #f8fafc;
+  --aui-muted-foreground: #64748b;
+  --aui-border: #e2e8f0;
+  --aui-input: #ffffff;
+  --aui-card: #ffffff;
+  --aui-card-foreground: #0f172a;
+  --aui-secondary: #f1f5f9;
+  --aui-secondary-foreground: #0f172a;
+  
+  /* Typography matching homepage demo */
+  --aui-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  /* Shadows and borders matching homepage demo */
+  --aui-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --aui-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --aui-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  
+  /* Border radius matching homepage demo */
+  --aui-radius: 0.75rem;
+  --aui-radius-sm: 0.5rem;
+  --aui-radius-lg: 1rem;
+}
+
+/* Typography Hierarchy - Assistant-UI Homepage Demo Style */
+body, .app {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* App title/header - Inter 600, larger size */
+.app-title, .line-lead-logo {
+  font-weight: 600;
+}
+
+/* Message text - Inter 400, comfortable reading size */
+.message-text {
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+/* Input text - Inter 400 */
+.message-input {
+  font-weight: 400;
+}
+
+/* Button text - Inter 500 */
+.send-button, .upload-toggle-btn, button {
+  font-weight: 500;
+}
+
+/* Timestamps/metadata - Inter 400, smaller size, muted */
+.message-time, .upload-hint {
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--aui-muted-foreground);
+}
+
+/* Upload text - Inter 500 for emphasis */
+.upload-text strong {
+  font-weight: 600;
+}
+
+/* Streaming cursor animation - optimized with will-change */
+.streaming-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.2em;
+  background-color: var(--aui-primary);
+  margin-left: 2px;
+  will-change: opacity;
+  animation: smoothBlink 1s infinite ease-in-out;
+}
+
+@keyframes smoothBlink {
+  0%, 45% { opacity: 1; }
+  55%, 100% { opacity: 0; }
+}
+
+/* Thinking dots animation */
+.thinking-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--aui-muted-foreground);
+}
+
+.thinking-dots::after {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 50%;
+  animation: thinkingPulse 1.4s infinite ease-in-out both;
+}
+
+.thinking-dots::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 50%;
+  margin-right: 2px;
+  animation: thinkingPulse 1.4s infinite ease-in-out both;
+  animation-delay: -0.32s;
+}
+
+@keyframes thinkingPulse {
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Smooth text reveal animation */
+.message-text {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Performance optimization for streaming */
+.streaming-message {
+  will-change: contents;
+}
+
+.streaming-message .message-text {
+  animation: none; /* Disable fade animation during streaming for performance */
+}
+
+/* Fallback indicator */
+.fallback-indicator {
+  color: var(--aui-muted-foreground);
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+
+/* Enhanced retry button */
+.retry-message-btn {
+  background: var(--aui-primary);
+  color: var(--aui-primary-foreground);
+  border: none;
+  border-radius: var(--aui-radius-sm);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.2s ease;
+}
+
+.retry-message-btn:hover {
+  background: color-mix(in srgb, var(--aui-primary) 90%, black);
+  transform: translateY(-1px);
+}
+
+.retry-message-btn:active {
+  transform: translateY(0);
+}
+
+/* Markdown Formatting Styles */
+.markdown-ul {
+  list-style-type: disc;
+  list-style-position: outside;
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.markdown-ol {
+  list-style-type: decimal;
+  list-style-position: outside;
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.markdown-li {
+  margin-bottom: 4px;
+  line-height: 1.5;
+  display: list-item;
+}
+
+.markdown-strong {
+  font-weight: 600;
+  color: var(--aui-foreground);
+}
+
+.markdown-p {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.markdown-p:first-child {
+  margin-top: 0;
+}
+
+.markdown-p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-code {
+  background: var(--aui-muted);
+  color: var(--aui-foreground);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.9em;
+}
+
+.markdown-h1 {
+  font-size: 1.2em;
+  font-weight: 600;
+  margin: 12px 0 8px 0;
+  color: var(--aui-foreground);
+}
+
+.markdown-h2 {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin: 10px 0 6px 0;
+  color: var(--aui-foreground);
+}
+
+.markdown-h3 {
+  font-size: 1.05em;
+  font-weight: 600;
+  margin: 8px 0 4px 0;
+  color: var(--aui-foreground);
+}
+
+/* Ensure proper spacing in nested lists */
+.markdown-ul .markdown-ul,
+.markdown-ol .markdown-ol,
+.markdown-ul .markdown-ol,
+.markdown-ol .markdown-ul {
+  margin: 4px 0;
+  padding-left: 24px;
+}
+
+/* Message Actions Styling */
+.message-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0; /* Allow content to shrink */
+}
+
+.message-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  height: 28px; /* Fixed height to prevent layout shifts */
+  transition: opacity 150ms ease;
+}
+
+.message-actions.hidden {
+  opacity: 0;
+  pointer-events: none; /* Prevent interaction when hidden */
+}
+
+.message-actions.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--aui-muted-foreground);
+  cursor: pointer;
+  transition: all 150ms ease;
+  min-width: 28px;
+  min-height: 28px;
+}
+
+.action-button:not(:disabled):hover {
+  background: var(--aui-muted);
+  color: var(--aui-foreground);
+  transform: translateY(-1px);
+}
+
+.action-button:not(:disabled):active {
+  transform: translateY(0);
+}
+
+.action-button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.action-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+.action-icon.copied {
+  color: #10b981; /* Green color for success */
+}
+
+/* Mobile responsive adjustments for markdown */
+@media (max-width: 414px) {
+  .markdown-ul,
+  .markdown-ol {
+    padding-left: 16px;
+  }
+  
+  .markdown-ul .markdown-ul,
+  .markdown-ol .markdown-ol,
+  .markdown-ul .markdown-ol,
+  .markdown-ol .markdown-ul {
+    padding-left: 20px;
+  }
+  
+  .message-actions {
+    height: 32px; /* Larger fixed height for mobile */
+  }
+  
+  .action-button {
+    padding: 8px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+  
+  .action-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Assistant-UI Loading Spinner */
+.aui-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--aui-border);
+  border-top: 2px solid var(--aui-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
+
+/* Avatar loading state */
+.avatar-loading-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* Responsive avatar sizing */
+@media (max-width: 414px) {
+  .assistant-avatar {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .assistant-message.aui-assistant-message {
+    gap: 10px;
+  }
+  
+  .assistant-message.aui-assistant-message .message-content-wrapper {
+    max-width: calc(80% - 38px); /* Account for smaller avatar (28px) + gap (10px) */
+  }
+  
+  .assistant-message.aui-assistant-message .loading-content {
+    max-width: 100%;
+  }
+  
+  .user-message.aui-user-message .message-content-wrapper {
+    padding-bottom: 32px; /* Match mobile action button space */
+  }
+  
+  .aui-loading-spinner {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+.app {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--aui-background);
+  font-family: var(--aui-font-family);
+  color: var(--aui-foreground);
+  
+  /* Clean typography matching homepage demo */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+/* Header - Clean homepage demo styling */
+.app-header {
+  background: var(--aui-background);
+  color: var(--aui-foreground);
+  padding: 20px 16px 16px 16px;
+  border-bottom: 1px solid var(--aui-border);
+  box-shadow: var(--aui-shadow-sm);
+  flex-shrink: 0;
+  /* Account for safe area on iPhone */
+  padding-top: max(20px, env(safe-area-inset-top, 20px));
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.logo-container {
+  flex: 1;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.line-lead-logo {
+  height: 46px; /* Scaled up another 20% from 38px */
+  width: auto;
+  max-width: 288px; /* Scaled up another 20% from 240px */
+  object-fit: contain;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.upload-toggle-btn {
+  background: var(--aui-secondary);
+  border: 1px solid var(--aui-border);
+  border-radius: var(--aui-radius-sm);
+  color: var(--aui-foreground);
+  font-size: 16px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 44px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--aui-shadow-sm);
+}
+
+.upload-toggle-btn:hover {
+  background: var(--aui-muted);
+  box-shadow: var(--aui-shadow-md);
+}
+
+.upload-toggle-btn:active {
+  transform: translateY(1px);
+  box-shadow: var(--aui-shadow-sm);
+}
+
+.offline-indicator {
+  display: flex;
+  align-items: center;
+  background: var(--aui-muted);
+  color: var(--aui-muted-foreground);
+  padding: 4px 8px;
+  border-radius: var(--aui-radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--aui-border);
+}
+
+/* Messages Container - Homepage demo styling */
+.messages-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--aui-background);
+}
+
+/* Homepage demo viewport styling */
+.messages-scroll.aui-thread-viewport {
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
+  background: var(--aui-background);
+  
+  /* Clean scrollbar matching homepage demo */
+  scrollbar-width: thin;
+  scrollbar-color: var(--aui-border) transparent;
+}
+
+.messages-scroll.aui-thread-viewport::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-scroll.aui-thread-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.messages-scroll.aui-thread-viewport::-webkit-scrollbar-thumb {
+  background: var(--aui-border);
+  border-radius: 3px;
+}
+
+.messages-scroll.aui-thread-viewport::-webkit-scrollbar-thumb:hover {
+  background: var(--aui-muted-foreground);
+}
+
+.upload-section {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Homepage demo message styling with avatar support */
+.message.aui-message {
+  margin-bottom: 16px;
+  display: flex;
+  animation: fadeIn 0.3s ease-out;
+  width: 100%;
+}
+
+.user-message.aui-user-message {
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.assistant-message.aui-assistant-message {
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+
+.assistant-message.aui-assistant-message .message-bubble.aui-message-content {
+  background: var(--aui-card);
+  color: var(--aui-card-foreground);
+  border-bottom-left-radius: 8px;
+}
+
+/* Assistant avatar styling */
+.assistant-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--aui-background);
+  border: 2px solid var(--aui-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);
+  object-fit: cover;
+  transition: all 0.2s ease;
+}
+
+.assistant-avatar:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Loading content - horizontally aligned with avatar */
+.loading-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  min-height: 44px; /* Consistent height with message bubbles */
+  animation: fadeIn 0.3s ease-out;
+  flex: 1;
+}
+
+/* Loading text styled to match message text */
+.loading-text-inline {
+  font-size: 14px;
+  color: var(--aui-muted-foreground);
+  line-height: 1.5;
+  font-family: var(--aui-font-family);
+}
+
+/* Loading spinner sized to match text */
+.loading-content .aui-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--aui-border);
+  border-top: 2px solid var(--aui-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  flex-shrink: 0;
+}
+
+.message-bubble.aui-message-content {
+  max-width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--aui-radius);
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  box-shadow: var(--aui-shadow-sm);
+  border: 1px solid var(--aui-border);
+  background: var(--aui-card);
+  color: var(--aui-card-foreground);
+}
+
+/* User message layout - no avatar, right aligned */
+.user-message.aui-user-message {
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.user-message.aui-user-message .message-content-wrapper {
+  max-width: 80%;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 28px; /* Match assistant message action button space */
+}
+
+/* Assistant message with avatar - account for avatar space */
+.assistant-message.aui-assistant-message .message-content-wrapper {
+  max-width: calc(80% - 44px); /* Account for avatar width (32px) + gap (12px) */
+  flex: 1;
+}
+
+.assistant-message.aui-assistant-message .loading-content {
+  max-width: 100%;
+}
+
+.user-message.aui-user-message .message-bubble.aui-message-content {
+  background: #F8FAFC;
+  color: var(--aui-foreground);
+  border: 1px solid var(--aui-border);
+  border-bottom-right-radius: 8px;
+  max-width: 80%;
+  margin-left: auto;
+}
+
+.assistant-message.aui-assistant-message .message-bubble.aui-message-content {
+  background: var(--aui-card);
+  color: var(--aui-card-foreground);
+  border-bottom-left-radius: 8px;
+}
+
+.message-text {
+  margin-bottom: 6px;
+}
+
+.message-time {
+  font-size: 11px;
+  opacity: 0.6;
+  margin-top: 4px;
+}
+
+.user-message .message-time {
+  text-align: right;
+}
+
+.assistant-message .message-time {
+  text-align: left;
+}
+
+/* Homepage demo fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-text {
+  font-size: 16px;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.message-time {
+  font-size: 12px;
+  opacity: 0.7;
+  text-align: right;
+}
+
+.assistant-message .message-time {
+  text-align: left;
+}
+
+/* Homepage demo composer styling */
+.input-container.aui-composer {
+  background: var(--aui-background);
+  border-top: 1px solid var(--aui-border);
+  padding: 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  max-width: 100%;
+  background: var(--aui-card);
+  border: 1px solid var(--aui-border);
+  border-radius: var(--aui-radius-lg);
+  padding: 8px;
+  box-shadow: var(--aui-shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.input-wrapper:focus-within {
+  border-color: var(--aui-primary);
+  box-shadow: var(--aui-shadow-md);
+}
+
+.message-input.aui-composer-input {
+  flex: 1;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--aui-radius);
+  font-size: 14px;
+  font-family: var(--aui-font-family);
+  resize: none;
+  outline: none;
+  line-height: 1.5;
+  max-height: 120px;
+  overflow-y: auto;
+  background: transparent;
+  color: var(--aui-foreground);
+}
+
+.message-input.aui-composer-input::placeholder {
+  color: var(--aui-muted-foreground);
+}
+
+.send-button.aui-composer-send {
+  min-width: 40px;
+  min-height: 40px;
+  border: none;
+  border-radius: var(--aui-radius);
+  background: var(--aui-primary);
+  color: var(--aui-primary-foreground);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--aui-shadow-sm);
+}
+
+.send-button.aui-composer-send:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--aui-primary) 90%, black);
+  transform: translateY(-1px);
+  box-shadow: var(--aui-shadow-md);
+}
+
+.send-button.aui-composer-send:active {
+  transform: translateY(0);
+  box-shadow: var(--aui-shadow-sm);
+}
+
+.send-button.aui-composer-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Lucide Icon Styling - Assistant-UI Homepage Demo Standards */
+.send-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+  transition: all 150ms ease;
+}
+
+.toggle-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+  transition: all 150ms ease;
+}
+
+.offline-icon {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2;
+  margin-right: 4px;
+}
+
+/* Icon button states matching assistant-ui standards */
+.send-button:hover:not(:disabled) .send-icon {
+  transform: translateY(-1px);
+}
+
+.send-button:active .send-icon {
+  transform: translateY(0);
+}
+
+.send-button:disabled .send-icon {
+  opacity: 0.5;
+}
+
+.upload-toggle-btn:hover:not(:disabled) .toggle-icon {
+  transform: translateY(-1px);
+}
+
+.upload-toggle-btn:active .toggle-icon {
+  transform: translateY(0);
+}
+
+/* Let assistant-ui handle button states */
+
+
+
+@keyframes pulse {
+  0%, 80%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Let assistant-ui handle disabled states */
+
+/* Responsive adjustments for larger screens */
+@media (min-width: 768px) {
+  .app {
+    max-width: 400px;
+    margin: 0 auto;
+    border-left: 1px solid #e1e5e9;
+    border-right: 1px solid #e1e5e9;
+  }
+  
+  .app-header {
+    border-radius: 0;
+  }
+}
+
+/* iPhone specific adjustments */
+@media (max-width: 414px) {
+  .line-lead-logo {
+    height: 41px; /* Scaled up another 20% from 34px */
+    max-width: 230px; /* Scaled up another 20% from 192px */
+  }
+  
+  .message-bubble {
+    max-width: 85%;
+  }
+  
+  .messages-scroll {
+    padding: 12px;
+  }
+  
+  .input-container {
+    padding: 8px 12px;
+  }
+}
+
+/* Handle keyboard appearing on mobile */
+@media (max-height: 500px) {
+  .messages-scroll {
+    padding: 8px;
+  }
+  
+  .message {
+    margin-bottom: 8px;
+  }
+}
+
+/* Homepage demo error styling */
+.error-message .message-bubble.aui-message-content {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.retry-message-btn {
+  margin-top: 8px;
+  padding: 6px 12px;
+  border-radius: var(--aui-radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  background: #dc2626;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--aui-shadow-sm);
+}
+
+.retry-message-btn:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: var(--aui-shadow-md);
+}
+
+.offline-indicator {
+  background: #f59e0b;
+  color: white;
+  padding: 4px 8px;
+  border-radius: var(--aui-radius-sm);
+  font-size: 11px;
+  font-weight: 500;
+  box-shadow: var(--aui-shadow-sm);
+  letter-spacing: -0.01em;
+}
+
+
+
+.queue-indicator {
+  background: var(--aui-primary);
+  color: var(--aui-primary-foreground);
+  padding: 8px 12px;
+  border-radius: var(--aui-radius);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+  margin-top: 8px;
+  box-shadow: var(--aui-shadow-sm);
+  letter-spacing: -0.01em;
+}
+
+
+
+/* Service status integration */
+.messages-container {
+  position: relative;
+}
+
+/* Duplicate error styling removed - handled above */
+
+/* Network status styles */
+.header-controls {
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Service Status Card on Documents Page */
+.service-status-card {
+  margin: 16px;
+  margin-bottom: 0;
+}
+
+.upload-section .service-status {
+  margin-bottom: 0;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+}
+
+.upload-section .service-status .status-indicator {
+  margin-bottom: 8px;
+}
+
+.upload-section .service-status .status-text {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.upload-section .service-status .ready-info {
+  background: #f0fdf4;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #bbf7d0;
+  margin-top: 8px;
+}
+
+/* Better mobile spacing for status indicators */
+@media (max-width: 414px) {
+  .header-controls {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+  
+  .offline-indicator {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+  
+  .service-status-card {
+    margin: 12px;
+    margin-bottom: 0;
+  }
+  
+  /* Logo responsive sizing for mobile */
+  .line-lead-logo {
+    height: 34px; /* Scaled up another 20% from 28px */
+    max-width: 192px; /* Scaled up another 20% from 160px */
+  }
+}
+
