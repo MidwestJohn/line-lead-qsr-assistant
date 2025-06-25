@@ -31,7 +31,7 @@ function App() {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: "Hi! I'm Line Lead, your world-class QSR expert assistant. I can help you with operations, strategy, leadership, financial performance, and growth across all aspects of your restaurant business. What can I help you optimize today?",
+      text: "Hi! I'm Lina, your expert restaurant assistant. What can I help you with today?",
       sender: 'assistant',
       timestamp: new Date()
     }
@@ -591,7 +591,7 @@ function App() {
     if (!isOnline) {
       return "You're offline - connect to send messages";
     }
-    return "Ask about operations, strategy, leadership, or any QSR challenge...";
+    return "Ask me anything...";
   };
 
   const isInputDisabled = (messageStatus.isLoading || isStreaming || isThinking || isWaitingForResponse) || !serviceStatus.isHealthy || !isOnline;
