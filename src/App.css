@@ -9,7 +9,7 @@
   --aui-accent-foreground: #ffffff;
   
   /* Clean Homepage Demo Colors */
-  --aui-background: #ffffff;
+  --aui-background: #f0f9ff; /* DEPLOYMENT TEST - Light blue background */
   --aui-foreground: #0f172a;
   --aui-muted: #f8fafc;
   --aui-muted-foreground: #64748b;
