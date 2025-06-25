@@ -395,7 +395,11 @@ body, .app {
   }
   
   .assistant-message.aui-assistant-message {
-    gap: 10px;
+    gap: 0; /* Remove gap since avatar has margin-right */
+  }
+  
+  .assistant-avatar {
+    margin-right: 10px; /* Slightly less margin on mobile */
   }
   
   /* ======== MOBILE OPTIMIZED LAYOUT ======== */
@@ -573,7 +577,7 @@ body, .app {
 .assistant-message.aui-assistant-message {
   justify-content: flex-start;
   align-items: flex-start;
-  gap: 12px;
+  gap: 0; /* Remove gap since avatar has margin-right */
   width: 100%;
 }
 
@@ -594,6 +598,7 @@ body, .app {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);
   object-fit: cover;
   transition: all 0.2s ease;
+  margin-right: 12px; /* Ensure proper spacing between avatar and message */
 }
 
 .assistant-avatar:hover {
