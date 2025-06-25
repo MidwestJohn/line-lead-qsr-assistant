@@ -1,7 +1,9 @@
+import { API_BASE_URL } from './config';
+
 // Centralized chat service with retry logic and error handling
 class ChatService {
   constructor() {
-    this.baseURL = '';
+    this.baseURL = API_BASE_URL;
     this.defaultTimeout = 30000; // 30 seconds
   }
 
@@ -35,7 +37,7 @@ class ChatService {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-        const response = await fetch('/chat', {
+        const response = await fetch(`${this.baseURL}/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -169,7 +171,7 @@ class ChatService {
         if (onError) onError('Response timeout - please try again');
       }, timeout);
 
-      const response = await fetch('/chat/stream', {
+      const response = await fetch(`${this.baseURL}/chat/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -293,7 +295,7 @@ class ChatService {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('/upload', {
+        const response = await fetch(`${this.baseURL}/upload`, {
           method: 'POST',
           body: formData
         });

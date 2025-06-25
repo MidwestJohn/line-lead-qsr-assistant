@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './ServiceStatus.css';
+import { API_BASE_URL } from './config';
 
 const ServiceStatus = ({ onStatusChange }) => {
   const [status, setStatus] = useState({
@@ -21,7 +22,7 @@ const ServiceStatus = ({ onStatusChange }) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-      const response = await fetch('/health', {
+      const response = await fetch(`${API_BASE_URL}/health`, {
         signal: controller.signal,
         headers: {
           'Cache-Control': 'no-cache'

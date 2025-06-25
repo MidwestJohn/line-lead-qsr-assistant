@@ -9,6 +9,7 @@ import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react";
 import { Send, Square, Upload, MessageCircle, WifiOff, Copy, RefreshCw, Check, BookOpen } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { API_BASE_URL } from './config';
 
 function App() {
   
@@ -97,7 +98,7 @@ function App() {
   useEffect(() => {
     const checkServices = async () => {
       try {
-        const response = await fetch('/health');
+        const response = await fetch(`${API_BASE_URL}/health`);
         if (response.ok) {
           const healthData = await response.json();
           setServiceStatus({
