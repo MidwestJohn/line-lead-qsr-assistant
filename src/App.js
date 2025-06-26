@@ -697,7 +697,7 @@ function App() {
                   {/* Assistant Avatar - only for assistant messages */}
                   {message.sender === 'assistant' && (
                     <img 
-                      src="/images/assistant-avatar.png" 
+                      src="/images/LineLead_AvatarIcon.png" 
                       alt="Line Lead Assistant"
                       className="assistant-avatar"
                     />
@@ -785,7 +785,7 @@ function App() {
                 <div className="message aui-message assistant-message aui-assistant-message">
                   {/* Avatar on the left */}
                   <img 
-                    src="/images/assistant-avatar.png" 
+                    src="/images/LineLead_AvatarIcon.png" 
                     alt="Line Lead Assistant"
                     className="assistant-avatar"
                   />
