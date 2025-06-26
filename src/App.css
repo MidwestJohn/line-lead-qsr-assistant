@@ -9,7 +9,7 @@
   --aui-accent-foreground: #ffffff;
   
   /* Clean Homepage Demo Colors */
-  --aui-background: #f0f9ff; /* DEPLOYMENT TEST - Light blue background */
+  --aui-background: #f0f9ff; /* Light blue chat background for better UX */
   --aui-foreground: #0f172a;
   --aui-muted: #f8fafc;
   --aui-muted-foreground: #64748b;
@@ -441,7 +441,7 @@ body, .app {
 
 /* Header - Clean homepage demo styling */
 .app-header {
-  background: var(--aui-background);
+  background: #ffffff; /* Keep header white */
   color: var(--aui-foreground);
   padding: 20px 16px 16px 16px;
   border-bottom: 1px solid var(--aui-border);
@@ -755,7 +755,7 @@ body, .app {
 
 /* Homepage demo composer styling */
 .input-container.aui-composer {
-  background: var(--aui-background);
+  background: #ffffff; /* Keep footer white */
   border-top: 1px solid var(--aui-border);
   padding: 16px;
   padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));

@@ -1,4 +1,3 @@
-// Force deployment trigger - avatar spacing fix
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 import FileUpload from './FileUpload';
@@ -32,7 +31,7 @@ function App() {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      text: "Hi! I'm Lina, your expert restaurant assistant. [DEPLOYMENT TEST] What can I help you with today?",
+      text: "Hi! I'm Lina, your expert restaurant assistant. What can I help you with today?",
       sender: 'assistant',
       timestamp: new Date()
     }
