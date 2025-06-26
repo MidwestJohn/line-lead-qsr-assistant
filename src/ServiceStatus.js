@@ -116,6 +116,14 @@ const ServiceStatus = ({ onStatusChange }) => {
     }
   };
 
+  // Green dot when all services are healthy
+  const getOverallStatusColor = () => {
+    if (status.overall === 'healthy') return '#10b981'; // green
+    if (status.overall === 'degraded') return '#f59e0b'; // yellow  
+    if (status.overall === 'error') return '#ef4444'; // red
+    return '#6b7280'; // gray for checking/unknown
+  };
+
   const getOverallStatusText = () => {
     switch (status.overall) {
       case 'healthy': return 'Services Ready';
@@ -132,19 +140,23 @@ const ServiceStatus = ({ onStatusChange }) => {
 
   return (
     <div className="service-status">
-      <div className="service-status-header">
-        <h3>System Status</h3>
-      </div>
       <div className="status-indicator">
         <div 
           className={`status-dot ${status.overall}`}
-          style={{ backgroundColor: getStatusColor(status.overall) }}
+          style={{ backgroundColor: getOverallStatusColor() }}
         />
         <span className="status-text">{getOverallStatusText()}</span>
         
         {status.retryCount > 0 && (
           <span className="retry-text">
             (Retry {status.retryCount}/3)
+          </span>
+        )}
+
+        {/* Inline timestamp */}
+        {status.lastCheck && (
+          <span className="last-check-inline">
+            Last check: {status.lastCheck.toLocaleTimeString()}
           </span>
         )}
       </div>
@@ -183,11 +195,7 @@ const ServiceStatus = ({ onStatusChange }) => {
         </details>
       )}
 
-      {status.lastCheck && (
-        <div className="last-check">
-          Last check: {status.lastCheck.toLocaleTimeString()}
-        </div>
-      )}
+
     </div>
   );
 };

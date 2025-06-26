@@ -8,29 +8,13 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.service-status-header {
-  margin-bottom: 12px;
-}
-
-.service-status-header h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #1f2937;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.service-status-header h3:before {
-  content: "🔧";
-  font-size: 14px;
-}
+/* Header removed for compact design */
 
 .status-indicator {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .status-dot {
@@ -147,6 +131,12 @@
   color: #9ca3af;
   font-size: 11px;
   text-align: right;
+}
+
+.last-check-inline {
+  color: #9ca3af;
+  font-size: 11px;
+  margin-left: auto; /* Push to right side */
 }
 
 /* Mobile optimizations */
