@@ -399,12 +399,13 @@ body, .app {
   }
   
   .assistant-avatar {
+    margin-left: 8px; /* 8px left padding on mobile too */
     margin-right: 2px; /* Consistent tight spacing on mobile */
   }
   
   /* ======== MOBILE OPTIMIZED LAYOUT ======== */
   .assistant-message.aui-assistant-message .message-content-wrapper {
-    max-width: calc(100% - 30px - 8px); /* Mobile: avatar(28px) + margin(2px) + right gutter(8px) */
+    max-width: calc(100% - 38px - 8px); /* Mobile: avatar left(8px) + width(28px) + margin(2px) + right gutter(8px) */
   }
   
   .assistant-message.aui-assistant-message .loading-content {
@@ -413,8 +414,8 @@ body, .app {
   
   /* Mobile user messages - align with assistant messages */
   .user-message.aui-user-message .message-content-wrapper {
-    margin-left: 30px; /* Mobile: avatar(28px) + margin(2px) = 30px */
-    max-width: calc(100% - 30px - 8px); /* Align with assistant messages */
+    margin-left: 36px; /* Mobile: avatar left(8px) + width(28px) + margin(2px) - 2px adjustment = 36px */
+    max-width: calc(100% - 36px - 8px); /* Full width minus left alignment and 8px right padding */
     padding-bottom: 32px; /* Match mobile action button space */
   }
   
@@ -598,6 +599,7 @@ body, .app {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.1);
   object-fit: cover;
   transition: all 0.2s ease;
+  margin-left: 8px; /* 8px left padding as requested */
   margin-right: 2px; /* Tight spacing as requested */
 }
 
@@ -667,7 +669,7 @@ body, .app {
 }
 
 .assistant-message.aui-assistant-message .message-content-wrapper {
-  max-width: calc(100% - 34px - 8px); /* Full width minus avatar(32px) + margin(2px) + right gutter(8px) */
+  max-width: calc(100% - 42px - 8px); /* Full width minus avatar area(8px+32px+2px) + right gutter(8px) */
   flex: 1;
   /* This establishes the conversation column left boundary */
 }
@@ -680,9 +682,9 @@ body, .app {
 }
 
 .user-message.aui-user-message .message-content-wrapper {
-  /* Align with assistant message left edge: avatar(32px) + margin(2px) = 34px */
-  margin-left: 34px;
-  max-width: calc(100% - 34px - 8px); /* Full width minus left alignment and right gutter */
+  /* Align with assistant message container: avatar left(8px) + width(32px) + margin(2px) - 2px adjustment = 40px */
+  margin-left: 40px;
+  max-width: calc(100% - 40px - 8px); /* Full width minus left alignment and 8px right padding */
   display: flex;
   flex-direction: column;
   padding-bottom: 28px; /* Match assistant message action button space */
