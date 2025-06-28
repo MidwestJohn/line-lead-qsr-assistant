@@ -5,7 +5,7 @@
   "description": "Line Lead QSR Assistant - Mobile-first chat interface",
   "scripts": {
     "start": "craco start",
-    "build": "craco build", 
+    "build": "craco build",
     "test": "craco test",
     "eject": "react-scripts eject"
   },
@@ -21,9 +21,11 @@
     "@assistant-ui/react": "^0.10.24",
     "@assistant-ui/styles": "^0.1.13",
     "lucide-react": "^0.523.0",
+    "pdfjs-dist": "^5.3.31",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
+    "react-pdf": "^10.0.1",
     "react-scripts": "^5.0.1",
     "remark-gfm": "^4.0.1"
   },

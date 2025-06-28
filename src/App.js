@@ -10,6 +10,7 @@ import { Send, Square, Upload, MessageCircle, WifiOff, Copy, RefreshCw, Check, B
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { API_BASE_URL } from './config';
+import PDFTest from './PDFTest';
 
 function App() {
   
@@ -39,6 +40,7 @@ function App() {
   const [inputText, setInputText] = useState('');
   const [showUpload, setShowUpload] = useState(false);
   const [documentsRefresh, setDocumentsRefresh] = useState(0);
+  const [showPDFTest, setShowPDFTest] = useState(false);
   
   // Service status and resilience state
   const [serviceStatus, setServiceStatus] = useState({
@@ -650,6 +652,14 @@ function App() {
               )}
               <button 
                 className="upload-toggle-btn"
+                onClick={() => setShowPDFTest(!showPDFTest)}
+                title={showPDFTest ? "Hide PDF Test" : "PDF Test"}
+                style={{ marginRight: '8px', backgroundColor: showPDFTest ? '#007bff' : '#f0f0f0' }}
+              >
+                PDF
+              </button>
+              <button 
+                className="upload-toggle-btn"
                 onClick={() => setShowUpload(!showUpload)}
                 title={showUpload ? "Hide Upload" : "Upload Manual"}
                 aria-label={showUpload ? "Show chat" : "Show documents"}
@@ -665,7 +675,13 @@ function App() {
         </header>
 
         <div className="messages-container">
-          {showUpload ? (
+          {showPDFTest ? (
+            <div className="pdf-test-section">
+              <ErrorBoundary>
+                <PDFTest />
+              </ErrorBoundary>
+            </div>
+          ) : showUpload ? (
             <div className="upload-section">
               <ErrorBoundary>
                 {/* Service Status Card - Only shown on documents page */}
