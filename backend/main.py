@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Dict, List
 import logging
@@ -106,6 +107,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files for serving uploaded PDFs
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # Initialize search engine with existing documents on startup
 @app.on_event("startup")

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './DocumentList.css';
-import { FileText, Loader2, Trash2, AlertTriangle } from 'lucide-react';
+import { FileText, Loader2, Trash2, AlertTriangle, Eye } from 'lucide-react';
 import { apiUtils } from './apiUtils';
+import PDFModal from './PDFModal';
+import { API_BASE_URL } from './config';
 
 function DocumentList({ refreshTrigger, onDocumentDeleted }) {
   const [documents, setDocuments] = useState([]);
@@ -9,6 +11,10 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
   const [error, setError] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  
+  // PDF Preview state
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
 
   const fetchDocuments = async () => {
     try {
@@ -80,6 +86,29 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
     setDeleteConfirm(null);
   };
 
+  // PDF Preview handlers
+  const handlePreviewClick = (doc) => {
+    setSelectedDocument(doc);
+    setPdfModalOpen(true);
+  };
+
+  const handlePreviewClose = () => {
+    setPdfModalOpen(false);
+    setSelectedDocument(null);
+  };
+
+  // Check if file is PDF based on filename
+  const isPDFFile = (filename) => {
+    return filename && filename.toLowerCase().endsWith('.pdf');
+  };
+
+  // Generate file URL for serving
+  const getFileURL = (doc) => {
+    if (!doc || !doc.filename) return null;
+    // Construct the URL based on the backend serving pattern
+    return `${API_BASE_URL}/uploads/${doc.filename}`;
+  };
+
   if (loading) {
     return (
       <div className="document-list-container">
@@ -140,6 +169,16 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
 
               </div>
               <div className="document-actions">
+                {isPDFFile(doc.original_filename) && (
+                  <button
+                    className="preview-button"
+                    onClick={() => handlePreviewClick(doc)}
+                    title="Preview PDF"
+                    aria-label="Preview PDF"
+                  >
+                    <Eye className="preview-icon" />
+                  </button>
+                )}
                 <button
                   className="delete-button"
                   onClick={() => handleDeleteClick(doc)}
@@ -202,6 +241,14 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
           </div>
         </div>
       )}
+      
+      {/* PDF Preview Modal */}
+      <PDFModal
+        fileUrl={selectedDocument ? getFileURL(selectedDocument) : null}
+        filename={selectedDocument?.original_filename}
+        isOpen={pdfModalOpen}
+        onClose={handlePreviewClose}
+      />
     </div>
   );
 }
