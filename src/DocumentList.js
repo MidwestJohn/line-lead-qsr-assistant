@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './DocumentList.css';
 import { FileText, Loader2, Trash2, AlertTriangle, Eye } from 'lucide-react';
 import { apiUtils } from './apiUtils';
-import PDFModal from './PDFModal';
+import EnhancedPDFModal from './EnhancedPDFModal';
 import { API_BASE_URL } from './config';
 
 function DocumentList({ refreshTrigger, onDocumentDeleted }) {
@@ -249,8 +249,8 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
         </div>
       )}
       
-      {/* PDF Preview Modal */}
-      <PDFModal
+      {/* Enhanced PDF Preview Modal */}
+      <EnhancedPDFModal
         fileUrl={selectedDocument ? getFileURL(selectedDocument) : null}
         filename={selectedDocument?.original_filename}
         isOpen={pdfModalOpen}

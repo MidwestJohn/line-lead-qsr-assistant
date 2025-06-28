@@ -1,0 +1,580 @@
+/* Enhanced PDF Modal Styles with Professional Polish */
+
+/* Overlay with smooth transitions */
+.enhanced-pdf-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  box-sizing: border-box;
+  animation: enhanced-pdf-fade-in 150ms ease-out;
+  backdrop-filter: blur(4px);
+}
+
+.enhanced-pdf-modal-overlay.fullscreen {
+  padding: 0;
+  background-color: rgba(0, 0, 0, 0.95);
+}
+
+/* Modal Container with enhanced shadows */
+.enhanced-pdf-modal-container {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  width: 100%;
+  max-width: 1400px;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  animation: enhanced-pdf-slide-in 150ms ease-out;
+  transition: all 150ms ease-out;
+}
+
+.enhanced-pdf-modal-container.fullscreen {
+  max-width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Header with glass morphism effect */
+.enhanced-pdf-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 28px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(250, 250, 250, 0.8);
+  backdrop-filter: blur(20px);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.enhanced-pdf-modal-header::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(220, 17, 17, 0.3), transparent);
+}
+
+.enhanced-pdf-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.enhanced-pdf-filename {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 500px;
+  transition: color 150ms ease;
+}
+
+.enhanced-pdf-page-count {
+  font-size: 14px;
+  color: #6b7280;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.enhanced-pdf-load-time {
+  font-size: 12px;
+  color: #10b981;
+  margin-left: 8px;
+  font-weight: 600;
+  padding: 4px 8px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.enhanced-pdf-modal-header-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Enhanced Control Bar */
+.enhanced-pdf-modal-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 28px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(249, 250, 251, 0.8);
+  backdrop-filter: blur(20px);
+  flex-shrink: 0;
+}
+
+.enhanced-pdf-modal-nav-controls,
+.enhanced-pdf-modal-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.enhanced-pdf-page-indicator {
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+  min-width: 120px;
+  text-align: center;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.enhanced-pdf-zoom-indicator {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  min-width: 80px;
+  text-align: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.enhanced-pdf-zoom-indicator:hover {
+  background: rgba(220, 17, 17, 0.05);
+  border-color: rgba(220, 17, 17, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Enhanced Buttons */
+.enhanced-pdf-modal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+  border: 1px solid transparent;
+  text-decoration: none;
+  user-select: none;
+  min-height: 48px;
+  min-width: 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Button hover effect */
+.enhanced-pdf-modal-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 150ms ease;
+}
+
+.enhanced-pdf-modal-btn:hover::before {
+  left: 100%;
+}
+
+.enhanced-pdf-modal-btn:focus {
+  outline: 2px solid #DC1111;
+  outline-offset: 2px;
+}
+
+/* Primary Button */
+.enhanced-pdf-modal-btn-primary {
+  background: linear-gradient(135deg, #DC1111 0%, #ef4444 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(220, 17, 17, 0.3);
+}
+
+.enhanced-pdf-modal-btn-primary:hover {
+  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+  box-shadow: 0 6px 16px rgba(220, 17, 17, 0.4);
+  transform: translateY(-1px);
+}
+
+.enhanced-pdf-modal-btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(220, 17, 17, 0.3);
+}
+
+/* Secondary Button */
+.enhanced-pdf-modal-btn-secondary {
+  background: rgba(255, 255, 255, 0.9);
+  color: #374151;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.enhanced-pdf-modal-btn-secondary:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(220, 17, 17, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.enhanced-pdf-modal-btn-secondary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Close Button */
+.enhanced-pdf-modal-btn-close {
+  background: rgba(255, 255, 255, 0.8);
+  color: #6b7280;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.enhanced-pdf-modal-btn-close:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  border-color: rgba(220, 17, 17, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Disabled Button */
+.enhanced-pdf-modal-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none !important;
+}
+
+/* Icons */
+.enhanced-pdf-modal-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+/* Main Content Area with enhanced depth */
+.enhanced-pdf-modal-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  background: 
+    radial-gradient(circle at 25% 25%, rgba(220, 17, 17, 0.02) 0%, transparent 70%),
+    linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  position: relative;
+  padding: 24px;
+}
+
+/* Enhanced PDF page rendering */
+.enhanced-pdf-modal-content .pdf-page,
+.enhanced-pdf-modal-content .pdf-modal-page {
+  border-radius: 12px;
+  box-shadow: 
+    0 20px 40px rgba(0, 0, 0, 0.15),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+  transition: all 150ms ease;
+  background: white;
+  overflow: hidden;
+}
+
+.enhanced-pdf-modal-content .pdf-page:hover,
+.enhanced-pdf-modal-content .pdf-modal-page:hover {
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Mobile Navigation with glass effect */
+.enhanced-pdf-modal-mobile-nav {
+  display: none;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(249, 250, 251, 0.8);
+  backdrop-filter: blur(20px);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.enhanced-pdf-modal-mobile-nav::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(220, 17, 17, 0.3), transparent);
+}
+
+.enhanced-pdf-modal-mobile-btn {
+  flex: 0 0 auto;
+  padding: 12px 20px;
+  font-size: 14px;
+}
+
+.enhanced-pdf-page-indicator-mobile {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+  flex: 1;
+  padding: 0 16px;
+}
+
+/* Animations */
+@keyframes enhanced-pdf-fade-in {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(4px);
+  }
+}
+
+@keyframes enhanced-pdf-slide-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+  .enhanced-pdf-modal-overlay {
+    padding: 12px;
+  }
+
+  .enhanced-pdf-modal-container {
+    height: 95vh;
+    border-radius: 12px;
+  }
+
+  .enhanced-pdf-modal-header {
+    padding: 16px 20px;
+  }
+
+  .enhanced-pdf-filename {
+    font-size: 18px;
+    max-width: 250px;
+  }
+
+  .enhanced-pdf-modal-controls {
+    display: none;
+  }
+
+  .enhanced-pdf-modal-mobile-nav {
+    display: flex;
+  }
+
+  .enhanced-pdf-modal-content {
+    padding: 16px;
+  }
+
+  .enhanced-pdf-modal-btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 10px 14px;
+  }
+
+  .enhanced-pdf-modal-icon {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .enhanced-pdf-modal-overlay {
+    padding: 8px;
+  }
+
+  .enhanced-pdf-modal-container {
+    height: 98vh;
+    border-radius: 8px;
+  }
+
+  .enhanced-pdf-modal-header {
+    padding: 12px 16px;
+  }
+
+  .enhanced-pdf-filename {
+    font-size: 16px;
+    max-width: 180px;
+  }
+
+  .enhanced-pdf-page-count {
+    font-size: 13px;
+  }
+
+  .enhanced-pdf-load-time {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+
+  .enhanced-pdf-modal-mobile-nav {
+    padding: 12px 16px;
+  }
+
+  .enhanced-pdf-modal-mobile-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .enhanced-pdf-page-indicator-mobile {
+    font-size: 13px;
+  }
+
+  .enhanced-pdf-modal-content {
+    padding: 12px;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .enhanced-pdf-modal-overlay {
+    background-color: rgba(0, 0, 0, 0.9);
+  }
+
+  .enhanced-pdf-modal-container {
+    background: #1f2937;
+    color: #f9fafb;
+    box-shadow: 
+      0 25px 50px -12px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
+
+  .enhanced-pdf-modal-header,
+  .enhanced-pdf-modal-controls,
+  .enhanced-pdf-modal-mobile-nav {
+    background: rgba(17, 24, 39, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .enhanced-pdf-filename {
+    color: #f9fafb;
+  }
+
+  .enhanced-pdf-page-count,
+  .enhanced-pdf-page-indicator,
+  .enhanced-pdf-page-indicator-mobile {
+    color: #d1d5db;
+  }
+
+  .enhanced-pdf-modal-content {
+    background: 
+      radial-gradient(circle at 25% 25%, rgba(220, 17, 17, 0.05) 0%, transparent 70%),
+      linear-gradient(135deg, #374151 0%, #1f2937 100%);
+  }
+
+  .enhanced-pdf-modal-btn-secondary {
+    background: rgba(55, 65, 81, 0.8);
+    color: #f9fafb;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .enhanced-pdf-modal-btn-secondary:hover {
+    background: rgba(75, 85, 99, 0.9);
+    border-color: rgba(220, 17, 17, 0.3);
+  }
+
+  .enhanced-pdf-modal-btn-close {
+    background: rgba(55, 65, 81, 0.6);
+    color: #9ca3af;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .enhanced-pdf-modal-btn-close:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+  }
+
+  .enhanced-pdf-zoom-indicator {
+    background: rgba(55, 65, 81, 0.8);
+    color: #e5e7eb;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .enhanced-pdf-zoom-indicator:hover {
+    background: rgba(220, 17, 17, 0.1);
+    border-color: rgba(220, 17, 17, 0.3);
+  }
+
+  .enhanced-pdf-page-indicator {
+    background: rgba(55, 65, 81, 0.6);
+    color: #e5e7eb;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .enhanced-pdf-modal-container {
+    border: 3px solid #000;
+  }
+
+  .enhanced-pdf-modal-btn-secondary {
+    border-color: #000;
+    border-width: 2px;
+  }
+
+  .enhanced-pdf-modal-btn:focus {
+    outline: 3px solid #000;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .enhanced-pdf-modal-overlay,
+  .enhanced-pdf-modal-container,
+  .enhanced-pdf-modal-btn,
+  .enhanced-pdf-zoom-indicator {
+    animation: none;
+    transition: none;
+  }
+
+  .enhanced-pdf-modal-btn::before {
+    display: none;
+  }
+
+  .enhanced-pdf-modal-content .pdf-page:hover,
+  .enhanced-pdf-modal-content .pdf-modal-page:hover {
+    transform: none;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .enhanced-pdf-modal-overlay {
+    display: none;
+  }
+}
