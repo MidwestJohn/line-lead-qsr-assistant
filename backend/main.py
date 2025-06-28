@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -367,8 +367,8 @@ async def chat_stream_endpoint(chat_message: ChatMessage):
 
 # File serving endpoint
 @app.get("/files/{filename}")
-async def serve_file(filename: str):
-    """Serve uploaded files with proper headers for browser preview"""
+async def serve_file(filename: str, request: Request):
+    """High-performance streaming file server with range request support"""
     try:
         # Validate filename for security
         if not validate_filename(filename):
@@ -388,25 +388,108 @@ async def serve_file(filename: str):
             logger.warning(f"Path is not a file: {file_path}")
             raise HTTPException(status_code=404, detail="File not found")
         
+        # Get file size for range requests
+        file_size = os.path.getsize(file_path)
+        
         # Determine content type
         content_type = get_file_type(filename)
         
-        # Set headers for proper browser preview
+        # Parse range header for partial content support
+        range_header = request.headers.get('range')
+        
+        if range_header:
+            # Handle range requests for streaming (critical for PDF performance)
+            try:
+                byte_start = 0
+                byte_end = file_size - 1
+                
+                # Parse range header: "bytes=start-end"
+                range_match = range_header.replace('bytes=', '').split('-')
+                if len(range_match) == 2:
+                    if range_match[0]:
+                        byte_start = int(range_match[0])
+                    if range_match[1]:
+                        byte_end = int(range_match[1])
+                
+                # Ensure byte_end doesn't exceed file size
+                byte_end = min(byte_end, file_size - 1)
+                content_length = byte_end - byte_start + 1
+                
+                # Set headers for partial content response
+                headers = {
+                    "Content-Type": content_type,
+                    "Content-Range": f"bytes {byte_start}-{byte_end}/{file_size}",
+                    "Accept-Ranges": "bytes",
+                    "Content-Length": str(content_length),
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, OPTIONS",
+                    "Access-Control-Allow-Headers": "*",
+                    "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length",
+                    "Cache-Control": "public, max-age=3600"  # Cache for 1 hour
+                }
+                
+                # For PDF files, set Content-Disposition to inline for browser preview
+                if content_type == "application/pdf":
+                    headers["Content-Disposition"] = "inline"
+                
+                logger.info(f"Serving partial content: {filename} ({byte_start}-{byte_end}/{file_size})")
+                
+                # Stream the requested byte range
+                def generate_range():
+                    with open(file_path, 'rb') as file:
+                        file.seek(byte_start)
+                        remaining = content_length
+                        chunk_size = 64 * 1024  # 64KB chunks for optimal streaming
+                        
+                        while remaining > 0:
+                            chunk_to_read = min(chunk_size, remaining)
+                            chunk = file.read(chunk_to_read)
+                            if not chunk:
+                                break
+                            remaining -= len(chunk)
+                            yield chunk
+                
+                return StreamingResponse(
+                    generate_range(),
+                    status_code=206,  # Partial Content
+                    headers=headers,
+                    media_type=content_type
+                )
+                
+            except (ValueError, IndexError) as e:
+                logger.warning(f"Invalid range header: {range_header}, error: {e}")
+                # Fall through to serve entire file
+        
+        # Serve entire file with optimized streaming
         headers = {
             "Content-Type": content_type,
+            "Content-Length": str(file_size),
+            "Accept-Ranges": "bytes",  # Advertise range support
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, OPTIONS",
             "Access-Control-Allow-Headers": "*",
+            "Access-Control-Expose-Headers": "Content-Length, Accept-Ranges",
+            "Cache-Control": "public, max-age=3600"  # Cache for 1 hour
         }
         
         # For PDF files, set Content-Disposition to inline for browser preview
         if content_type == "application/pdf":
             headers["Content-Disposition"] = "inline"
         
-        logger.info(f"Serving file: {filename} ({content_type})")
+        logger.info(f"Serving full file: {filename} ({file_size} bytes)")
         
-        return FileResponse(
-            path=file_path,
+        # Stream entire file in chunks for better performance
+        def generate_file():
+            with open(file_path, 'rb') as file:
+                chunk_size = 64 * 1024  # 64KB chunks
+                while True:
+                    chunk = file.read(chunk_size)
+                    if not chunk:
+                        break
+                    yield chunk
+        
+        return StreamingResponse(
+            generate_file(),
             headers=headers,
             media_type=content_type
         )
@@ -416,6 +499,16 @@ async def serve_file(filename: str):
     except Exception as e:
         logger.error(f"Error serving file {filename}: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.options("/files/{filename}")
+async def files_options(filename: str):
+    """Handle CORS preflight requests for file serving"""
+    return {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Range, Content-Type, Authorization",
+        "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length"
+    }
 
 # File upload endpoint
 @app.post("/upload", response_model=UploadResponse)
