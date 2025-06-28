@@ -401,6 +401,60 @@
   }
 }
 
+/* Accessibility */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.pdf-load-time {
+  font-size: 11px;
+  color: #10b981;
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+/* Focus management */
+.pdf-modal-container:focus {
+  outline: none;
+}
+
+.pdf-modal-btn:focus-visible {
+  outline: 2px solid #DC1111;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .pdf-modal-container {
+    border: 3px solid #000;
+  }
+  
+  .pdf-modal-btn-secondary {
+    border-color: #000;
+    border-width: 2px;
+  }
+  
+  .pdf-modal-btn:focus-visible {
+    outline: 3px solid #000;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .pdf-modal-btn,
+  .pdf-modal-container {
+    transition: none;
+  }
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .pdf-modal-container {
@@ -457,5 +511,9 @@
 
   .pdf-modal-error h3 {
     color: #f9fafb;
+  }
+  
+  .pdf-load-time {
+    color: #34d399;
   }
 }

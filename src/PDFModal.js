@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   X, 
   Download, 
@@ -8,10 +7,10 @@ import {
   ZoomIn, 
   ZoomOut 
 } from 'lucide-react';
+import PDFErrorBoundary from './PDFErrorBoundary';
+import LazyPDFViewer from './LazyPDFViewer';
 import './PDFModal.css';
-
-// Configure PDF.js worker to use CDN
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+import './PDFErrorBoundary.css';
 
 const PDFModal = ({ fileUrl, filename, isOpen, onClose }) => {
   // PDF state
@@ -19,12 +18,22 @@ const PDFModal = ({ fileUrl, filename, isOpen, onClose }) => {
   const [pageNumber, setPageNumber] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   
   // Zoom state
   const [scale, setScale] = useState(1.0);
   const MIN_SCALE = 0.5;
   const MAX_SCALE = 3.0;
   const SCALE_INCREMENT = 0.2;
+  
+  // Accessibility and performance refs
+  const modalRef = useRef(null);
+  const previousFocusRef = useRef(null);
+  const firstFocusableRef = useRef(null);
+  const lastFocusableRef = useRef(null);
+  
+  // Performance monitoring
+  const [performanceMetrics, setPerformanceMetrics] = useState(null);
   
   // Reset state when modal opens/closes or file changes
   useEffect(() => {
@@ -34,21 +43,61 @@ const PDFModal = ({ fileUrl, filename, isOpen, onClose }) => {
       setLoading(true);
       setError(null);
       setNumPages(null);
+      setLoadingProgress(0);
+      setPerformanceMetrics(null);
     }
   }, [isOpen, fileUrl]);
 
-  // Document load handlers
-  const onDocumentLoadSuccess = ({ numPages }) => {
-    setNumPages(numPages);
+  // Focus management for accessibility
+  useEffect(() => {
+    if (isOpen) {
+      // Store the previously focused element
+      previousFocusRef.current = document.activeElement;
+      
+      // Focus the modal
+      setTimeout(() => {
+        if (firstFocusableRef.current) {
+          firstFocusableRef.current.focus();
+        } else if (modalRef.current) {
+          modalRef.current.focus();
+        }
+      }, 100);
+    } else {
+      // Restore focus when modal closes
+      if (previousFocusRef.current && previousFocusRef.current.focus) {
+        previousFocusRef.current.focus();
+      }
+    }
+  }, [isOpen]);
+
+  // Document load handlers with performance tracking
+  const onDocumentLoadSuccess = useCallback((result) => {
+    setNumPages(result.numPages);
     setLoading(false);
     setError(null);
-  };
+    setLoadingProgress(100);
+    
+    // Store performance metrics
+    setPerformanceMetrics({
+      loadTime: result.loadTime,
+      pageCount: result.numPages,
+      fileSize: result.fileSize
+    });
+    
+    console.log('PDF loaded successfully:', {
+      pages: result.numPages,
+      loadTime: result.loadTime,
+      fileSize: result.fileSize
+    });
+  }, []);
 
-  const onDocumentLoadError = (error) => {
+  const onDocumentLoadError = useCallback((errorInfo) => {
     setLoading(false);
-    setError(error);
-    console.error('PDF load error:', error);
-  };
+    setError(errorInfo);
+    setLoadingProgress(0);
+    
+    console.error('PDF load error:', errorInfo);
+  }, []);
 
   // Navigation handlers
   const goToPrevPage = useCallback(() => {
@@ -68,12 +117,13 @@ const PDFModal = ({ fileUrl, filename, isOpen, onClose }) => {
     setScale(prevScale => Math.max(MIN_SCALE, prevScale - SCALE_INCREMENT));
   }, []);
 
-  // Keyboard event handler
+  // Enhanced keyboard event handler with accessibility
   const handleKeyDown = useCallback((e) => {
     if (!isOpen) return;
 
     switch (e.key) {
       case 'Escape':
+        e.preventDefault();
         onClose();
         break;
       case 'ArrowLeft':
@@ -93,21 +143,62 @@ const PDFModal = ({ fileUrl, filename, isOpen, onClose }) => {
         e.preventDefault();
         zoomOut();
         break;
+      case 'Home':
+        e.preventDefault();
+        setPageNumber(1);
+        break;
+      case 'End':
+        e.preventDefault();
+        if (numPages) setPageNumber(numPages);
+        break;
+      case 'Tab':
+        // Handle focus trapping
+        handleTabKey(e);
+        break;
       default:
         break;
     }
-  }, [isOpen, onClose, goToPrevPage, goToNextPage, zoomIn, zoomOut]);
+  }, [isOpen, onClose, goToPrevPage, goToNextPage, zoomIn, zoomOut, numPages]);
 
-  // Add/remove keyboard event listener
+  // Focus trapping for accessibility
+  const handleTabKey = useCallback((e) => {
+    const focusableElements = modalRef.current?.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    
+    if (!focusableElements || focusableElements.length === 0) return;
+    
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+    
+    if (e.shiftKey && document.activeElement === firstElement) {
+      e.preventDefault();
+      lastElement.focus();
+    } else if (!e.shiftKey && document.activeElement === lastElement) {
+      e.preventDefault();
+      firstElement.focus();
+    }
+  }, []);
+
+  // Add/remove keyboard event listener with cleanup
   useEffect(() => {
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden'; // Prevent background scroll
+      
+      // Add accessibility attributes
+      document.body.setAttribute('aria-hidden', 'true');
+      if (modalRef.current) {
+        modalRef.current.setAttribute('aria-modal', 'true');
+        modalRef.current.setAttribute('role', 'dialog');
+        modalRef.current.setAttribute('aria-labelledby', 'pdf-modal-title');
+      }
     }
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
+      document.body.removeAttribute('aria-hidden');
     };
   }, [isOpen, handleKeyDown]);
 
@@ -133,76 +224,127 @@ const PDFModal = ({ fileUrl, filename, isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="pdf-modal-overlay" onClick={handleOverlayClick}>
-      <div className="pdf-modal-container">
+    <div 
+      className="pdf-modal-overlay" 
+      onClick={handleOverlayClick}
+      role="presentation"
+    >
+      <div 
+        ref={modalRef}
+        className="pdf-modal-container"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pdf-modal-title"
+        aria-describedby="pdf-modal-description"
+      >
         {/* Header */}
         <div className="pdf-modal-header">
           <div className="pdf-modal-title">
-            <span className="pdf-filename">{filename || 'Document'}</span>
+            <span 
+              id="pdf-modal-title" 
+              className="pdf-filename"
+            >
+              {filename || 'Document'}
+            </span>
             {numPages && (
-              <span className="pdf-page-count">({numPages} pages)</span>
+              <span 
+                className="pdf-page-count"
+                aria-label={`Document has ${numPages} pages`}
+              >
+                ({numPages} pages)
+              </span>
+            )}
+            {performanceMetrics && (
+              <span 
+                className="pdf-load-time"
+                aria-hidden="true"
+                title={`Loaded in ${performanceMetrics.loadTime}ms`}
+              >
+                {performanceMetrics.loadTime < 1000 ? 'Fast' : 
+                 performanceMetrics.loadTime < 3000 ? 'Normal' : 'Slow'} load
+              </span>
             )}
           </div>
           <div className="pdf-modal-header-actions">
             <button 
+              ref={firstFocusableRef}
               onClick={handleDownload}
               className="pdf-modal-btn pdf-modal-btn-secondary"
-              title="Download PDF"
-              aria-label="Download PDF"
+              title="Download PDF file to your device"
+              aria-label={`Download ${filename || 'PDF document'}`}
             >
-              <Download className="pdf-modal-icon" />
+              <Download className="pdf-modal-icon" aria-hidden="true" />
+              <span className="sr-only">Download</span>
             </button>
             <button 
+              ref={lastFocusableRef}
               onClick={onClose}
               className="pdf-modal-btn pdf-modal-btn-close"
-              title="Close"
-              aria-label="Close modal"
+              title="Close PDF preview"
+              aria-label="Close PDF preview modal"
             >
-              <X className="pdf-modal-icon" />
+              <X className="pdf-modal-icon" aria-hidden="true" />
+              <span className="sr-only">Close</span>
             </button>
           </div>
         </div>
 
         {/* Control Bar */}
-        <div className="pdf-modal-controls">
-          <div className="pdf-modal-nav-controls">
+        <div 
+          className="pdf-modal-controls"
+          role="toolbar"
+          aria-label="PDF navigation and zoom controls"
+        >
+          <div className="pdf-modal-nav-controls" role="group" aria-label="Page navigation">
             <button 
               onClick={goToPrevPage}
               disabled={pageNumber <= 1 || loading}
               className="pdf-modal-btn pdf-modal-btn-secondary"
-              title="Previous page"
-              aria-label="Previous page"
+              title="Go to previous page (Left arrow)"
+              aria-label={`Go to previous page. Currently on page ${pageNumber}`}
             >
-              <ChevronLeft className="pdf-modal-icon" />
+              <ChevronLeft className="pdf-modal-icon" aria-hidden="true" />
+              <span className="sr-only">Previous</span>
             </button>
             
-            <span className="pdf-page-indicator">
-              {loading ? 'Loading...' : `${pageNumber} of ${numPages || 0}`}
+            <span 
+              className="pdf-page-indicator"
+              aria-live="polite"
+              aria-atomic="true"
+              role="status"
+            >
+              {loading ? 'Loading...' : `Page ${pageNumber} of ${numPages || 0}`}
             </span>
             
             <button 
               onClick={goToNextPage}
               disabled={pageNumber >= (numPages || 0) || loading}
               className="pdf-modal-btn pdf-modal-btn-secondary"
-              title="Next page"
-              aria-label="Next page"
+              title="Go to next page (Right arrow)"
+              aria-label={`Go to next page. Currently on page ${pageNumber} of ${numPages || 0}`}
             >
-              <ChevronRight className="pdf-modal-icon" />
+              <ChevronRight className="pdf-modal-icon" aria-hidden="true" />
+              <span className="sr-only">Next</span>
             </button>
           </div>
 
-          <div className="pdf-modal-zoom-controls">
+          <div className="pdf-modal-zoom-controls" role="group" aria-label="Zoom controls">
             <button 
               onClick={zoomOut}
               disabled={scale <= MIN_SCALE || loading}
               className="pdf-modal-btn pdf-modal-btn-secondary"
-              title="Zoom out"
-              aria-label="Zoom out"
+              title="Zoom out (- key)"
+              aria-label={`Zoom out. Current zoom: ${Math.round(scale * 100)}%`}
             >
-              <ZoomOut className="pdf-modal-icon" />
+              <ZoomOut className="pdf-modal-icon" aria-hidden="true" />
+              <span className="sr-only">Zoom out</span>
             </button>
             
-            <span className="pdf-zoom-indicator">
+            <span 
+              className="pdf-zoom-indicator"
+              aria-live="polite"
+              role="status"
+            >
               {Math.round(scale * 100)}%
             </span>
             
@@ -210,68 +352,31 @@ const PDFModal = ({ fileUrl, filename, isOpen, onClose }) => {
               onClick={zoomIn}
               disabled={scale >= MAX_SCALE || loading}
               className="pdf-modal-btn pdf-modal-btn-secondary"
-              title="Zoom in"
-              aria-label="Zoom in"
+              title="Zoom in (+ key)"
+              aria-label={`Zoom in. Current zoom: ${Math.round(scale * 100)}%`}
             >
-              <ZoomIn className="pdf-modal-icon" />
+              <ZoomIn className="pdf-modal-icon" aria-hidden="true" />
+              <span className="sr-only">Zoom in</span>
             </button>
           </div>
         </div>
 
         {/* Main Content Area */}
-        <div className="pdf-modal-content">
-          {loading && (
-            <div className="pdf-modal-loading">
-              <div className="pdf-modal-spinner"></div>
-              <span>Loading PDF...</span>
-            </div>
-          )}
-
-          {error && (
-            <div className="pdf-modal-error">
-              <h3>Unable to display PDF</h3>
-              <p>The PDF could not be loaded. You can still download it below.</p>
-              <button 
-                onClick={handleDownload}
-                className="pdf-modal-btn pdf-modal-btn-primary"
-              >
-                <Download className="pdf-modal-icon" />
-                Download PDF
-              </button>
-            </div>
-          )}
-
-          {!loading && !error && (
-            <div className="pdf-modal-document-container">
-              <Document
-                file={fileUrl}
-                onLoadSuccess={onDocumentLoadSuccess}
-                onLoadError={onDocumentLoadError}
-                loading={<div className="pdf-modal-spinner"></div>}
-                error={
-                  <div className="pdf-modal-error">
-                    <h3>Failed to load PDF</h3>
-                    <button onClick={handleDownload} className="pdf-modal-btn pdf-modal-btn-primary">
-                      <Download className="pdf-modal-icon" />
-                      Download instead
-                    </button>
-                  </div>
-                }
-                options={{
-                  cMapUrl: `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/cmaps/`,
-                  cMapPacked: true,
-                }}
-              >
-                <Page
-                  pageNumber={pageNumber}
-                  scale={scale}
-                  renderTextLayer={false}
-                  renderAnnotationLayer={false}
-                  className="pdf-modal-page"
-                />
-              </Document>
-            </div>
-          )}
+        <div 
+          className="pdf-modal-content"
+          id="pdf-modal-description"
+          aria-label="PDF document content"
+        >
+          <PDFErrorBoundary fileUrl={fileUrl} filename={filename}>
+            <LazyPDFViewer
+              fileUrl={fileUrl}
+              filename={filename}
+              pageNumber={pageNumber}
+              scale={scale}
+              onLoadSuccess={onDocumentLoadSuccess}
+              onLoadError={onDocumentLoadError}
+            />
+          </PDFErrorBoundary>
         </div>
 
         {/* Mobile Navigation */}
