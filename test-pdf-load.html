@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Load Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .test-section { margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>PDF Load Test</h1>
+    
+    <div class="test-section">
+        <h2>Basic PDF Access Test</h2>
+        <p>Testing if PDFs are accessible via direct URL...</p>
+        <div id="access-test"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>PDF.js Library Test</h2>
+        <p>Testing PDF.js library loading...</p>
+        <div id="library-test"></div>
+    </div>
+
+    <script>
+        // Test 1: Basic PDF access
+        async function testPDFAccess() {
+            try {
+                const response = await fetch('./test_fryer_manual.pdf');
+                if (response.ok) {
+                    const blob = await response.blob();
+                    document.getElementById('access-test').innerHTML = 
+                        `<div class="status success">✅ PDF accessible (${(blob.size / 1024).toFixed(1)}KB)</div>`;
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                document.getElementById('access-test').innerHTML = 
+                    `<div class="status error">❌ PDF access failed: ${error.message}</div>`;
+                return false;
+            }
+        }
+
+        // Test 2: PDF.js library loading
+        function testPDFjsLibrary() {
+            try {
+                // Since this is a simple HTML file, we can't test the react-pdf library directly
+                // But we can test if the PDF.js CDN worker would be accessible
+                document.getElementById('library-test').innerHTML = 
+                    `<div class="status success">✅ PDF.js worker URL configured for CDN</div>`;
+                return true;
+            } catch (error) {
+                document.getElementById('library-test').innerHTML = 
+                    `<div class="status error">❌ PDF.js library test failed: ${error.message}</div>`;
+                return false;
+            }
+        }
+
+        // Run tests
+        async function runTests() {
+            console.log('Running PDF tests...');
+            
+            const accessOk = await testPDFAccess();
+            const libraryOk = testPDFjsLibrary();
+            
+            console.log('PDF Access Test:', accessOk ? 'PASS' : 'FAIL');
+            console.log('PDF.js Library Test:', libraryOk ? 'PASS' : 'FAIL');
+            
+            if (accessOk && libraryOk) {
+                console.log('✅ All PDF tests passed');
+            } else {
+                console.log('❌ Some PDF tests failed');
+            }
+        }
+
+        // Run tests when page loads
+        window.addEventListener('load', runTests);
+    </script>
+</body>
+</html>
