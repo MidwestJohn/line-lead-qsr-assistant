@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Dict, List
@@ -58,6 +58,42 @@ def save_documents_db(db):
         logger.error(f"Error saving documents database: {e}")
         return False
 
+def get_file_type(filename):
+    """Determine file type based on extension"""
+    if not filename:
+        return "unknown"
+    
+    extension = filename.lower().split('.')[-1] if '.' in filename else ""
+    file_types = {
+        'pdf': 'application/pdf',
+        'txt': 'text/plain',
+        'doc': 'application/msword',
+        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    }
+    return file_types.get(extension, 'application/octet-stream')
+
+def validate_filename(filename):
+    """Validate filename to prevent directory traversal and ensure security"""
+    if not filename:
+        return False
+    
+    # Check for directory traversal attempts
+    if '..' in filename or '/' in filename or '\\' in filename:
+        return False
+    
+    # Check for valid characters (alphanumeric, dots, dashes, underscores)
+    import re
+    if not re.match(r'^[a-zA-Z0-9._-]+$', filename):
+        return False
+    
+    return True
+
+def get_file_url(filename):
+    """Generate file URL for frontend access"""
+    if not filename:
+        return None
+    return f"/files/{filename}"
+
 def extract_pdf_text(pdf_content: bytes) -> tuple[str, int]:
     """Extract text from PDF content"""
     try:
@@ -108,8 +144,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files for serving uploaded PDFs
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+# File serving will be handled by dedicated endpoint below
 
 # Initialize search engine with existing documents on startup
 @app.on_event("startup")
@@ -154,6 +189,8 @@ class DocumentInfo(BaseModel):
     file_size: int
     pages_count: int
     text_preview: str
+    url: str
+    file_type: str
 
 class DocumentSummary(BaseModel):
     id: str
@@ -162,6 +199,8 @@ class DocumentSummary(BaseModel):
     upload_timestamp: str
     file_size: int
     pages_count: int
+    url: str
+    file_type: str
 
 class DocumentListResponse(BaseModel):
     documents: List[DocumentSummary]
@@ -326,6 +365,58 @@ async def chat_stream_endpoint(chat_message: ChatMessage):
         logger.error(f"Error setting up streaming chat: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+# File serving endpoint
+@app.get("/files/{filename}")
+async def serve_file(filename: str):
+    """Serve uploaded files with proper headers for browser preview"""
+    try:
+        # Validate filename for security
+        if not validate_filename(filename):
+            logger.warning(f"Invalid filename requested: {filename}")
+            raise HTTPException(status_code=400, detail="Invalid filename")
+        
+        # Construct file path
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        
+        # Check if file exists
+        if not os.path.exists(file_path):
+            logger.warning(f"File not found: {file_path}")
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Check if it's actually a file (not a directory)
+        if not os.path.isfile(file_path):
+            logger.warning(f"Path is not a file: {file_path}")
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Determine content type
+        content_type = get_file_type(filename)
+        
+        # Set headers for proper browser preview
+        headers = {
+            "Content-Type": content_type,
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        }
+        
+        # For PDF files, set Content-Disposition to inline for browser preview
+        if content_type == "application/pdf":
+            headers["Content-Disposition"] = "inline"
+        
+        logger.info(f"Serving file: {filename} ({content_type})")
+        
+        return FileResponse(
+            path=file_path,
+            headers=headers,
+            media_type=content_type
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error serving file {filename}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 # File upload endpoint
 @app.post("/upload", response_model=UploadResponse)
 async def upload_file(file: UploadFile = File(...)):
@@ -417,13 +508,16 @@ async def list_documents():
         
         documents = []
         for doc_id, doc_info in docs_db.items():
+            filename = doc_info.get("filename", "")
             documents.append(DocumentSummary(
                 id=doc_info["id"],
-                filename=doc_info["filename"],
+                filename=filename,
                 original_filename=doc_info["original_filename"],
                 upload_timestamp=doc_info["upload_timestamp"],
                 file_size=doc_info["file_size"],
-                pages_count=doc_info["pages_count"]
+                pages_count=doc_info["pages_count"],
+                url=get_file_url(filename),
+                file_type=get_file_type(doc_info["original_filename"])
             ))
         
         # Sort by upload timestamp (newest first)
@@ -467,14 +561,17 @@ async def get_document_details(document_id: str):
         
         doc_info = docs_db[document_id]
         
+        filename = doc_info.get("filename", "")
         return DocumentInfo(
             id=doc_info["id"],
-            filename=doc_info["filename"],
+            filename=filename,
             original_filename=doc_info["original_filename"],
             upload_timestamp=doc_info["upload_timestamp"],
             file_size=doc_info["file_size"],
             pages_count=doc_info["pages_count"],
-            text_preview=doc_info["text_preview"]
+            text_preview=doc_info["text_preview"],
+            url=get_file_url(filename),
+            file_type=get_file_type(doc_info["original_filename"])
         )
         
     except HTTPException:

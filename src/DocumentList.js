@@ -104,9 +104,16 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
 
   // Generate file URL for serving
   const getFileURL = (doc) => {
-    if (!doc || !doc.filename) return null;
-    // Construct the URL based on the backend serving pattern
-    return `${API_BASE_URL}/uploads/${doc.filename}`;
+    if (!doc) return null;
+    // Use URL from backend if available, otherwise construct it
+    if (doc.url) {
+      return `${API_BASE_URL}${doc.url}`;
+    }
+    // Fallback for backward compatibility
+    if (doc.filename) {
+      return `${API_BASE_URL}/files/${doc.filename}`;
+    }
+    return null;
   };
 
   if (loading) {
