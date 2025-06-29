@@ -7,7 +7,7 @@ import ErrorBoundary from './ErrorBoundary';
 import ChatService from './ChatService';
 import ProgressiveLoader from './components/ProgressiveLoader';
 import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react";
-import { Send, Square, Upload, MessageCircle, WifiOff, Copy, RefreshCw, Check, BookOpen, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { Send, Square, Upload, MessageCircle, WifiOff, Copy, RefreshCw, Check, BookOpen, Mic, MicOff, Volume2, VolumeX, Headphones } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { API_BASE_URL } from './config';
@@ -77,6 +77,11 @@ function App() {
   const [ttsAvailable, setTtsAvailable] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   
+  // Hands-free mode state
+  const [handsFreeMode, setHandsFreeMode] = useState(false);
+  const [handsFreeStatus, setHandsFreeStatus] = useState('idle'); // 'listening', 'processing', 'speaking', 'ready', 'idle'
+  const [autoVoiceTimer, setAutoVoiceTimer] = useState(null);
+  
   // Performance optimization refs
   const messagesEndRef = useRef(null);
   const streamingTimeoutRef = useRef(null);
@@ -88,6 +93,10 @@ function App() {
   
   // Speech recognition ref
   const speechRecognitionRef = useRef(null);
+  
+  // Hands-free mode refs
+  const autoVoiceTimerRef = useRef(null);
+  const handsFreeTimeoutRef = useRef(null);
 
   // Effects and event handlers
   const scrollToBottom = useCallback(() => {
@@ -159,6 +168,9 @@ function App() {
           recognition.onstart = () => {
             console.log('Speech recognition started');
             setIsRecording(true);
+            if (handsFreeMode) {
+              setHandsFreeStatus('listening');
+            }
           };
           
           recognition.onresult = (event) => {
@@ -188,6 +200,26 @@ function App() {
                   textareaRef.current.style.height = newHeight + 'px';
                 }
               }, 0);
+              
+              // In hands-free mode, check for voice commands and auto-send
+              if (handsFreeMode && isFinal && transcript.trim().length > 0) {
+                const command = transcript.trim().toLowerCase();
+                
+                // Handle voice commands
+                if (command === 'stop' || command === 'exit' || command === 'end hands free') {
+                  console.log('Voice command: Exiting hands-free mode');
+                  exitHandsFreeMode();
+                  setInputText(''); // Clear the command from input
+                  return;
+                }
+                
+                // Regular message - auto-send
+                console.log('Hands-free mode: Auto-sending message:', transcript.trim());
+                setHandsFreeStatus('processing');
+                setTimeout(() => {
+                  sendMessage();
+                }, 100);
+              }
             }
             
             console.log('Speech result:', transcript, 'Final:', isFinal);
@@ -210,6 +242,9 @@ function App() {
           recognition.onend = () => {
             console.log('Speech recognition ended');
             setIsRecording(false);
+            if (handsFreeMode) {
+              setHandsFreeStatus('processing');
+            }
           };
           
           speechRecognitionRef.current = recognition;
@@ -251,6 +286,47 @@ function App() {
       }
     };
   }, []);
+
+  // Handle hands-free mode changes
+  useEffect(() => {
+    if (handsFreeMode) {
+      console.log('Entering hands-free mode');
+      setHandsFreeStatus('ready');
+      resetHandsFreeTimeout();
+      
+      // Start with voice input if not currently in any active state
+      if (!isRecording && !isSpeaking && !messageStatus.isLoading) {
+        startAutoVoiceInput();
+      }
+    } else {
+      console.log('Exiting hands-free mode');
+      setHandsFreeStatus('idle');
+      
+      // Clear all timers and stop any active voice operations
+      if (autoVoiceTimerRef.current) {
+        clearTimeout(autoVoiceTimerRef.current);
+      }
+      if (handsFreeTimeoutRef.current) {
+        clearTimeout(handsFreeTimeoutRef.current);
+      }
+    }
+    
+    return () => {
+      if (autoVoiceTimerRef.current) {
+        clearTimeout(autoVoiceTimerRef.current);
+      }
+      if (handsFreeTimeoutRef.current) {
+        clearTimeout(handsFreeTimeoutRef.current);
+      }
+    };
+  }, [handsFreeMode]);
+
+  // Reset hands-free timeout on any user activity
+  useEffect(() => {
+    if (handsFreeMode) {
+      resetHandsFreeTimeout();
+    }
+  }, [messages, isRecording, isSpeaking]);
 
   // Process queued messages when back online
   const processMessageQueue = useCallback(async () => {
@@ -577,6 +653,20 @@ function App() {
       retryAttempt: 0,
       error: null
     });
+
+    // In hands-free mode, automatically start TTS for the response
+    if (handsFreeMode && ttsAvailable) {
+      setTimeout(() => {
+        // Find the completed message and speak it
+        setMessages(current => {
+          const completedMessage = current.find(msg => msg.id === streamingMsgId);
+          if (completedMessage && completedMessage.text) {
+            speakText(completedMessage.text);
+          }
+          return current;
+        });
+      }, 500); // Small delay to ensure message is rendered
+    }
   };
 
   const fallbackToRegularAPI = async (messageText, streamingMsgId, messageCreated = false) => {
@@ -655,6 +745,16 @@ function App() {
   const handleInputChange = (e) => {
     setInputText(e.target.value);
     setTimeout(autoExpandTextarea, 0); // Use setTimeout instead of requestAnimationFrame
+    
+    // If user manually types while in hands-free mode, temporarily pause auto-activation
+    if (handsFreeMode && !isRecording) {
+      // Clear any pending auto-voice timer since user is manually typing
+      if (autoVoiceTimerRef.current) {
+        clearTimeout(autoVoiceTimerRef.current);
+        autoVoiceTimerRef.current = null;
+      }
+      setHandsFreeStatus('ready'); // Set to ready state (paused)
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -807,12 +907,20 @@ function App() {
     // Event handlers
     utterance.onstart = () => {
       setIsSpeaking(true);
+      if (handsFreeMode) {
+        setHandsFreeStatus('speaking');
+      }
       console.log('Started speaking assistant response');
     };
 
     utterance.onend = () => {
       setIsSpeaking(false);
       console.log('Finished speaking assistant response');
+      
+      // In hands-free mode, automatically start next voice input
+      if (handsFreeMode) {
+        startAutoVoiceInput();
+      }
     };
 
     utterance.onerror = (event) => {
@@ -829,6 +937,62 @@ function App() {
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
       setIsSpeaking(false);
+    }
+  };
+
+  // Hands-free mode functions
+  const startAutoVoiceInput = () => {
+    if (!handsFreeMode || !voiceAvailable) return;
+    
+    // Clear any existing timer
+    if (autoVoiceTimerRef.current) {
+      clearTimeout(autoVoiceTimerRef.current);
+    }
+    
+    // Set status to ready with countdown
+    setHandsFreeStatus('ready');
+    
+    // Wait 2 seconds then start voice input
+    autoVoiceTimerRef.current = setTimeout(() => {
+      if (handsFreeMode && !isRecording && !isSpeaking) {
+        setHandsFreeStatus('listening');
+        handleVoiceInput(); // Start voice recognition
+      }
+    }, 2000);
+  };
+
+  const exitHandsFreeMode = () => {
+    setHandsFreeMode(false);
+    setHandsFreeStatus('idle');
+    
+    // Clear timers
+    if (autoVoiceTimerRef.current) {
+      clearTimeout(autoVoiceTimerRef.current);
+    }
+    if (handsFreeTimeoutRef.current) {
+      clearTimeout(handsFreeTimeoutRef.current);
+    }
+    
+    // Stop any ongoing voice or speech
+    if (isRecording && speechRecognitionRef.current) {
+      speechRecognitionRef.current.stop();
+    }
+    if (isSpeaking) {
+      stopSpeaking();
+    }
+  };
+
+  // Auto-exit hands-free mode after inactivity
+  const resetHandsFreeTimeout = () => {
+    if (handsFreeTimeoutRef.current) {
+      clearTimeout(handsFreeTimeoutRef.current);
+    }
+    
+    if (handsFreeMode) {
+      handsFreeTimeoutRef.current = setTimeout(() => {
+        console.log('Hands-free mode auto-exit due to inactivity');
+        exitHandsFreeMode();
+      }, 600000); // 10 minutes
     }
   };
 
@@ -878,6 +1042,22 @@ function App() {
                   Offline
                 </span>
               )}
+              
+              {/* Hands-Free Mode Toggle */}
+              {voiceAvailable && ttsAvailable && !showUpload && (
+                <button 
+                  className={`hands-free-toggle ${handsFreeMode ? 'active' : ''}`}
+                  onClick={() => setHandsFreeMode(!handsFreeMode)}
+                  title={handsFreeMode ? "Exit Hands-Free Mode" : "Enter Hands-Free Mode"}
+                  aria-label={handsFreeMode ? "Exit hands-free conversation" : "Start hands-free conversation"}
+                >
+                  <Headphones className="toggle-icon" />
+                  {handsFreeMode && (
+                    <span className="hands-free-status">{handsFreeStatus}</span>
+                  )}
+                </button>
+              )}
+              
               <button 
                 className="upload-toggle-btn"
                 onClick={() => setShowUpload(!showUpload)}
@@ -1042,6 +1222,21 @@ function App() {
                     <div className="aui-loading-spinner" />
                     <span className="loading-text-inline">
                       {isThinking ? "Assistant is thinking..." : "Assistant is responding..."}
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Hands-Free Status Indicator */}
+              {handsFreeMode && handsFreeStatus !== 'idle' && (
+                <div className="hands-free-indicator">
+                  <div className="hands-free-content">
+                    <Headphones className="hands-free-icon" />
+                    <span className="hands-free-text">
+                      {handsFreeStatus === 'ready' && 'Ready to listen...'}
+                      {handsFreeStatus === 'listening' && 'Listening for your question...'}
+                      {handsFreeStatus === 'processing' && 'Processing your request...'}
+                      {handsFreeStatus === 'speaking' && 'Assistant responding...'}
                     </span>
                   </div>
                 </div>
