@@ -269,7 +269,23 @@ function App() {
           recognition.onend = () => {
             console.log('Speech recognition ended');
             setIsRecording(false);
-            if (handsFreeMode) {
+            
+            // If in hands-free mode with silence detection, auto-send if we have enough content
+            if (handsFreeMode && silenceDetectionEnabled && transcriptWordCountRef.current >= 2) {
+              console.log('Speech recognition ended with sufficient content - auto-sending');
+              console.log('Final transcript:', currentTranscriptRef.current);
+              console.log('Word count:', transcriptWordCountRef.current);
+              
+              // Clear any countdown since we're auto-sending now
+              stopTranscriptTimer();
+              
+              if (inputText.trim()) {
+                setHandsFreeStatus('processing');
+                setTimeout(() => {
+                  sendMessage();
+                }, 100);
+              }
+            } else if (handsFreeMode) {
               setHandsFreeStatus('processing');
             }
           };
@@ -1040,11 +1056,16 @@ function App() {
 
   // Transcript-based silence detection functions
   const startTranscriptTimer = () => {
-    if (!handsFreeMode || !silenceDetectionEnabled) return;
+    console.log('🎯 startTranscriptTimer called - handsFree:', handsFreeMode, 'silenceEnabled:', silenceDetectionEnabled);
+    
+    if (!handsFreeMode || !silenceDetectionEnabled) {
+      console.log('❌ Timer conditions not met');
+      return;
+    }
     
     // Check if we have minimum speech (2+ words)
     if (transcriptWordCountRef.current < 2) {
-      console.log('Insufficient speech for auto-send:', transcriptWordCountRef.current, 'words');
+      console.log('❌ Insufficient speech for auto-send:', transcriptWordCountRef.current, 'words');
       return;
     }
     
@@ -1053,11 +1074,18 @@ function App() {
       clearTimeout(silenceTimerRef.current);
     }
     
-    console.log('Starting transcript-based silence timer: 3.5 seconds');
+    console.log('✅ Starting transcript-based silence timer: 3.5 seconds total');
+    console.log('📄 Current transcript:', currentTranscriptRef.current);
+    console.log('🔢 Word count:', transcriptWordCountRef.current);
     
     // Wait 500ms to ensure speech has actually ended, then start 3-second countdown
     silenceTimerRef.current = setTimeout(() => {
-      if (!handsFreeMode || !silenceDetectionEnabled) return;
+      console.log('⏱️ 500ms buffer complete, starting 3-second countdown');
+      
+      if (!handsFreeMode || !silenceDetectionEnabled) {
+        console.log('❌ Conditions changed during buffer');
+        return;
+      }
       
       // Start visual countdown from 3 seconds (3.5s total delay)
       setSilenceCountdown(3);
@@ -1067,14 +1095,16 @@ function App() {
       const updateCountdown = () => {
         countdown--;
         setSilenceCountdown(countdown);
+        console.log('⏰ Countdown:', countdown);
         
         if (countdown > 0) {
           silenceTimerRef.current = setTimeout(updateCountdown, 1000);
         } else {
           // Countdown finished - auto-send message
-          console.log('Transcript silence timer completed: Auto-sending message');
-          console.log('Final transcript:', currentTranscriptRef.current);
-          console.log('Word count:', transcriptWordCountRef.current);
+          console.log('🚀 Transcript silence timer completed: Auto-sending message');
+          console.log('📝 Final transcript:', currentTranscriptRef.current);
+          console.log('🔢 Final word count:', transcriptWordCountRef.current);
+          console.log('💬 Input text:', inputText.trim());
           
           setIsCountingDown(false);
           setSilenceCountdown(0);
@@ -1084,6 +1114,8 @@ function App() {
             setTimeout(() => {
               sendMessage();
             }, 100);
+          } else {
+            console.log('❌ Auto-send conditions not met at completion');
           }
         }
       };
@@ -1111,21 +1143,28 @@ function App() {
     currentTranscriptRef.current = transcript;
     transcriptWordCountRef.current = wordCount;
     
-    console.log('Transcript updated:', transcript, '|', wordCount, 'words');
+    console.log('📝 Transcript updated:', transcript, '| Words:', wordCount, '| Time:', new Date().toLocaleTimeString());
     
     // Reset any existing timer since new speech was detected
     stopTranscriptTimer();
     
     // Start new timer if we have sufficient speech content
     if (handsFreeMode && silenceDetectionEnabled && wordCount >= 2) {
-      // Small delay to allow for rapid transcript updates
+      console.log('⏰ Scheduling silence timer for transcript with', wordCount, 'words');
+      
+      // Shorter delay for more responsive detection
       setTimeout(() => {
-        // Only start timer if transcript hasn't been updated again
+        // Only start timer if transcript hasn't been updated again and we're still recording
         const timeSinceUpdate = Date.now() - (lastTranscriptUpdateRef.current || 0);
-        if (timeSinceUpdate >= 400) { // 400ms without updates suggests speech ended
+        if (timeSinceUpdate >= 300 && isRecording) { // 300ms without updates
+          console.log('🚀 Starting transcript timer - last update was', timeSinceUpdate, 'ms ago');
           startTranscriptTimer();
+        } else {
+          console.log('⏸️ Timer not started - timeSinceUpdate:', timeSinceUpdate, 'ms, isRecording:', isRecording);
         }
-      }, 500);
+      }, 400);
+    } else {
+      console.log('❌ Timer not eligible - handsFree:', handsFreeMode, 'silenceEnabled:', silenceDetectionEnabled, 'words:', wordCount);
     }
   };
 
