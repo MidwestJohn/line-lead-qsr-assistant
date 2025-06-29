@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import './DocumentList.css';
 import { FileText, Loader2, Trash2, AlertTriangle, Eye } from 'lucide-react';
 import { apiService } from './services/api';
-import EnhancedPDFModal from './EnhancedPDFModal';
+import PDFModal from './PDFModal';
 import ConnectionStatus from './components/ConnectionStatus';
-import SimplePDFTest from './SimplePDFTest';
+
 
 function DocumentList({ refreshTrigger, onDocumentDeleted }) {
   const [documents, setDocuments] = useState([]);
@@ -16,6 +16,7 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
   // PDF Preview state
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
+
 
   const fetchDocuments = async () => {
     try {
@@ -89,22 +90,11 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
 
   // PDF Preview handlers
   const handlePreviewClick = (doc) => {
-    console.log('🔍 [DOCUMENT-LIST] Preview button clicked for document:', doc);
-    const fileUrl = getFileURL(doc);
-    console.log('🔍 [DOCUMENT-LIST] Computed file URL:', fileUrl);
-    
     setSelectedDocument(doc);
     setPdfModalOpen(true);
-    
-    console.log('🔍 [DOCUMENT-LIST] Modal state set to open with document:', {
-      selectedDocument: doc,
-      fileUrl: fileUrl,
-      modalOpen: true
-    });
   };
 
   const handlePreviewClose = () => {
-    console.log('🔍 [DOCUMENT-LIST] Closing PDF modal');
     setPdfModalOpen(false);
     setSelectedDocument(null);
   };
@@ -261,32 +251,15 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
         </div>
       )}
       
-      {/* Enhanced PDF Preview Modal */}
-      {(() => {
-        const fileUrl = selectedDocument ? getFileURL(selectedDocument) : null;
-        console.log('🔍 [DOCUMENT-LIST] Rendering EnhancedPDFModal with:', {
-          fileUrl,
-          filename: selectedDocument?.original_filename,
-          isOpen: pdfModalOpen,
-          selectedDocument: !!selectedDocument
-        });
-        
-        return (
-          <EnhancedPDFModal
-            fileUrl={fileUrl}
-            filename={selectedDocument?.original_filename}
-            isOpen={pdfModalOpen}
-            onClose={handlePreviewClose}
-          />
-        );
-      })()}
+      {/* PDF Preview Modal */}
+      <PDFModal
+        isOpen={pdfModalOpen}
+        onClose={handlePreviewClose}
+        fileUrl={selectedDocument ? getFileURL(selectedDocument) : null}
+        filename={selectedDocument?.original_filename}
+      />
 
-      {/* 🧪 DEBUG: Simple PDF Test Component */}
-      {selectedDocument && pdfModalOpen && (
-        <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 10000 }}>
-          <SimplePDFTest fileUrl={getFileURL(selectedDocument)} />
-        </div>
-      )}
+
     </div>
   );
 }

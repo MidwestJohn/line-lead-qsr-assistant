@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Dict, List
@@ -84,9 +84,9 @@ def validate_filename(filename):
     if '..' in filename or '/' in filename or '\\' in filename:
         return False
     
-    # Check for valid characters (alphanumeric, dots, dashes, underscores)
+    # Check for valid characters (alphanumeric, dots, dashes, underscores, spaces, parentheses)
     import re
-    if not re.match(r'^[a-zA-Z0-9._-]+$', filename):
+    if not re.match(r'^[a-zA-Z0-9._\-\s()]+$', filename):
         return False
     
     return True
@@ -139,7 +139,8 @@ app.add_middleware(
         "https://linelead.io",                    # Your custom domain
         "https://line-lead-qsr-assistant.vercel.app",  # Default Vercel URL
         "https://line-lead-qsr-assistant-qz7ni39d8-johninniger-projects.vercel.app",  # Preview deployment
-        "http://localhost:3000",                  # Local development
+        "http://localhost:3000",                  # Local development (default)
+        "http://localhost:3001",                  # Local development (alternative port)
         "http://localhost:8000",                  # Local backend testing
     ],
     allow_credentials=True,
@@ -584,13 +585,17 @@ async def chat_stream_endpoint(chat_message: ChatMessage):
 async def serve_file(filename: str, request: Request):
     """High-performance streaming file server with range request support"""
     try:
-        # Validate filename for security
-        if not validate_filename(filename):
-            logger.warning(f"Invalid filename requested: {filename}")
+        # URL decode the filename
+        from urllib.parse import unquote
+        decoded_filename = unquote(filename)
+        
+        # Validate decoded filename for security
+        if not validate_filename(decoded_filename):
+            logger.warning(f"Invalid filename requested: {decoded_filename} (original: {filename})")
             raise HTTPException(status_code=400, detail="Invalid filename")
         
-        # Construct file path
-        file_path = os.path.join(UPLOAD_DIR, filename)
+        # Construct file path using decoded filename
+        file_path = os.path.join(UPLOAD_DIR, decoded_filename)
         
         # Check if file exists
         if not os.path.exists(file_path):
@@ -636,9 +641,10 @@ async def serve_file(filename: str, request: Request):
                     "Accept-Ranges": "bytes",
                     "Content-Length": str(content_length),
                     "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-                    "Access-Control-Allow-Headers": "*",
-                    "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length",
+                    "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS, POST",
+                    "Access-Control-Allow-Headers": "Range, Content-Type, Authorization, Cache-Control, Pragma",
+                    "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length, Content-Type",
+                    "Access-Control-Max-Age": "86400",
                     "Cache-Control": "public, max-age=3600"  # Cache for 1 hour
                 }
                 
@@ -680,9 +686,10 @@ async def serve_file(filename: str, request: Request):
             "Content-Length": str(file_size),
             "Accept-Ranges": "bytes",  # Advertise range support
             "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-            "Access-Control-Expose-Headers": "Content-Length, Accept-Ranges",
+            "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS, POST",
+            "Access-Control-Allow-Headers": "Range, Content-Type, Authorization, Cache-Control, Pragma",
+            "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length, Content-Type",
+            "Access-Control-Max-Age": "86400",
             "Cache-Control": "public, max-age=3600"  # Cache for 1 hour
         }
         
@@ -718,13 +725,17 @@ async def serve_file(filename: str, request: Request):
 async def files_head(filename: str, request: Request):
     """Handle HEAD requests for file serving (for debugging and accessibility checks)"""
     try:
-        # Validate filename for security
-        if not validate_filename(filename):
-            logger.warning(f"Invalid filename requested: {filename}")
+        # URL decode the filename
+        from urllib.parse import unquote
+        decoded_filename = unquote(filename)
+        
+        # Validate decoded filename for security
+        if not validate_filename(decoded_filename):
+            logger.warning(f"Invalid filename requested: {decoded_filename} (original: {filename})")
             raise HTTPException(status_code=400, detail="Invalid filename")
         
-        # Construct file path
-        file_path = os.path.join(UPLOAD_DIR, filename)
+        # Construct file path using decoded filename
+        file_path = os.path.join(UPLOAD_DIR, decoded_filename)
         
         # Check if file exists
         if not os.path.exists(file_path):
@@ -748,9 +759,10 @@ async def files_head(filename: str, request: Request):
             "Content-Length": str(file_size),
             "Accept-Ranges": "bytes",
             "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-            "Access-Control-Allow-Headers": "Range, Content-Type, Authorization",
-            "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length",
+            "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS, POST",
+            "Access-Control-Allow-Headers": "Range, Content-Type, Authorization, Cache-Control, Pragma",
+            "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length, Content-Type",
+            "Access-Control-Max-Age": "86400",
             "Cache-Control": "public, max-age=3600"
         }
         
@@ -778,6 +790,66 @@ async def files_options(filename: str):
         "Access-Control-Allow-Headers": "Range, Content-Type, Authorization",
         "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length"
     }
+
+@app.get("/pdf.worker.min.js")
+async def serve_pdf_worker():
+    """Serve PDF.js worker file for frontend"""
+    try:
+        # Use absolute path construction to avoid __file__ issues
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        worker_path = os.path.join(script_dir, "pdf.worker.min.js")
+        
+        logger.info(f"Looking for PDF worker at: {worker_path}")
+        
+        if not os.path.exists(worker_path):
+            logger.warning(f"PDF worker file not found: {worker_path}")
+            raise HTTPException(status_code=404, detail="PDF worker not found")
+        
+        logger.info(f"Serving PDF worker from: {worker_path}")
+        
+        return FileResponse(
+            worker_path,
+            media_type="application/javascript",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",  # Force fresh download
+                "Pragma": "no-cache",
+                "Expires": "0",
+                "Access-Control-Allow-Origin": "*"
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error serving PDF worker: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@app.head("/pdf.worker.min.js")
+async def pdf_worker_head():
+    """Handle HEAD requests for PDF worker"""
+    try:
+        # Use absolute path construction to avoid __file__ issues
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        worker_path = os.path.join(script_dir, "pdf.worker.min.js")
+        
+        logger.info(f"HEAD request for PDF worker at: {worker_path}")
+        
+        if not os.path.exists(worker_path):
+            logger.warning(f"PDF worker file not found: {worker_path}")
+            raise HTTPException(status_code=404, detail="PDF worker not found")
+        
+        file_size = os.path.getsize(worker_path)
+        
+        return Response(
+            headers={
+                "Content-Type": "application/javascript",
+                "Content-Length": str(file_size),
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Pragma": "no-cache",
+                "Expires": "0",
+                "Access-Control-Allow-Origin": "*"
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error in PDF worker HEAD request: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 # File upload endpoint
 @app.post("/upload", response_model=UploadResponse)
