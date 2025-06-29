@@ -636,7 +636,7 @@ async def serve_file(filename: str, request: Request):
                     "Accept-Ranges": "bytes",
                     "Content-Length": str(content_length),
                     "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "GET, OPTIONS",
+                    "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
                     "Access-Control-Allow-Headers": "*",
                     "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length",
                     "Cache-Control": "public, max-age=3600"  # Cache for 1 hour
@@ -680,7 +680,7 @@ async def serve_file(filename: str, request: Request):
             "Content-Length": str(file_size),
             "Accept-Ranges": "bytes",  # Advertise range support
             "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
             "Access-Control-Allow-Headers": "*",
             "Access-Control-Expose-Headers": "Content-Length, Accept-Ranges",
             "Cache-Control": "public, max-age=3600"  # Cache for 1 hour
@@ -714,12 +714,67 @@ async def serve_file(filename: str, request: Request):
         logger.error(f"Error serving file {filename}: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+@app.head("/files/{filename}")
+async def files_head(filename: str, request: Request):
+    """Handle HEAD requests for file serving (for debugging and accessibility checks)"""
+    try:
+        # Validate filename for security
+        if not validate_filename(filename):
+            logger.warning(f"Invalid filename requested: {filename}")
+            raise HTTPException(status_code=400, detail="Invalid filename")
+        
+        # Construct file path
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        
+        # Check if file exists
+        if not os.path.exists(file_path):
+            logger.warning(f"File not found: {file_path}")
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Check if it's actually a file (not a directory)
+        if not os.path.isfile(file_path):
+            logger.warning(f"Path is not a file: {file_path}")
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Get file size
+        file_size = os.path.getsize(file_path)
+        
+        # Determine content type
+        content_type = get_file_type(filename)
+        
+        # Set headers for HEAD response
+        headers = {
+            "Content-Type": content_type,
+            "Content-Length": str(file_size),
+            "Accept-Ranges": "bytes",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+            "Access-Control-Allow-Headers": "Range, Content-Type, Authorization",
+            "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length",
+            "Cache-Control": "public, max-age=3600"
+        }
+        
+        # For PDF files, set Content-Disposition to inline for browser preview
+        if content_type == "application/pdf":
+            headers["Content-Disposition"] = "inline"
+        
+        logger.info(f"HEAD request for file: {filename} ({content_type}, {file_size} bytes)")
+        
+        from fastapi import Response
+        return Response(headers=headers)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error serving HEAD request for file {filename}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 @app.options("/files/{filename}")
 async def files_options(filename: str):
     """Handle CORS preflight requests for file serving"""
     return {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
         "Access-Control-Allow-Headers": "Range, Content-Type, Authorization",
         "Access-Control-Expose-Headers": "Content-Range, Accept-Ranges, Content-Length"
     }
