@@ -28,17 +28,36 @@ const LazyPDFViewer = ({
   onLoadSuccess, 
   onLoadError 
 }) => {
+  console.log('🔍 [LAZY-PDF] LazyPDFViewer rendering with props:', {
+    fileUrl,
+    filename,
+    pageNumber,
+    scale,
+    onLoadSuccess: !!onLoadSuccess,
+    onLoadError: !!onLoadError
+  });
+
   return (
     <div className="lazy-pdf-viewer">
-      <Suspense fallback={<PDFLoadingFallback />}>
-        <PDFViewerComponent
-          fileUrl={fileUrl}
-          filename={filename}
-          pageNumber={pageNumber}
-          scale={scale}
-          onLoadSuccess={onLoadSuccess}
-          onLoadError={onLoadError}
-        />
+      <Suspense fallback={
+        (() => {
+          console.log('📋 [LAZY-PDF] Showing loading fallback while PDF component loads');
+          return <PDFLoadingFallback />;
+        })()
+      }>
+        {(() => {
+          console.log('📄 [LAZY-PDF] About to render PDFViewerComponent');
+          return (
+            <PDFViewerComponent
+              fileUrl={fileUrl}
+              filename={filename}
+              pageNumber={pageNumber}
+              scale={scale}
+              onLoadSuccess={onLoadSuccess}
+              onLoadError={onLoadError}
+            />
+          );
+        })()}
       </Suspense>
     </div>
   );

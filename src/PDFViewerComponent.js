@@ -115,6 +115,15 @@ export const PDFViewerComponent = ({
   onLoadSuccess, 
   onLoadError 
 }) => {
+  console.log('🔍 [PDF-VIEWER] PDFViewerComponent mounting/rendering with props:', {
+    fileUrl,
+    filename,
+    pageNumber: externalPageNumber,
+    scale: externalScale,
+    onLoadSuccess: !!onLoadSuccess,
+    onLoadError: !!onLoadError
+  });
+
   const [numPages, setNumPages] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -200,6 +209,25 @@ export const PDFViewerComponent = ({
       }
     });
   }, [fileUrl, filename, pageNumber, scale, isOnline]);
+
+  // 🔍 DEBUG: Track loading state changes
+  useEffect(() => {
+    console.log('🔍 [PDF-VIEWER] Loading state changed:', {
+      loading,
+      progress: loadingProgress,
+      error: !!error,
+      numPages,
+      fileUrl
+    });
+  }, [loading, loadingProgress, error, numPages, fileUrl]);
+
+  // 🔍 DEBUG: Track component mount/unmount
+  useEffect(() => {
+    console.log('🔍 [PDF-VIEWER] Component mounted with fileUrl:', fileUrl);
+    return () => {
+      console.log('🔍 [PDF-VIEWER] Component unmounting');
+    };
+  }, [fileUrl]);
 
   // Calculate optimal scale for mobile devices (informational only since scale is external)
   const getOptimalScale = useCallback(() => {
@@ -400,9 +428,13 @@ export const PDFViewerComponent = ({
   }, [isOnline, retryCount, fileUrl, onLoadError]);
 
   const onDocumentLoadProgress = useCallback(({ loaded, total }) => {
+    console.log('📊 [PDF-VIEWER] onDocumentLoadProgress fired!', { loaded, total });
+    
     if (total > 0) {
       const progress = Math.round((loaded / total) * 100);
       setLoadingProgress(progress);
+      
+      console.log(`📈 [PDF-VIEWER] Progress update: ${progress}% (${loaded}/${total} bytes)`);
       
       debugLog('LOAD-PROGRESS', `Loading progress: ${progress}%`, {
         loaded,
@@ -411,11 +443,18 @@ export const PDFViewerComponent = ({
         remainingBytes: total - loaded
       });
     } else {
+      console.log('📊 [PDF-VIEWER] Progress update: unknown total size, loaded:', loaded);
       debugLog('LOAD-PROGRESS', 'Loading progress: unknown total size', { loaded });
     }
   }, []);
 
   const onDocumentLoadStart = useCallback(() => {
+    console.log('🚀 [PDF-VIEWER] onDocumentLoadStart fired!', {
+      fileUrl,
+      timestamp: new Date().toISOString(),
+      retryCount
+    });
+    
     loadStartTimeRef.current = Date.now();
     setLoading(true);
     setError(null);
@@ -609,35 +648,56 @@ export const PDFViewerComponent = ({
     );
   }
 
+  // 🔍 DEBUG: About to render PDF Document
+  console.log('🔍 [PDF-VIEWER] About to render PDF Document component with:', {
+    fileUrl,
+    filename,
+    loading,
+    error: !!error,
+    retryCount,
+    pageNumber,
+    scale,
+    pdfjs: {
+      available: typeof pdfjs !== 'undefined',
+      version: typeof pdfjs !== 'undefined' ? pdfjs.version : 'undefined',
+      workerSrc: typeof pdfjs !== 'undefined' ? pdfjs.GlobalWorkerOptions.workerSrc : 'undefined'
+    }
+  });
+
   // Successful PDF rendering
   return (
     <div className="pdf-viewer-content">
       <div className="pdf-document-container">
-        <Document
-          key={`${fileUrl}-${retryCount}`} // Force re-render on retry
-          file={fileUrl}
-          onLoadStart={onDocumentLoadStart}
-          onLoadSuccess={onDocumentLoadSuccess}
-          onLoadError={onDocumentLoadError}
-          onLoadProgress={onDocumentLoadProgress}
-          loading=""
-          error=""
-          noData=""
-          options={PDF_OPTIONS}
-        >
-          <Page
-            key={`page-${pageNumber}-${scale}`}
-            pageNumber={pageNumber}
-            scale={scale}
-            renderTextLayer={false}
-            renderAnnotationLayer={false}
-            className="pdf-page"
-            loading=""
-            error=""
-            noData=""
-            canvasRef={pageRef}
-          />
-        </Document>
+        {(() => {
+          console.log('📄 [PDF-VIEWER] Rendering react-pdf Document component');
+          return (
+            <Document
+              key={`${fileUrl}-${retryCount}`} // Force re-render on retry
+              file={fileUrl}
+              onLoadStart={onDocumentLoadStart}
+              onLoadSuccess={onDocumentLoadSuccess}
+              onLoadError={onDocumentLoadError}
+              onLoadProgress={onDocumentLoadProgress}
+              loading=""
+              error=""
+              noData=""
+              options={PDF_OPTIONS}
+            >
+              <Page
+                key={`page-${pageNumber}-${scale}`}
+                pageNumber={pageNumber}
+                scale={scale}
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+                className="pdf-page"
+                loading=""
+                error=""
+                noData=""
+                canvasRef={pageRef}
+              />
+            </Document>
+          );
+        })()}
       </div>
       
       {documentLoadTime && (

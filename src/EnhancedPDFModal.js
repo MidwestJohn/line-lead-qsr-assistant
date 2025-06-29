@@ -21,6 +21,14 @@ import './PDFLoadingSkeleton.css';
 import './PDFKeyboardHelp.css';
 
 const EnhancedPDFModal = ({ fileUrl, filename, isOpen, onClose }) => {
+  // 🔍 DEBUG: Log modal props and opening
+  console.log('🔍 [PDF-MODAL] EnhancedPDFModal rendered with props:', {
+    fileUrl,
+    filename,
+    isOpen,
+    onClose: !!onClose
+  });
+
   // PDF state
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
@@ -79,7 +87,10 @@ const EnhancedPDFModal = ({ fileUrl, filename, isOpen, onClose }) => {
 
   // Reset state when modal opens/closes or file changes
   useEffect(() => {
+    console.log('🔍 [PDF-MODAL] useEffect triggered:', { isOpen, fileUrl, hasFileUrl: !!fileUrl });
+    
     if (isOpen && fileUrl) {
+      console.log('✅ [PDF-MODAL] Modal opening with valid fileUrl:', fileUrl);
       setPageNumber(1);
       setScale(calculateOptimalScale());
       setLoading(true);
@@ -89,6 +100,8 @@ const EnhancedPDFModal = ({ fileUrl, filename, isOpen, onClose }) => {
       setPerformanceMetrics(null);
       setShowThumbnails(false);
       
+      console.log('📋 [PDF-MODAL] State reset complete, should render PDF component');
+      
       // Show help on first open if user hasn't seen it
       if (userPreferences.showHelpOnFirstOpen) {
         setTimeout(() => {
@@ -96,6 +109,10 @@ const EnhancedPDFModal = ({ fileUrl, filename, isOpen, onClose }) => {
           setUserPreferences(prev => ({ ...prev, showHelpOnFirstOpen: false }));
         }, 2000);
       }
+    } else if (isOpen && !fileUrl) {
+      console.log('❌ [PDF-MODAL] Modal opened but no fileUrl provided!');
+    } else if (!isOpen) {
+      console.log('🔍 [PDF-MODAL] Modal is closed');
     }
   }, [isOpen, fileUrl, calculateOptimalScale, userPreferences.showHelpOnFirstOpen]);
 
@@ -127,6 +144,7 @@ const EnhancedPDFModal = ({ fileUrl, filename, isOpen, onClose }) => {
 
   // Document load handlers with performance tracking
   const onDocumentLoadSuccess = useCallback((result) => {
+    console.log('🎉 [PDF-MODAL] onDocumentLoadSuccess called!', result);
     setNumPages(result.numPages);
     setLoading(false);
     setError(null);
@@ -146,6 +164,7 @@ const EnhancedPDFModal = ({ fileUrl, filename, isOpen, onClose }) => {
   }, []);
 
   const onDocumentLoadError = useCallback((errorInfo) => {
+    console.log('❌ [PDF-MODAL] onDocumentLoadError called!', errorInfo);
     setLoading(false);
     setError(errorInfo);
     setLoadingProgress(0);
@@ -523,23 +542,44 @@ const EnhancedPDFModal = ({ fileUrl, filename, isOpen, onClose }) => {
             id="pdf-modal-description"
             aria-label="PDF document content"
           >
-            {loading ? (
-              <PDFLoadingSkeleton 
-                showProgress={true} 
-                progress={loadingProgress} 
-              />
-            ) : (
-              <PDFErrorBoundary fileUrl={fileUrl} filename={filename}>
-                <LazyPDFViewer
-                  fileUrl={fileUrl}
-                  filename={filename}
-                  pageNumber={pageNumber}
-                  scale={scale}
-                  onLoadSuccess={onDocumentLoadSuccess}
-                  onLoadError={onDocumentLoadError}
-                />
-              </PDFErrorBoundary>
-            )}
+            {(() => {
+              console.log('🔍 [PDF-MODAL] Rendering decision:', {
+                loading,
+                loadingProgress,
+                error: !!error,
+                fileUrl,
+                filename
+              });
+              
+              if (loading) {
+                console.log('📋 [PDF-MODAL] Showing loading skeleton, progress:', loadingProgress);
+                return (
+                  <PDFLoadingSkeleton 
+                    showProgress={true} 
+                    progress={loadingProgress} 
+                  />
+                );
+              } else {
+                console.log('📄 [PDF-MODAL] Rendering LazyPDFViewer with:', {
+                  fileUrl,
+                  filename,
+                  pageNumber,
+                  scale
+                });
+                return (
+                  <PDFErrorBoundary fileUrl={fileUrl} filename={filename}>
+                    <LazyPDFViewer
+                      fileUrl={fileUrl}
+                      filename={filename}
+                      pageNumber={pageNumber}
+                      scale={scale}
+                      onLoadSuccess={onDocumentLoadSuccess}
+                      onLoadError={onDocumentLoadError}
+                    />
+                  </PDFErrorBoundary>
+                );
+              }
+            })()}
           </div>
 
           {/* Mobile Navigation */}

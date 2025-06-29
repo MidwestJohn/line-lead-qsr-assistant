@@ -59,7 +59,7 @@ try {
     
     const importTests = [
         { test: 'React PDF imports', pattern: /import.*{.*Document.*Page.*pdfjs.*}.*from.*['"]react-pdf['"]/, required: true },
-        { test: 'CSS imports', pattern: /import.*['"]react-pdf\/dist\/esm\/Page\/.*\.css['"]/, required: true },
+        { test: 'CSS imports', pattern: /import.*['"]react-pdf\/dist\/Page\/.*\.css['"]/, required: true },
         { test: 'Worker configuration', pattern: /pdfjs\.GlobalWorkerOptions\.workerSrc\s*=/, required: true },
         { test: 'PDF.js version check', pattern: /pdfjs\.version/, required: true },
         { test: 'Worker availability check', pattern: /typeof pdfjs.*undefined/, required: true }
@@ -125,8 +125,8 @@ console.log('🎨 TEST 4: CSS Files');
 console.log('--------------------');
 
 const cssFiles = [
-    './node_modules/react-pdf/dist/esm/Page/AnnotationLayer.css',
-    './node_modules/react-pdf/dist/esm/Page/TextLayer.css'
+    './node_modules/react-pdf/dist/Page/AnnotationLayer.css',
+    './node_modules/react-pdf/dist/Page/TextLayer.css'
 ];
 
 cssFiles.forEach(cssFile => {

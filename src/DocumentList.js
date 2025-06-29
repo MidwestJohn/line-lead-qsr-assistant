@@ -88,11 +88,22 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
 
   // PDF Preview handlers
   const handlePreviewClick = (doc) => {
+    console.log('🔍 [DOCUMENT-LIST] Preview button clicked for document:', doc);
+    const fileUrl = getFileURL(doc);
+    console.log('🔍 [DOCUMENT-LIST] Computed file URL:', fileUrl);
+    
     setSelectedDocument(doc);
     setPdfModalOpen(true);
+    
+    console.log('🔍 [DOCUMENT-LIST] Modal state set to open with document:', {
+      selectedDocument: doc,
+      fileUrl: fileUrl,
+      modalOpen: true
+    });
   };
 
   const handlePreviewClose = () => {
+    console.log('🔍 [DOCUMENT-LIST] Closing PDF modal');
     setPdfModalOpen(false);
     setSelectedDocument(null);
   };
@@ -250,12 +261,24 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
       )}
       
       {/* Enhanced PDF Preview Modal */}
-      <EnhancedPDFModal
-        fileUrl={selectedDocument ? getFileURL(selectedDocument) : null}
-        filename={selectedDocument?.original_filename}
-        isOpen={pdfModalOpen}
-        onClose={handlePreviewClose}
-      />
+      {(() => {
+        const fileUrl = selectedDocument ? getFileURL(selectedDocument) : null;
+        console.log('🔍 [DOCUMENT-LIST] Rendering EnhancedPDFModal with:', {
+          fileUrl,
+          filename: selectedDocument?.original_filename,
+          isOpen: pdfModalOpen,
+          selectedDocument: !!selectedDocument
+        });
+        
+        return (
+          <EnhancedPDFModal
+            fileUrl={fileUrl}
+            filename={selectedDocument?.original_filename}
+            isOpen={pdfModalOpen}
+            onClose={handlePreviewClose}
+          />
+        );
+      })()}
     </div>
   );
 }
