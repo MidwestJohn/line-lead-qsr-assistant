@@ -7,7 +7,7 @@ import ErrorBoundary from './ErrorBoundary';
 import ChatService from './ChatService';
 import ProgressiveLoader from './components/ProgressiveLoader';
 import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react";
-import { Send, Square, Upload, MessageCircle, WifiOff, Copy, RefreshCw, Check, BookOpen } from 'lucide-react';
+import { Send, Square, Upload, MessageCircle, WifiOff, Copy, RefreshCw, Check, BookOpen, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { API_BASE_URL } from './config';
@@ -69,6 +69,14 @@ function App() {
   const [hoveredMessage, setHoveredMessage] = useState(null);
   const [copiedMessage, setCopiedMessage] = useState(null);
   
+  // Voice input state
+  const [isRecording, setIsRecording] = useState(false);
+  const [voiceAvailable, setVoiceAvailable] = useState(false);
+  
+  // Text-to-Speech state
+  const [ttsAvailable, setTtsAvailable] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  
   // Performance optimization refs
   const messagesEndRef = useRef(null);
   const streamingTimeoutRef = useRef(null);
@@ -77,6 +85,9 @@ function App() {
   
   // Auto-expanding textarea ref
   const textareaRef = useRef(null);
+  
+  // Speech recognition ref
+  const speechRecognitionRef = useRef(null);
 
   // Effects and event handlers
   const scrollToBottom = useCallback(() => {
@@ -126,6 +137,119 @@ function App() {
     const interval = setInterval(checkServices, 30000);
     
     return () => clearInterval(interval);
+  }, []);
+
+  // Check voice availability and initialize speech recognition
+  useEffect(() => {
+    const initializeSpeechRecognition = () => {
+      // Check if Web Speech API is available
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      
+      if (SpeechRecognition) {
+        try {
+          const recognition = new SpeechRecognition();
+          
+          // Configure speech recognition
+          recognition.continuous = false; // Stop after one result
+          recognition.interimResults = true; // Show partial results
+          recognition.lang = 'en-US'; // Language setting
+          recognition.maxAlternatives = 1; // Only need one result
+          
+          // Event handlers
+          recognition.onstart = () => {
+            console.log('Speech recognition started');
+            setIsRecording(true);
+          };
+          
+          recognition.onresult = (event) => {
+            let transcript = '';
+            let isFinal = false;
+            
+            // Get the latest result
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              transcript += event.results[i][0].transcript;
+              if (event.results[i].isFinal) {
+                isFinal = true;
+              }
+            }
+            
+            // Update input with transcript (for interim results)
+            if (transcript.trim()) {
+              setInputText(transcript.trim());
+              
+              // Auto-expand textarea
+              setTimeout(() => {
+                if (textareaRef.current) {
+                  textareaRef.current.style.height = 'auto';
+                  const scrollHeight = textareaRef.current.scrollHeight;
+                  const maxHeight = 120;
+                  const minHeight = 40;
+                  const newHeight = Math.min(Math.max(scrollHeight, minHeight), maxHeight);
+                  textareaRef.current.style.height = newHeight + 'px';
+                }
+              }, 0);
+            }
+            
+            console.log('Speech result:', transcript, 'Final:', isFinal);
+          };
+          
+          recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            setIsRecording(false);
+            
+            // Show user-friendly error message
+            if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+              alert('Microphone permission denied. Please allow microphone access to use voice input.');
+            } else if (event.error === 'no-speech') {
+              console.log('No speech detected, try again');
+            } else {
+              console.warn('Speech recognition error:', event.error);
+            }
+          };
+          
+          recognition.onend = () => {
+            console.log('Speech recognition ended');
+            setIsRecording(false);
+          };
+          
+          speechRecognitionRef.current = recognition;
+          setVoiceAvailable(true);
+          
+        } catch (error) {
+          console.error('Failed to initialize speech recognition:', error);
+          setVoiceAvailable(false);
+        }
+      } else {
+        console.log('Speech recognition not supported in this browser');
+        setVoiceAvailable(false);
+      }
+    };
+    
+    initializeSpeechRecognition();
+    
+    // Check Text-to-Speech availability
+    const checkTTSAvailability = () => {
+      if ('speechSynthesis' in window) {
+        setTtsAvailable(true);
+        console.log('Text-to-Speech available');
+      } else {
+        setTtsAvailable(false);
+        console.log('Text-to-Speech not supported');
+      }
+    };
+    
+    checkTTSAvailability();
+    
+    // Cleanup on unmount
+    return () => {
+      if (speechRecognitionRef.current) {
+        speechRecognitionRef.current.abort();
+      }
+      // Stop any ongoing speech synthesis
+      if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
   }, []);
 
   // Process queued messages when back online
@@ -602,6 +726,112 @@ function App() {
     }
   };
 
+  // Voice input handler
+  const handleVoiceInput = () => {
+    if (!voiceAvailable || !speechRecognitionRef.current) {
+      console.warn('Voice input not available');
+      return;
+    }
+
+    if (isRecording) {
+      // Stop recording
+      console.log('Stopping voice recording...');
+      speechRecognitionRef.current.stop();
+      setIsRecording(false);
+    } else {
+      // Start recording
+      console.log('Starting voice recording...');
+      try {
+        // Clear any existing text before starting
+        setInputText('');
+        speechRecognitionRef.current.start();
+      } catch (error) {
+        console.error('Failed to start speech recognition:', error);
+        setIsRecording(false);
+        
+        if (error.name === 'InvalidStateError') {
+          // Recognition is already running, stop it first
+          speechRecognitionRef.current.stop();
+          setTimeout(() => {
+            try {
+              setInputText('');
+              speechRecognitionRef.current.start();
+            } catch (retryError) {
+              console.error('Retry failed:', retryError);
+            }
+          }, 100);
+        }
+      }
+    }
+  };
+
+  // Text-to-Speech handler
+  const speakText = (text) => {
+    if (!ttsAvailable || !text.trim()) return;
+
+    // Stop any ongoing speech
+    window.speechSynthesis.cancel();
+
+    // Clean text for speech (remove markdown and special characters)
+    const cleanText = text
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markdown
+      .replace(/\*(.*?)\*/g, '$1')     // Remove italic markdown
+      .replace(/`(.*?)`/g, '$1')       // Remove code markdown
+      .replace(/#{1,6}\s/g, '')        // Remove headers
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Convert links to text
+      .replace(/\n+/g, '. ')           // Convert line breaks to pauses
+      .trim();
+
+    if (!cleanText) return;
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    
+    // Configure voice settings for QSR environment
+    utterance.rate = 0.9;    // Slightly slower for clarity
+    utterance.pitch = 1.0;   // Normal pitch
+    utterance.volume = 0.8;  // Comfortable volume
+    
+    // Try to use a female voice (Lina assistant personality)
+    const voices = window.speechSynthesis.getVoices();
+    const femaleVoice = voices.find(voice => 
+      voice.name.toLowerCase().includes('female') || 
+      voice.name.toLowerCase().includes('zira') ||
+      voice.name.toLowerCase().includes('susan') ||
+      voice.name.toLowerCase().includes('samantha')
+    );
+    
+    if (femaleVoice) {
+      utterance.voice = femaleVoice;
+    }
+
+    // Event handlers
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      console.log('Started speaking assistant response');
+    };
+
+    utterance.onend = () => {
+      setIsSpeaking(false);
+      console.log('Finished speaking assistant response');
+    };
+
+    utterance.onerror = (event) => {
+      setIsSpeaking(false);
+      console.error('Speech synthesis error:', event.error);
+    };
+
+    // Speak the text
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Stop TTS if currently speaking
+  const stopSpeaking = () => {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  };
+
   // Get loading text based on current state
   const getLoadingText = () => {
     if (messageStatus.isRetrying) {
@@ -765,6 +995,23 @@ function App() {
                           )}
                         </button>
                         
+                        {/* Text-to-Speech Button */}
+                        {ttsAvailable && (
+                          <button 
+                            onClick={() => isSpeaking ? stopSpeaking() : speakText(message.text)}
+                            className="action-button"
+                            aria-label={isSpeaking ? "Stop speaking" : "Read message aloud"}
+                            title={isSpeaking ? "Stop speaking" : "Read aloud"}
+                            disabled={hoveredMessage !== message.id}
+                          >
+                            {isSpeaking ? (
+                              <VolumeX className="action-icon speaking" />
+                            ) : (
+                              <Volume2 className="action-icon" />
+                            )}
+                          </button>
+                        )}
+                        
                         <button 
                           onClick={() => handleRegenerate(message.id)}
                           className="action-button"
@@ -813,11 +1060,27 @@ function App() {
               value={inputText}
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
-              placeholder={getLoadingText()}
+              placeholder={isRecording ? "Listening..." : getLoadingText()}
               rows="1"
-              disabled={isInputDisabled}
+              disabled={isInputDisabled || isRecording}
               style={{ minHeight: '40px', height: '40px' }}
             />
+            
+            {/* Voice Input Button */}
+            <button
+              className={`voice-button ${isRecording ? 'recording' : ''} ${!voiceAvailable ? 'disabled' : ''}`}
+              onClick={handleVoiceInput}
+              disabled={!voiceAvailable || isInputDisabled}
+              aria-label={isRecording ? 'Stop voice recording' : 'Start voice input'}
+              title={!voiceAvailable ? 'Voice input not available' : isRecording ? 'Stop recording' : 'Start voice input'}
+            >
+              {!voiceAvailable ? (
+                <MicOff className="voice-icon" />
+              ) : (
+                <Mic className={`voice-icon ${isRecording ? 'recording-pulse' : ''}`} />
+              )}
+            </button>
+            
             <button
               className="send-button aui-composer-send"
               onClick={(messageStatus.isLoading || isStreaming || isThinking || isWaitingForResponse) ? stopMessage : sendMessage}

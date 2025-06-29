@@ -332,6 +332,22 @@ body, .app {
   color: #10b981; /* Green color for success */
 }
 
+.action-icon.speaking {
+  color: var(--aui-primary);
+  animation: speakingPulse 1s ease-in-out infinite;
+}
+
+@keyframes speakingPulse {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.6; 
+    transform: scale(1.1);
+  }
+}
+
 /* Mobile responsive adjustments for markdown */
 @media (max-width: 414px) {
   .markdown-ul,
@@ -766,7 +782,7 @@ body, .app {
 .input-wrapper {
   display: flex;
   align-items: flex-end;
-  gap: 12px;
+  gap: 8px; /* Reduced gap to accommodate voice button */
   max-width: 100%;
   background: var(--aui-card);
   border: 1px solid var(--aui-border);
@@ -868,12 +884,85 @@ body, .app {
   transform: none;
 }
 
+/* Voice Input Button Styling - Matching Assistant UI Standards */
+.voice-button {
+  min-width: 40px;
+  min-height: 40px;
+  border: none;
+  border-radius: var(--aui-radius);
+  background: var(--aui-secondary);
+  color: var(--aui-muted-foreground);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--aui-shadow-sm);
+}
+
+.voice-button:hover:not(:disabled):not(.disabled) {
+  background: var(--aui-border);
+  color: var(--aui-foreground);
+  transform: translateY(-1px);
+  box-shadow: var(--aui-shadow-md);
+}
+
+.voice-button:active:not(:disabled):not(.disabled) {
+  transform: translateY(0);
+  box-shadow: var(--aui-shadow-sm);
+}
+
+.voice-button.recording {
+  background: var(--aui-primary);
+  color: var(--aui-primary-foreground);
+}
+
+.voice-button.recording:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--aui-primary) 90%, black);
+}
+
+.voice-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.voice-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* Lucide Icon Styling - Assistant-UI Homepage Demo Standards */
 .send-icon {
   width: 16px;
   height: 16px;
   stroke-width: 2;
   transition: all 150ms ease;
+}
+
+.voice-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+  transition: all 150ms ease;
+}
+
+.voice-icon.recording-pulse {
+  animation: recordingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes recordingPulse {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7; 
+    transform: scale(1.1);
+  }
 }
 
 .toggle-icon {
