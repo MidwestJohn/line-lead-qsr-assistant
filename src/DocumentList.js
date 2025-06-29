@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './DocumentList.css';
 import { FileText, Loader2, Trash2, AlertTriangle, Eye } from 'lucide-react';
-import { apiUtils } from './apiUtils';
+import { apiService } from './services/api';
 import EnhancedPDFModal from './EnhancedPDFModal';
-import { API_BASE_URL } from './config';
+import ConnectionStatus from './components/ConnectionStatus';
 
 function DocumentList({ refreshTrigger, onDocumentDeleted }) {
   const [documents, setDocuments] = useState([]);
@@ -21,7 +21,7 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
       setLoading(true);
       setError('');
       
-      const data = await apiUtils.getDocuments();
+      const data = await apiService.getDocuments();
       setDocuments(data.documents);
       
     } catch (err) {
@@ -63,7 +63,7 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
       setDeleting(deleteConfirm.id);
       setError('');
       
-      const result = await apiUtils.deleteDocument(deleteConfirm.id);
+      const result = await apiService.deleteDocument(deleteConfirm.id);
       
       // Remove the document from local state
       setDocuments(prev => prev.filter(doc => doc.id !== deleteConfirm.id));
@@ -107,11 +107,11 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
     if (!doc) return null;
     // Use URL from backend if available, otherwise construct it
     if (doc.url) {
-      return `${API_BASE_URL}${doc.url}`;
+      return apiService.getFileUrl(doc.url.replace('/files/', ''));
     }
     // Fallback for backward compatibility
     if (doc.filename) {
-      return `${API_BASE_URL}/files/${doc.filename}`;
+      return apiService.getFileUrl(doc.filename);
     }
     return null;
   };

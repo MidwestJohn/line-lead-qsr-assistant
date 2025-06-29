@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './FileUpload.css';
 import { Paperclip, Loader2 } from 'lucide-react';
-import { API_BASE_URL } from './config';
+import { apiService } from './services/api';
 
 function FileUpload({ onUploadSuccess, onDocumentsUpdate }) {
   const [dragActive, setDragActive] = useState(false);
@@ -58,19 +58,8 @@ function FileUpload({ onUploadSuccess, onDocumentsUpdate }) {
       setUploadProgress(0);
       setUploadMessage('Uploading and processing PDF...');
 
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch(`${API_BASE_URL}/upload`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.detail || 'Upload failed');
-      }
+      // Use the new API service with connection management
+      const result = await apiService.uploadFile(file);
 
       setUploadProgress(100);
       setUploadMessage(`✅ ${result.message} (${result.pages_extracted} pages extracted)`);

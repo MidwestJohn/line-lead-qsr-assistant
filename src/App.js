@@ -5,11 +5,14 @@ import DocumentList from './DocumentList';
 import ServiceStatus from './ServiceStatus';
 import ErrorBoundary from './ErrorBoundary';
 import ChatService from './ChatService';
+import ProgressiveLoader from './components/ProgressiveLoader';
+import ConnectionStatus from './components/ConnectionStatus';
 import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react";
 import { Send, Square, Upload, MessageCircle, WifiOff, Copy, RefreshCw, Check, BookOpen } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { API_BASE_URL } from './config';
+import { apiService } from './services/api';
 
 function App() {
   
@@ -101,15 +104,12 @@ function App() {
   useEffect(() => {
     const checkServices = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/health`);
-        if (response.ok) {
-          const healthData = await response.json();
-          setServiceStatus({
-            isHealthy: healthData.status === 'healthy',
-            isReady: healthData.search_ready,
-            services: healthData.services
-          });
-        }
+        const healthData = await apiService.getHealth();
+        setServiceStatus({
+          isHealthy: healthData.status === 'healthy',
+          isReady: healthData.search_ready,
+          services: healthData.services
+        });
       } catch (error) {
         console.error('Service check failed:', error);
         setServiceStatus({
@@ -631,7 +631,8 @@ function App() {
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <ErrorBoundary>
-        <div className="app">
+        <ProgressiveLoader>
+          <div className="app">
         <header className="app-header">
           <div className="header-content">
             <div className="logo-container">
@@ -642,6 +643,7 @@ function App() {
               />
             </div>
             <div className="header-controls">
+              <ConnectionStatus compact={true} />
               {!isOnline && (
                 <span className="offline-indicator">
                   <WifiOff className="offline-icon" />
@@ -841,7 +843,8 @@ function App() {
             </div>
           )}
         </div>
-        </div>
+          </div>
+        </ProgressiveLoader>
       </ErrorBoundary>
     </AssistantRuntimeProvider>
   );

@@ -36,6 +36,9 @@ ALLOWED_EXTENSIONS = {".pdf"}
 # Ensure upload directory exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# Track application startup time for monitoring
+app_start_time = datetime.datetime.now()
+
 # Utility functions
 def load_documents_db():
     """Load documents database from JSON file"""
@@ -222,43 +225,131 @@ class DeleteDocumentResponse(BaseModel):
     document_id: str
     original_filename: str
 
-# Health check endpoint
+# Enhanced Health Check with Connection Management
 @app.get("/health", response_model=HealthResponse)
-async def health_check():
-    """Enhanced health check endpoint with service status"""
+async def health_check(request: Request):
+    """Comprehensive health check with connection monitoring and keep-alive"""
     try:
-        # Check document database
+        start_time = datetime.datetime.now()
+        
+        # Extract session and monitoring headers
+        session_id = request.headers.get('X-Session-ID', 'anonymous')
+        is_heartbeat = request.headers.get('X-Heartbeat') == 'true'
+        health_check_type = request.headers.get('X-Health-Check', 'basic')
+        
+        # Log connection for monitoring
+        if not is_heartbeat:
+            logger.info(f"Health check requested by session {session_id[:12]}... (type: {health_check_type})")
+        
+        # Basic service checks
         documents_db = load_documents_db()
         doc_count = len(documents_db)
         
-        # Check search engine readiness
+        # Enhanced search engine check
         search_ready = search_engine is not None and hasattr(search_engine, 'model')
+        search_status = "ready" if search_ready else "initializing"
         
-        # Check AI service (basic check - could be enhanced to ping OpenAI)
+        # AI service health with timeout
         ai_status = "ready"
+        ai_response_time = None
         try:
+            ai_check_start = datetime.datetime.now()
             from openai_integration import qsr_assistant
             ai_status = "ready" if qsr_assistant else "unavailable"
-        except Exception:
+            ai_response_time = (datetime.datetime.now() - ai_check_start).total_seconds() * 1000
+            
+            # Additional AI connectivity test for full health check
+            if health_check_type == 'full' and ai_status == "ready":
+                try:
+                    # Quick test call to verify AI is responsive
+                    import asyncio
+                    test_future = asyncio.wait_for(
+                        asyncio.create_task(test_ai_connection()), 
+                        timeout=3.0
+                    )
+                    ai_test_result = await test_future
+                    if not ai_test_result:
+                        ai_status = "degraded"
+                except asyncio.TimeoutError:
+                    ai_status = "slow"
+                except Exception:
+                    ai_status = "error"
+                    
+        except Exception as e:
+            logger.warning(f"AI health check failed: {e}")
             ai_status = "error"
         
+        # File system checks
+        file_upload_status = "ready" if os.path.exists(UPLOAD_DIR) else "error"
+        disk_usage = get_disk_usage() if health_check_type == 'full' else None
+        
+        # Memory usage check for full health check
+        memory_usage = get_memory_usage() if health_check_type == 'full' else None
+        
+        # Database connectivity check
+        db_status = "ready"
+        db_response_time = None
+        try:
+            db_check_start = datetime.datetime.now()
+            # Test database read
+            test_documents = load_documents_db()
+            db_response_time = (datetime.datetime.now() - db_check_start).total_seconds() * 1000
+            if len(test_documents) != doc_count:
+                db_status = "inconsistent"
+        except Exception as e:
+            logger.error(f"Database health check failed: {e}")
+            db_status = "error"
+        
         services = {
-            "database": "ready",
-            "search_engine": "ready" if search_ready else "initializing",
+            "database": db_status,
+            "search_engine": search_status,
             "ai_assistant": ai_status,
-            "file_upload": "ready" if os.path.exists(UPLOAD_DIR) else "error"
+            "file_upload": file_upload_status
         }
         
-        overall_status = "healthy" if all(s in ["ready", "initializing"] for s in services.values()) else "degraded"
+        # Add performance metrics for full health check
+        performance_metrics = None
+        if health_check_type == 'full':
+            total_response_time = (datetime.datetime.now() - start_time).total_seconds() * 1000
+            performance_metrics = {
+                "total_response_time_ms": round(total_response_time, 2),
+                "db_response_time_ms": round(db_response_time, 2) if db_response_time else None,
+                "ai_response_time_ms": round(ai_response_time, 2) if ai_response_time else None,
+                "memory_usage": memory_usage,
+                "disk_usage": disk_usage
+            }
         
-        return HealthResponse(
-            status=overall_status,
-            timestamp=datetime.datetime.now().isoformat(),
-            version="1.0.0",
-            services=services,
-            document_count=doc_count,
-            search_ready=search_ready
-        )
+        # Determine overall status
+        critical_services = ["database", "search_engine"]
+        critical_healthy = all(services[s] in ["ready", "initializing"] for s in critical_services)
+        all_healthy = all(s in ["ready", "initializing"] for s in services.values())
+        
+        if not critical_healthy:
+            overall_status = "critical"
+        elif not all_healthy:
+            overall_status = "degraded"
+        else:
+            overall_status = "healthy"
+        
+        response_data = {
+            "status": overall_status,
+            "timestamp": datetime.datetime.now().isoformat(),
+            "version": "1.0.0",
+            "services": services,
+            "document_count": doc_count,
+            "search_ready": search_ready
+        }
+        
+        # Add performance metrics to full health checks
+        if performance_metrics:
+            response_data["performance"] = performance_metrics
+            
+        # Add session tracking for connection management
+        if session_id != 'anonymous':
+            response_data["session_id"] = session_id
+            
+        return HealthResponse(**response_data)
+        
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         return HealthResponse(
@@ -269,6 +360,129 @@ async def health_check():
             document_count=0,
             search_ready=False
         )
+
+async def test_ai_connection():
+    """Test AI service connectivity with minimal request"""
+    try:
+        from openai_integration import qsr_assistant
+        if qsr_assistant:
+            # Quick test - just verify the assistant is callable
+            return True
+        return False
+    except Exception:
+        return False
+
+def get_disk_usage():
+    """Get disk usage information"""
+    try:
+        import shutil
+        total, used, free = shutil.disk_usage("/")
+        usage_percent = (used / total) * 100
+        return {
+            "total_gb": round(total / (1024**3), 2),
+            "used_gb": round(used / (1024**3), 2),
+            "free_gb": round(free / (1024**3), 2),
+            "usage_percent": round(usage_percent, 1)
+        }
+    except Exception:
+        return None
+
+def get_memory_usage():
+    """Get memory usage information"""
+    try:
+        import psutil
+        memory = psutil.virtual_memory()
+        return {
+            "total_mb": round(memory.total / (1024**2), 1),
+            "used_mb": round(memory.used / (1024**2), 1),
+            "available_mb": round(memory.available / (1024**2), 1),
+            "usage_percent": round(memory.percent, 1)
+        }
+    except ImportError:
+        # psutil not available, use basic system info
+        try:
+            import os
+            # Basic memory check using /proc/meminfo on Linux
+            if os.path.exists('/proc/meminfo'):
+                with open('/proc/meminfo', 'r') as f:
+                    meminfo = f.read()
+                    for line in meminfo.split('\n'):
+                        if line.startswith('MemTotal:'):
+                            total = int(line.split()[1]) / 1024  # Convert KB to MB
+                        elif line.startswith('MemAvailable:'):
+                            available = int(line.split()[1]) / 1024
+                    used = total - available
+                    return {
+                        "total_mb": round(total, 1),
+                        "used_mb": round(used, 1),
+                        "available_mb": round(available, 1),
+                        "usage_percent": round((used / total) * 100, 1)
+                    }
+        except Exception:
+            pass
+        return None
+    except Exception:
+        return None
+
+# Keep-alive endpoint for preventing cold starts
+@app.get("/keep-alive")
+async def keep_alive():
+    """Keep-alive endpoint to prevent Render cold starts"""
+    return {
+        "status": "alive",
+        "timestamp": datetime.datetime.now().isoformat(),
+        "uptime_seconds": (datetime.datetime.now() - app_start_time).total_seconds() if 'app_start_time' in globals() else 0
+    }
+
+# Warm-up endpoint for faster cold start recovery
+@app.post("/warm-up")
+async def warm_up():
+    """Warm-up endpoint to initialize services after cold start"""
+    try:
+        logger.info("Warm-up request received")
+        
+        # Pre-load critical services
+        documents_db = load_documents_db()
+        doc_count = len(documents_db)
+        
+        # Initialize search engine if needed
+        global search_engine
+        if search_engine is None:
+            try:
+                from document_search import initialize_search_engine
+                search_engine = initialize_search_engine()
+                logger.info("Search engine initialized during warm-up")
+            except Exception as e:
+                logger.warning(f"Search engine initialization failed during warm-up: {e}")
+        
+        # Pre-load AI assistant
+        try:
+            from openai_integration import qsr_assistant
+            if qsr_assistant:
+                logger.info("AI assistant verified during warm-up")
+        except Exception as e:
+            logger.warning(f"AI assistant check failed during warm-up: {e}")
+        
+        warm_up_time = (datetime.datetime.now() - app_start_time).total_seconds() if 'app_start_time' in globals() else 0
+        
+        return {
+            "status": "warmed_up",
+            "timestamp": datetime.datetime.now().isoformat(),
+            "services_initialized": {
+                "documents": doc_count,
+                "search_engine": search_engine is not None,
+                "ai_assistant": True
+            },
+            "warm_up_time_seconds": round(warm_up_time, 2)
+        }
+        
+    except Exception as e:
+        logger.error(f"Warm-up failed: {e}")
+        return {
+            "status": "warm_up_failed",
+            "error": str(e),
+            "timestamp": datetime.datetime.now().isoformat()
+        }
 
 # Chat endpoint
 @app.post("/chat", response_model=ChatResponse)

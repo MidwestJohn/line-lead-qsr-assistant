@@ -1,9 +1,9 @@
-import { API_BASE_URL } from './config';
+import { apiService } from './services/api';
 
 // Centralized chat service with retry logic and error handling
 class ChatService {
   constructor() {
-    this.baseURL = API_BASE_URL;
+    this.baseURL = apiService.baseURL;
     this.defaultTimeout = 30000; // 30 seconds
   }
 
@@ -37,27 +37,13 @@ class ChatService {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-        const response = await fetch(`${this.baseURL}/chat`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache'
-          },
-          body: JSON.stringify({ message }),
-          signal: controller.signal
-        });
-
+        // Use the connection-aware API service
+        const data = await apiService.sendChatMessage(message);
         clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          throw new Error(`Chat request failed: ${response.status} ${response.statusText}`);
-        }
 
         if (onProgress) {
           onProgress('processing');
         }
-
-        const data = await response.json();
 
         if (onProgress) {
           onProgress('complete');
