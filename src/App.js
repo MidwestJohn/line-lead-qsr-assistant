@@ -103,10 +103,11 @@ function App() {
   const autoVoiceTimerRef = useRef(null);
   const handsFreeTimeoutRef = useRef(null);
   
-  // Silence detection refs
+  // Transcript-based silence detection refs
   const silenceTimerRef = useRef(null);
-  const lastSpeechTimeRef = useRef(null);
-  const hasDetectedSpeechRef = useRef(false);
+  const lastTranscriptUpdateRef = useRef(null);
+  const currentTranscriptRef = useRef('');
+  const transcriptWordCountRef = useRef(0);
 
   // Effects and event handlers
   const scrollToBottom = useCallback(() => {
@@ -199,14 +200,9 @@ function App() {
             if (transcript.trim()) {
               setInputText(transcript.trim());
               
-              // Mark that we've detected meaningful speech
-              if (transcript.trim().length > 3) { // Minimum 3 characters to be meaningful
-                hasDetectedSpeechRef.current = true;
-              }
-              
-              // Reset silence detection when new speech is detected
+              // Update transcript timestamp for silence detection
               if (handsFreeMode && silenceDetectionEnabled) {
-                resetSilenceDetection();
+                updateTranscriptTimestamp(transcript.trim());
               }
               
               // Auto-expand textarea
@@ -221,7 +217,7 @@ function App() {
                 }
               }, 0);
               
-              // In hands-free mode without silence detection, check for voice commands and auto-send
+              // Handle voice commands and auto-send (only when silence detection is disabled)
               if (handsFreeMode && isFinal && transcript.trim().length > 0 && !silenceDetectionEnabled) {
                 const command = transcript.trim().toLowerCase();
                 
@@ -234,22 +230,23 @@ function App() {
                 }
                 
                 // Regular message - auto-send (only if silence detection is disabled)
-                console.log('Hands-free mode: Auto-sending message:', transcript.trim());
+                console.log('Hands-free mode (no silence detection): Auto-sending message:', transcript.trim());
                 setHandsFreeStatus('processing');
                 setTimeout(() => {
                   sendMessage();
                 }, 100);
               }
-            }
-            
-            // Start silence detection when speech ends (no more interim results)
-            if (handsFreeMode && silenceDetectionEnabled && hasDetectedSpeechRef.current && transcript.trim()) {
-              // Use a small delay to ensure we're not getting more interim results
-              setTimeout(() => {
-                if (handsFreeMode && silenceDetectionEnabled && !isCountingDown) {
-                  startSilenceDetection();
+              
+              // Handle voice commands even with silence detection enabled
+              if (handsFreeMode && isFinal && silenceDetectionEnabled) {
+                const command = transcript.trim().toLowerCase();
+                if (command === 'stop' || command === 'exit' || command === 'end hands free') {
+                  console.log('Voice command: Exiting hands-free mode');
+                  exitHandsFreeMode();
+                  setInputText(''); // Clear the command from input
+                  return;
                 }
-              }, 500);
+              }
             }
             
             console.log('Speech result:', transcript, 'Final:', isFinal);
@@ -776,13 +773,17 @@ function App() {
     setInputText(e.target.value);
     setTimeout(autoExpandTextarea, 0); // Use setTimeout instead of requestAnimationFrame
     
-    // If user manually types while in hands-free mode, temporarily pause auto-activation
+    // If user manually types while in hands-free mode, cancel any pending auto-send
     if (handsFreeMode && !isRecording) {
       // Clear any pending auto-voice timer since user is manually typing
       if (autoVoiceTimerRef.current) {
         clearTimeout(autoVoiceTimerRef.current);
         autoVoiceTimerRef.current = null;
       }
+      
+      // Cancel transcript-based auto-send since user is manually editing
+      stopTranscriptTimer();
+      
       setHandsFreeStatus('ready'); // Set to ready state (paused)
     }
   };
@@ -872,11 +873,12 @@ function App() {
       // Start recording
       console.log('Starting voice recording...');
       try {
-        // Clear any existing text and reset silence detection state
+        // Clear any existing text and reset transcript-based detection state
         setInputText('');
-        hasDetectedSpeechRef.current = false;
-        lastSpeechTimeRef.current = null;
-        stopSilenceDetection();
+        currentTranscriptRef.current = '';
+        transcriptWordCountRef.current = 0;
+        lastTranscriptUpdateRef.current = null;
+        stopTranscriptTimer();
         
         speechRecognitionRef.current.start();
       } catch (error) {
@@ -1007,10 +1009,11 @@ function App() {
       clearTimeout(handsFreeTimeoutRef.current);
     }
     
-    // Clean up silence detection
-    stopSilenceDetection();
-    hasDetectedSpeechRef.current = false;
-    lastSpeechTimeRef.current = null;
+    // Clean up transcript-based silence detection
+    stopTranscriptTimer();
+    currentTranscriptRef.current = '';
+    transcriptWordCountRef.current = 0;
+    lastTranscriptUpdateRef.current = null;
     
     // Stop any ongoing voice or speech
     if (isRecording && speechRecognitionRef.current) {
@@ -1035,65 +1038,94 @@ function App() {
     }
   };
 
-  // Silence detection functions
-  const startSilenceDetection = () => {
-    if (!handsFreeMode || !silenceDetectionEnabled || !hasDetectedSpeechRef.current) return;
+  // Transcript-based silence detection functions
+  const startTranscriptTimer = () => {
+    if (!handsFreeMode || !silenceDetectionEnabled) return;
+    
+    // Check if we have minimum speech (2+ words)
+    if (transcriptWordCountRef.current < 2) {
+      console.log('Insufficient speech for auto-send:', transcriptWordCountRef.current, 'words');
+      return;
+    }
     
     // Clear any existing timer
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
     }
     
-    // Start countdown from 4 seconds
-    setSilenceCountdown(4);
-    setIsCountingDown(true);
+    console.log('Starting transcript-based silence timer: 3.5 seconds');
     
-    let countdown = 4;
-    const updateCountdown = () => {
-      countdown--;
-      setSilenceCountdown(countdown);
+    // Wait 500ms to ensure speech has actually ended, then start 3-second countdown
+    silenceTimerRef.current = setTimeout(() => {
+      if (!handsFreeMode || !silenceDetectionEnabled) return;
       
-      if (countdown > 0) {
-        silenceTimerRef.current = setTimeout(updateCountdown, 1000);
-      } else {
-        // Countdown finished - auto-send message
-        console.log('Silence detected: Auto-sending message');
-        setIsCountingDown(false);
-        setSilenceCountdown(0);
+      // Start visual countdown from 3 seconds (3.5s total delay)
+      setSilenceCountdown(3);
+      setIsCountingDown(true);
+      
+      let countdown = 3;
+      const updateCountdown = () => {
+        countdown--;
+        setSilenceCountdown(countdown);
         
-        if (inputText.trim() && handsFreeMode) {
-          setHandsFreeStatus('processing');
-          setTimeout(() => {
-            sendMessage();
-          }, 100);
+        if (countdown > 0) {
+          silenceTimerRef.current = setTimeout(updateCountdown, 1000);
+        } else {
+          // Countdown finished - auto-send message
+          console.log('Transcript silence timer completed: Auto-sending message');
+          console.log('Final transcript:', currentTranscriptRef.current);
+          console.log('Word count:', transcriptWordCountRef.current);
+          
+          setIsCountingDown(false);
+          setSilenceCountdown(0);
+          
+          if (inputText.trim() && handsFreeMode && transcriptWordCountRef.current >= 2) {
+            setHandsFreeStatus('processing');
+            setTimeout(() => {
+              sendMessage();
+            }, 100);
+          }
         }
-      }
-    };
-    
-    silenceTimerRef.current = setTimeout(updateCountdown, 1000);
+      };
+      
+      silenceTimerRef.current = setTimeout(updateCountdown, 1000);
+    }, 500); // Initial 500ms delay before starting visual countdown
   };
 
-  const stopSilenceDetection = () => {
+  const stopTranscriptTimer = () => {
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
     }
     setIsCountingDown(false);
     setSilenceCountdown(0);
+    console.log('Transcript timer stopped');
   };
 
-  const resetSilenceDetection = () => {
-    lastSpeechTimeRef.current = Date.now();
-    stopSilenceDetection();
+  const updateTranscriptTimestamp = (transcript) => {
+    const words = transcript.trim().split(' ').filter(word => word.length > 0);
+    const wordCount = words.length;
     
-    // Restart silence detection if we're in hands-free mode
-    if (handsFreeMode && silenceDetectionEnabled && isRecording) {
+    // Update refs
+    lastTranscriptUpdateRef.current = Date.now();
+    currentTranscriptRef.current = transcript;
+    transcriptWordCountRef.current = wordCount;
+    
+    console.log('Transcript updated:', transcript, '|', wordCount, 'words');
+    
+    // Reset any existing timer since new speech was detected
+    stopTranscriptTimer();
+    
+    // Start new timer if we have sufficient speech content
+    if (handsFreeMode && silenceDetectionEnabled && wordCount >= 2) {
+      // Small delay to allow for rapid transcript updates
       setTimeout(() => {
-        const timeSinceLastSpeech = Date.now() - (lastSpeechTimeRef.current || 0);
-        if (timeSinceLastSpeech >= 1000 && hasDetectedSpeechRef.current) {
-          startSilenceDetection();
+        // Only start timer if transcript hasn't been updated again
+        const timeSinceUpdate = Date.now() - (lastTranscriptUpdateRef.current || 0);
+        if (timeSinceUpdate >= 400) { // 400ms without updates suggests speech ended
+          startTranscriptTimer();
         }
-      }, 1000); // Wait 1 second after last speech before starting silence timer
+      }, 500);
     }
   };
 
@@ -1339,7 +1371,7 @@ function App() {
                     <span className="hands-free-text">
                       {handsFreeStatus === 'ready' && 'Ready to listen...'}
                       {handsFreeStatus === 'listening' && (
-                        silenceDetectionEnabled ? 'Listening... (Auto-send enabled)' : 'Listening for your question...'
+                        silenceDetectionEnabled ? 'Listening... (Auto-send after 3.5s silence)' : 'Listening for your question...'
                       )}
                       {handsFreeStatus === 'processing' && 'Processing your request...'}
                       {handsFreeStatus === 'speaking' && 'Assistant responding...'}
@@ -1372,14 +1404,14 @@ function App() {
                   <div 
                     className="countdown-progress" 
                     style={{
-                      width: `${(silenceCountdown / 4) * 100}%`,
+                      width: `${(silenceCountdown / 3) * 100}%`,
                       backgroundColor: silenceCountdown > 2 ? '#10b981' : silenceCountdown > 1 ? '#f59e0b' : '#ef4444'
                     }}
                   ></div>
                 </div>
                 <button 
                   className="cancel-countdown-btn"
-                  onClick={stopSilenceDetection}
+                  onClick={stopTranscriptTimer}
                   title="Cancel auto-send"
                 >
                   Cancel
