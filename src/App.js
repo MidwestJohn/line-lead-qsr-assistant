@@ -82,6 +82,11 @@ function App() {
   const [handsFreeStatus, setHandsFreeStatus] = useState('idle'); // 'listening', 'processing', 'speaking', 'ready', 'idle'
   const [autoVoiceTimer, setAutoVoiceTimer] = useState(null);
   
+  // Silence detection state
+  const [silenceDetectionEnabled, setSilenceDetectionEnabled] = useState(true); // Feature flag for easy disable
+  const [silenceCountdown, setSilenceCountdown] = useState(0);
+  const [isCountingDown, setIsCountingDown] = useState(false);
+  
   // Performance optimization refs
   const messagesEndRef = useRef(null);
   const streamingTimeoutRef = useRef(null);
@@ -97,6 +102,11 @@ function App() {
   // Hands-free mode refs
   const autoVoiceTimerRef = useRef(null);
   const handsFreeTimeoutRef = useRef(null);
+  
+  // Silence detection refs
+  const silenceTimerRef = useRef(null);
+  const lastSpeechTimeRef = useRef(null);
+  const hasDetectedSpeechRef = useRef(false);
 
   // Effects and event handlers
   const scrollToBottom = useCallback(() => {
@@ -159,7 +169,7 @@ function App() {
           const recognition = new SpeechRecognition();
           
           // Configure speech recognition
-          recognition.continuous = false; // Stop after one result
+          recognition.continuous = true; // Enable continuous for silence detection
           recognition.interimResults = true; // Show partial results
           recognition.lang = 'en-US'; // Language setting
           recognition.maxAlternatives = 1; // Only need one result
@@ -189,6 +199,16 @@ function App() {
             if (transcript.trim()) {
               setInputText(transcript.trim());
               
+              // Mark that we've detected meaningful speech
+              if (transcript.trim().length > 3) { // Minimum 3 characters to be meaningful
+                hasDetectedSpeechRef.current = true;
+              }
+              
+              // Reset silence detection when new speech is detected
+              if (handsFreeMode && silenceDetectionEnabled) {
+                resetSilenceDetection();
+              }
+              
               // Auto-expand textarea
               setTimeout(() => {
                 if (textareaRef.current) {
@@ -201,8 +221,8 @@ function App() {
                 }
               }, 0);
               
-              // In hands-free mode, check for voice commands and auto-send
-              if (handsFreeMode && isFinal && transcript.trim().length > 0) {
+              // In hands-free mode without silence detection, check for voice commands and auto-send
+              if (handsFreeMode && isFinal && transcript.trim().length > 0 && !silenceDetectionEnabled) {
                 const command = transcript.trim().toLowerCase();
                 
                 // Handle voice commands
@@ -213,13 +233,23 @@ function App() {
                   return;
                 }
                 
-                // Regular message - auto-send
+                // Regular message - auto-send (only if silence detection is disabled)
                 console.log('Hands-free mode: Auto-sending message:', transcript.trim());
                 setHandsFreeStatus('processing');
                 setTimeout(() => {
                   sendMessage();
                 }, 100);
               }
+            }
+            
+            // Start silence detection when speech ends (no more interim results)
+            if (handsFreeMode && silenceDetectionEnabled && hasDetectedSpeechRef.current && transcript.trim()) {
+              // Use a small delay to ensure we're not getting more interim results
+              setTimeout(() => {
+                if (handsFreeMode && silenceDetectionEnabled && !isCountingDown) {
+                  startSilenceDetection();
+                }
+              }, 500);
             }
             
             console.log('Speech result:', transcript, 'Final:', isFinal);
@@ -842,8 +872,12 @@ function App() {
       // Start recording
       console.log('Starting voice recording...');
       try {
-        // Clear any existing text before starting
+        // Clear any existing text and reset silence detection state
         setInputText('');
+        hasDetectedSpeechRef.current = false;
+        lastSpeechTimeRef.current = null;
+        stopSilenceDetection();
+        
         speechRecognitionRef.current.start();
       } catch (error) {
         console.error('Failed to start speech recognition:', error);
@@ -973,6 +1007,11 @@ function App() {
       clearTimeout(handsFreeTimeoutRef.current);
     }
     
+    // Clean up silence detection
+    stopSilenceDetection();
+    hasDetectedSpeechRef.current = false;
+    lastSpeechTimeRef.current = null;
+    
     // Stop any ongoing voice or speech
     if (isRecording && speechRecognitionRef.current) {
       speechRecognitionRef.current.stop();
@@ -993,6 +1032,68 @@ function App() {
         console.log('Hands-free mode auto-exit due to inactivity');
         exitHandsFreeMode();
       }, 600000); // 10 minutes
+    }
+  };
+
+  // Silence detection functions
+  const startSilenceDetection = () => {
+    if (!handsFreeMode || !silenceDetectionEnabled || !hasDetectedSpeechRef.current) return;
+    
+    // Clear any existing timer
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+    }
+    
+    // Start countdown from 4 seconds
+    setSilenceCountdown(4);
+    setIsCountingDown(true);
+    
+    let countdown = 4;
+    const updateCountdown = () => {
+      countdown--;
+      setSilenceCountdown(countdown);
+      
+      if (countdown > 0) {
+        silenceTimerRef.current = setTimeout(updateCountdown, 1000);
+      } else {
+        // Countdown finished - auto-send message
+        console.log('Silence detected: Auto-sending message');
+        setIsCountingDown(false);
+        setSilenceCountdown(0);
+        
+        if (inputText.trim() && handsFreeMode) {
+          setHandsFreeStatus('processing');
+          setTimeout(() => {
+            sendMessage();
+          }, 100);
+        }
+      }
+    };
+    
+    silenceTimerRef.current = setTimeout(updateCountdown, 1000);
+  };
+
+  const stopSilenceDetection = () => {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+    setIsCountingDown(false);
+    setSilenceCountdown(0);
+  };
+
+  const resetSilenceDetection = () => {
+    lastSpeechTimeRef.current = Date.now();
+    stopSilenceDetection();
+    
+    // Restart silence detection if we're in hands-free mode
+    if (handsFreeMode && silenceDetectionEnabled && isRecording) {
+      setTimeout(() => {
+        const timeSinceLastSpeech = Date.now() - (lastSpeechTimeRef.current || 0);
+        if (timeSinceLastSpeech >= 1000 && hasDetectedSpeechRef.current) {
+          startSilenceDetection();
+        }
+      }, 1000); // Wait 1 second after last speech before starting silence timer
     }
   };
 
@@ -1053,7 +1154,10 @@ function App() {
                 >
                   <Headphones className="toggle-icon" />
                   {handsFreeMode && (
-                    <span className="hands-free-status">{handsFreeStatus}</span>
+                    <span className="hands-free-status">
+                      {handsFreeStatus}
+                      {silenceDetectionEnabled && <span className="silence-indicator">📶</span>}
+                    </span>
                   )}
                 </button>
               )}
@@ -1234,10 +1338,21 @@ function App() {
                     <Headphones className="hands-free-icon" />
                     <span className="hands-free-text">
                       {handsFreeStatus === 'ready' && 'Ready to listen...'}
-                      {handsFreeStatus === 'listening' && 'Listening for your question...'}
+                      {handsFreeStatus === 'listening' && (
+                        silenceDetectionEnabled ? 'Listening... (Auto-send enabled)' : 'Listening for your question...'
+                      )}
                       {handsFreeStatus === 'processing' && 'Processing your request...'}
                       {handsFreeStatus === 'speaking' && 'Assistant responding...'}
                     </span>
+                    {handsFreeStatus === 'listening' && (
+                      <button 
+                        className="silence-toggle-btn"
+                        onClick={() => setSilenceDetectionEnabled(!silenceDetectionEnabled)}
+                        title={silenceDetectionEnabled ? "Disable auto-send" : "Enable auto-send"}
+                      >
+                        {silenceDetectionEnabled ? '⏰' : '🔇'}
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -1248,6 +1363,31 @@ function App() {
         </div>
 
         <div className="input-container aui-composer">
+          {/* Silence Detection Countdown */}
+          {isCountingDown && silenceDetectionEnabled && handsFreeMode && (
+            <div className="silence-countdown">
+              <div className="countdown-content">
+                <span className="countdown-text">Auto-sending in {silenceCountdown} second{silenceCountdown !== 1 ? 's' : ''}...</span>
+                <div className="countdown-bar">
+                  <div 
+                    className="countdown-progress" 
+                    style={{
+                      width: `${(silenceCountdown / 4) * 100}%`,
+                      backgroundColor: silenceCountdown > 2 ? '#10b981' : silenceCountdown > 1 ? '#f59e0b' : '#ef4444'
+                    }}
+                  ></div>
+                </div>
+                <button 
+                  className="cancel-countdown-btn"
+                  onClick={stopSilenceDetection}
+                  title="Cancel auto-send"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+          
           <div className="input-wrapper">
             <textarea
               ref={textareaRef}
