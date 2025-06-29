@@ -102,6 +102,21 @@ const EnhancedPDFModal = ({ fileUrl, filename, isOpen, onClose }) => {
       
       console.log('📋 [PDF-MODAL] State reset complete, should render PDF component');
       
+      // 🔍 DEBUG: Add timeout to detect if PDF never starts loading
+      setTimeout(() => {
+        console.log('⏰ [PDF-MODAL] 5-second timeout check:', {
+          stillLoading: loading,
+          progress: loadingProgress,
+          error: !!error,
+          numPages: numPages
+        });
+        
+        if (loading && loadingProgress === 0 && !error) {
+          console.log('🚨 [PDF-MODAL] WARNING: PDF has been loading for 5 seconds with no progress!');
+          console.log('🚨 [PDF-MODAL] This suggests the Document component is not triggering load events');
+        }
+      }, 5000);
+      
       // Show help on first open if user hasn't seen it
       if (userPreferences.showHelpOnFirstOpen) {
         setTimeout(() => {

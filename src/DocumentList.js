@@ -4,6 +4,7 @@ import { FileText, Loader2, Trash2, AlertTriangle, Eye } from 'lucide-react';
 import { apiService } from './services/api';
 import EnhancedPDFModal from './EnhancedPDFModal';
 import ConnectionStatus from './components/ConnectionStatus';
+import SimplePDFTest from './SimplePDFTest';
 
 function DocumentList({ refreshTrigger, onDocumentDeleted }) {
   const [documents, setDocuments] = useState([]);
@@ -279,6 +280,13 @@ function DocumentList({ refreshTrigger, onDocumentDeleted }) {
           />
         );
       })()}
+
+      {/* 🧪 DEBUG: Simple PDF Test Component */}
+      {selectedDocument && pdfModalOpen && (
+        <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 10000 }}>
+          <SimplePDFTest fileUrl={getFileURL(selectedDocument)} />
+        </div>
+      )}
     </div>
   );
 }
