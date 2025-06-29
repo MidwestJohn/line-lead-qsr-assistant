@@ -6,7 +6,6 @@ import ServiceStatus from './ServiceStatus';
 import ErrorBoundary from './ErrorBoundary';
 import ChatService from './ChatService';
 import ProgressiveLoader from './components/ProgressiveLoader';
-import ConnectionStatus from './components/ConnectionStatus';
 import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react";
 import { Send, Square, Upload, MessageCircle, WifiOff, Copy, RefreshCw, Check, BookOpen } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -643,7 +642,6 @@ function App() {
               />
             </div>
             <div className="header-controls">
-              <ConnectionStatus compact={true} />
               {!isOnline && (
                 <span className="offline-indicator">
                   <WifiOff className="offline-icon" />

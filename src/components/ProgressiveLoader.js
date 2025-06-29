@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { connectionManager } from '../services/ConnectionManager';
 import { keepAliveService } from '../services/KeepAliveService';
-import ConnectionStatus from './ConnectionStatus';
+import SplashScreen from './SplashScreen';
 import './ProgressiveLoader.css';
 
 /**
@@ -18,8 +18,6 @@ const ProgressiveLoader = ({ children }) => {
     const [connectionStatus, setConnectionStatus] = useState('disconnected');
     const [services, setServices] = useState({});
     const [loadingProgress, setLoadingProgress] = useState(0);
-    const [errorMessage, setErrorMessage] = useState(null);
-    const [showDetails, setShowDetails] = useState(false);
 
     // Loading states: initializing -> connecting -> loading_services -> ready -> error
     
@@ -110,9 +108,9 @@ const ProgressiveLoader = ({ children }) => {
     };
 
     const handleConnectionFailure = (data) => {
-        setLoadingState('error');
-        setErrorMessage(`Connection failed: ${data.error}`);
-        setLoadingProgress(0);
+        console.warn('Connection failed:', data.error);
+        // For production, we'll still show the splash screen
+        // The app will handle connection issues gracefully once loaded
     };
 
     const handleConnectionRetry = (data) => {
@@ -183,114 +181,15 @@ const ProgressiveLoader = ({ children }) => {
 
     const handleLoadingError = (error) => {
         console.error('Progressive loading failed:', error);
-        setLoadingState('error');
-        setErrorMessage(error.message);
-        setLoadingProgress(0);
+        // Still proceed to ready state for graceful degradation
+        setLoadingState('ready');
     };
 
-    const handleRetry = () => {
-        setErrorMessage(null);
-        setLoadingProgress(0);
-        setServices({});
-        startProgressiveLoading();
-    };
 
-    const getLoadingMessage = () => {
-        switch (loadingState) {
-            case 'initializing':
-                return 'Starting Line Lead...';
-            case 'connecting':
-                return 'Connecting to server...';
-            case 'loading_services':
-                return 'Initializing services...';
-            case 'ready':
-                return 'Ready!';
-            case 'error':
-                return 'Connection failed';
-            default:
-                return 'Loading...';
-        }
-    };
 
-    const getLoadingDetails = () => {
-        const details = [];
-        
-        if (connectionStatus !== 'disconnected') {
-            details.push(`Connection: ${connectionStatus}`);
-        }
-        
-        Object.entries(services).forEach(([service, status]) => {
-            details.push(`${service}: ${status}`);
-        });
-        
-        return details;
-    };
-
-    // Show loading screen until ready
+    // Show simple splash screen until ready
     if (loadingState !== 'ready') {
-        return (
-            <div className="progressive-loader">
-                <div className="loading-container">
-                    <div className="logo-section">
-                        <h1>🍔 Line Lead</h1>
-                        <p>QSR Assistant</p>
-                    </div>
-                    
-                    <div className="loading-section">
-                        <div className="loading-message">
-                            {getLoadingMessage()}
-                        </div>
-                        
-                        <div className="progress-bar">
-                            <div 
-                                className="progress-fill"
-                                style={{ width: `${loadingProgress}%` }}
-                            />
-                        </div>
-                        
-                        <div className="progress-text">
-                            {loadingProgress}%
-                        </div>
-                    </div>
-
-                    {errorMessage && (
-                        <div className="error-section">
-                            <div className="error-message">
-                                ❌ {errorMessage}
-                            </div>
-                            <button onClick={handleRetry} className="retry-button">
-                                🔄 Retry
-                            </button>
-                        </div>
-                    )}
-
-                    <div className="details-section">
-                        <button 
-                            onClick={() => setShowDetails(!showDetails)}
-                            className="details-toggle"
-                        >
-                            {showDetails ? '▼' : '▶'} Details
-                        </button>
-                        
-                        {showDetails && (
-                            <div className="loading-details">
-                                {getLoadingDetails().map((detail, index) => (
-                                    <div key={index} className="detail-item">
-                                        {detail}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {connectionStatus !== 'disconnected' && (
-                        <div className="connection-status-section">
-                            <ConnectionStatus compact={true} />
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
+        return <SplashScreen />;
     }
 
     // Once ready, render the actual application
