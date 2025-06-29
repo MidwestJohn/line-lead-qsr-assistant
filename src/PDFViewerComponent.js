@@ -1,16 +1,31 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
 import { Download, ExternalLink, Wifi, WifiOff } from 'lucide-react';
-import { pdfDebugLog, runComprehensiveDebug, testFileAccess } from './PDFDebugHelper';
+import { pdfDebugLog, runEnhancedPDFDebug, testFileAccess } from './PDFDebugHelper';
 import './PDFViewerComponent.css';
+
+// Configure PDF.js worker immediately after imports
+// Check if worker is already configured to avoid conflicts in React Strict Mode
+if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+  pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+  console.log('📄 PDF.js worker configured:', pdfjs.GlobalWorkerOptions.workerSrc);
+  console.log('📄 PDF.js version:', pdfjs.version);
+}
 
 // Use the enhanced debug logger from PDFDebugHelper
 const debugLog = pdfDebugLog;
 
 // Test PDF.js worker accessibility
 const testWorkerAccess = async () => {
+  // Verify pdfjs is available
+  if (typeof pdfjs === 'undefined' || !pdfjs.version) {
+    debugLog('WORKER-TEST', '❌ PDF.js not available - import failed');
+    return null;
+  }
+
   const workerUrls = [
-    `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`,
     `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`,
     `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`,
     '/pdf.worker.min.js' // Local fallback
@@ -35,25 +50,39 @@ const testWorkerAccess = async () => {
   return null;
 };
 
-// Initialize PDF.js worker with fallback
+// Initialize PDF.js worker with fallback (only if not already configured)
 const initializePDFWorker = async () => {
+  if (typeof pdfjs === 'undefined') {
+    throw new Error('PDF.js not imported correctly');
+  }
+
   debugLog('WORKER-INIT', 'Starting PDF.js worker initialization...');
   debugLog('WORKER-INIT', `PDF.js version: ${pdfjs.version}`);
+  debugLog('WORKER-INIT', `Current worker src: ${pdfjs.GlobalWorkerOptions.workerSrc}`);
   
-  const workingWorkerUrl = await testWorkerAccess();
-  if (workingWorkerUrl) {
-    pdfjs.GlobalWorkerOptions.workerSrc = workingWorkerUrl;
-    debugLog('WORKER-INIT', `✅ PDF.js worker configured: ${workingWorkerUrl}`);
+  // Only initialize if not already configured
+  if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+    const workingWorkerUrl = await testWorkerAccess();
+    if (workingWorkerUrl) {
+      pdfjs.GlobalWorkerOptions.workerSrc = workingWorkerUrl;
+      debugLog('WORKER-INIT', `✅ PDF.js worker configured: ${workingWorkerUrl}`);
+    } else {
+      debugLog('WORKER-INIT', '❌ PDF.js worker initialization failed!');
+      throw new Error('PDF.js worker could not be initialized');
+    }
   } else {
-    debugLog('WORKER-INIT', '❌ PDF.js worker initialization failed!');
-    throw new Error('PDF.js worker could not be initialized');
+    debugLog('WORKER-INIT', '✅ PDF.js worker already configured');
   }
 };
 
-// Initialize worker immediately
-initializePDFWorker().catch(error => {
-  debugLog('WORKER-INIT', '❌ Critical: PDF.js worker initialization failed', error);
-});
+// Initialize worker immediately (with error handling)
+if (typeof pdfjs !== 'undefined') {
+  initializePDFWorker().catch(error => {
+    debugLog('WORKER-INIT', '❌ Critical: PDF.js worker initialization failed', error);
+  });
+} else {
+  console.error('❌ Critical: PDF.js not imported - check import statements');
+}
 
 // Enhanced PDF options with debugging
 const PDF_OPTIONS = {
@@ -107,20 +136,70 @@ export const PDFViewerComponent = ({
   
   // Initialize debugging for this component instance
   useEffect(() => {
+    // Verify PDF.js is available before proceeding
+    if (typeof pdfjs === 'undefined') {
+      const error = new Error('PDF.js not imported correctly');
+      debugLog('COMPONENT-INIT', '❌ PDF.js import failed', { error });
+      setError({
+        type: 'import',
+        message: 'PDF.js library not loaded correctly. Please refresh the page.',
+        originalError: error,
+        retryCount: 0,
+        isOnline
+      });
+      setLoading(false);
+      return;
+    }
+
     debugLog('COMPONENT-INIT', `PDFViewerComponent initialized`, {
       fileUrl,
       filename,
       pageNumber,
       scale,
       isOnline: navigator.onLine,
-      userAgent: navigator.userAgent
+      userAgent: navigator.userAgent,
+      pdfjs: {
+        version: pdfjs.version,
+        workerSrc: pdfjs.GlobalWorkerOptions.workerSrc
+      }
     });
     
-    // Run comprehensive debugging
-    runComprehensiveDebug(fileUrl).then(results => {
-      debugLog('COMPREHENSIVE-DEBUG', 'Debug suite completed', results);
+    // Verify PDF.js worker is configured
+    if (!pdfjs.GlobalWorkerOptions.workerSrc) {
+      debugLog('COMPONENT-INIT', '⚠️ PDF.js worker not configured, attempting to configure...');
+      initializePDFWorker().catch(error => {
+        debugLog('COMPONENT-INIT', '❌ Failed to configure PDF.js worker', { error });
+        setError({
+          type: 'worker',
+          message: 'PDF.js worker failed to load. Please check your internet connection.',
+          originalError: error,
+          retryCount: 0,
+          isOnline
+        });
+        setLoading(false);
+      });
+    }
+    
+    // Run enhanced debugging with PDF.js availability check
+    runEnhancedPDFDebug(fileUrl, pdfjs).then(results => {
+      debugLog('ENHANCED-DEBUG', 'Enhanced debug suite completed', results);
+      
+      // Show critical issues in console for easy debugging
+      if (results.analysis.recommendations.length > 0) {
+        console.group('🚨 PDF Preview Issues Detected');
+        results.analysis.recommendations.forEach(rec => {
+          if (rec.startsWith('❌')) {
+            console.error(rec);
+          } else if (rec.startsWith('⚠️')) {
+            console.warn(rec);
+          } else {
+            console.log(rec);
+          }
+        });
+        console.groupEnd();
+      }
     });
-  }, [fileUrl, filename, pageNumber, scale]);
+  }, [fileUrl, filename, pageNumber, scale, isOnline]);
 
   // Calculate optimal scale for mobile devices (informational only since scale is external)
   const getOptimalScale = useCallback(() => {

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF.js Import Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            max-width: 800px; 
+            margin: 0 auto; 
+        }
+        .test-result { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+        }
+        .success { 
+            background-color: #d4edda; 
+            border: 1px solid #c3e6cb; 
+            color: #155724; 
+        }
+        .error { 
+            background-color: #f8d7da; 
+            border: 1px solid #f5c6cb; 
+            color: #721c24; 
+        }
+        .info { 
+            background-color: #d1ecf1; 
+            border: 1px solid #bee5eb; 
+            color: #0c5460; 
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 PDF.js Import Test</h1>
+    <p>This page tests if PDF.js is properly imported and configured in your React app.</p>
+    
+    <button onclick="testPDFImports()">🧪 Test PDF.js Imports</button>
+    <button onclick="testWorkerAccess()">⚙️ Test Worker Access</button>
+    <button onclick="testPDFLoading()">📄 Test PDF Loading</button>
+    <button onclick="clearResults()">🧹 Clear Results</button>
+    
+    <div id="results"></div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = message;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testPDFImports() {
+            addResult('🔍 Testing PDF.js imports...', 'info');
+            
+            try {
+                // Test if PDF.js is available globally (it won't be in React build)
+                if (typeof window.pdfjs !== 'undefined') {
+                    addResult('✅ PDF.js available globally', 'success');
+                    addResult(`📊 Version: ${window.pdfjs.version}`, 'info');
+                    addResult(`⚙️ Worker: ${window.pdfjs.GlobalWorkerOptions.workerSrc}`, 'info');
+                } else {
+                    addResult('ℹ️ PDF.js not available globally (normal for React apps)', 'info');
+                    addResult('📝 PDF.js should be imported within React components', 'info');
+                }
+                
+                // Test React build artifacts
+                addResult('🔍 Checking React build artifacts...', 'info');
+                
+                // Check if main.js contains PDF.js references
+                try {
+                    const response = await fetch('/static/js/main.2bf82bbb.js');
+                    if (response.ok) {
+                        const jsContent = await response.text();
+                        if (jsContent.includes('pdfjs') || jsContent.includes('pdf.js')) {
+                            addResult('✅ PDF.js found in React build', 'success');
+                        } else {
+                            addResult('⚠️ PDF.js not found in React build', 'error');
+                        }
+                    }
+                } catch (error) {
+                    addResult('ℹ️ Could not check React build (files may have different names)', 'info');
+                }
+                
+            } catch (error) {
+                addResult(`❌ Error testing PDF.js imports: ${error.message}`, 'error');
+            }
+        }
+
+        async function testWorkerAccess() {
+            addResult('🔍 Testing PDF.js worker accessibility...', 'info');
+            
+            const workerUrls = [
+                'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
+                'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js',
+                '/pdf.worker.min.js'
+            ];
+            
+            for (const url of workerUrls) {
+                try {
+                    addResult(`🔍 Testing: ${url}`, 'info');
+                    
+                    const startTime = Date.now();
+                    const response = await fetch(url, { method: 'HEAD' });
+                    const responseTime = Date.now() - startTime;
+                    
+                    if (response.ok) {
+                        addResult(`✅ Worker accessible: ${url} (${responseTime}ms)`, 'success');
+                        addResult(`📊 Status: ${response.status}, Content-Type: ${response.headers.get('Content-Type')}`, 'info');
+                    } else {
+                        addResult(`❌ Worker not accessible: ${url} (${response.status})`, 'error');
+                    }
+                } catch (error) {
+                    addResult(`❌ Worker test failed: ${url} - ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testPDFLoading() {
+            addResult('🔍 Testing PDF loading capability...', 'info');
+            
+            // Test if we can load PDF.js dynamically
+            try {
+                addResult('📦 Attempting to load PDF.js from CDN...', 'info');
+                
+                // Load PDF.js script
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                
+                script.onload = async () => {
+                    try {
+                        addResult('✅ PDF.js loaded successfully', 'success');
+                        
+                        if (typeof pdfjsLib !== 'undefined') {
+                            addResult(`📊 PDF.js version: ${pdfjsLib.version}`, 'success');
+                            
+                            // Configure worker
+                            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                            addResult('⚙️ Worker configured', 'success');
+                            
+                            // Test loading a simple PDF
+                            try {
+                                addResult('📄 Testing PDF document loading...', 'info');
+                                
+                                // Create a simple PDF data URL for testing
+                                const testPdfUrl = 'data:application/pdf;base64,JVBERi0xLjMKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwKL1R5cGUgL0NhdGFsb2cKL091dGxpbmVzIDIgMCBSCi9QYWdlcyAzIDAgUgo+PgplbmRvYmoKMiAwIG9iago8PAovVHlwZSAvT3V0bGluZXMKL0NvdW50IDAKPD4KZW5kb2JqCjMgMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9Db3VudCAxCi9LaWRzIFs0IDAgUl0KPj4KZW5kb2JqCjQgMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAzIDAgUgovUmVzb3VyY2VzIDw8Ci9Gb250IDw8Ci9GMSA2IDAgUgo+Pgo+PgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNSAwIFIKPj4KZW5kb2JqCjUgMCBvYmoKPDwKL0xlbmd0aCAxMDkKPj4Kc3RyZWFtCkJUCi9GMSA0OCBUZgoyMCAxMCBUZAooVGVzdCBQREYpIFRqCkVUCmVuZHN0cmVhbQplbmRvYmoKNiAwIG9iago8PAovVHlwZSAvRm9udAovU3VidHlwZSAvVHlwZTEKL0Jhc2VGb250IC9IZWx2ZXRpY2EKPj4KZW5kb2JqCnhyZWYKMCA3CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDY0IDAwMDAwIG4gCjAwMDAwMDAxMTMgMDAwMDAgbiAKMDAwMDAwMDE3MCAwMDAwMCBuIAowMDAwMDAwMzIzIDAwMDAwIG4gCjAwMDAwMDA0ODMgMDAwMDAgbiAKdHJhaWxlcgo8PAovU2l6ZSA3Ci9Sb290IDEgMCBSCj4+CnN0YXJ0eHJlZgo1ODEKJSVFT0Y=';
+                                
+                                const pdf = await pdfjsLib.getDocument(testPdfUrl).promise;
+                                addResult(`✅ PDF loaded successfully! Pages: ${pdf.numPages}`, 'success');
+                                
+                                // Test page rendering
+                                const page = await pdf.getPage(1);
+                                addResult(`✅ Page loaded successfully! Size: ${page.view[2]}x${page.view[3]}`, 'success');
+                                
+                                addResult('🎉 PDF.js is working correctly!', 'success');
+                                
+                            } catch (pdfError) {
+                                addResult(`❌ PDF loading failed: ${pdfError.message}`, 'error');
+                            }
+                            
+                        } else {
+                            addResult('❌ PDF.js loaded but pdfjsLib not available', 'error');
+                        }
+                        
+                    } catch (error) {
+                        addResult(`❌ Error after PDF.js load: ${error.message}`, 'error');
+                    }
+                };
+                
+                script.onerror = () => {
+                    addResult('❌ Failed to load PDF.js from CDN', 'error');
+                };
+                
+                document.head.appendChild(script);
+                
+            } catch (error) {
+                addResult(`❌ Error testing PDF loading: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run basic tests on load
+        window.addEventListener('load', () => {
+            addResult('🚀 PDF.js Import Test Page Loaded', 'info');
+            addResult('📝 Click the buttons above to run specific tests', 'info');
+        });
+    </script>
+</body>
+</html>
