@@ -999,28 +999,10 @@ function App() {
             console.log('🔊 Full text length:', fullText.length, 'Spoken length:', streamingTTSRef.current.spokenText.length, 'Remaining:', remainingText.length);
             
             if (remainingText) {
-              console.log('🔊 Speaking final remaining text:', remainingText.substring(0, 50) + '...');
+              console.log('🔊 Speaking final remaining text with ElevenLabs:', remainingText.substring(0, 50) + '...');
               
-              // Create final utterance with proper cleanup
-              const finalUtterance = new SpeechSynthesisUtterance(remainingText);
-              finalUtterance.rate = 0.9;
-              finalUtterance.pitch = 1.0;
-              finalUtterance.volume = 0.8;
-              
-              const voices = window.speechSynthesis.getVoices();
-              const femaleVoice = voices.find(voice => 
-                voice.name.toLowerCase().includes('female') || 
-                voice.name.toLowerCase().includes('zira') ||
-                voice.name.toLowerCase().includes('susan') ||
-                voice.name.toLowerCase().includes('samantha')
-              );
-              
-              if (femaleVoice) {
-                finalUtterance.voice = femaleVoice;
-              }
-
-              // Single completion handler
-              finalUtterance.onend = () => {
+              // Use the main speakText function which handles ElevenLabs + fallback
+              speakText(remainingText, streamingMsgId).then(() => {
                 console.log('🔊 Final TTS chunk completed');
                 setIsSpeaking(false);
                 streamingTTSRef.current = { isActive: false, spokenText: '', remainingText: '', isCompleting: false };
@@ -1031,15 +1013,13 @@ function App() {
                   setHandsFreeStatus('listening'); // Go directly to listening
                   startAutoVoiceInput();
                 }
-              };
-
-              finalUtterance.onerror = (event) => {
-                console.log('🔊 Final TTS error:', event.error);
+              }).catch((error) => {
+                console.error('Final TTS error:', error);
                 setIsSpeaking(false);
                 streamingTTSRef.current = { isActive: false, spokenText: '', remainingText: '', isCompleting: false };
                 currentTTSMessageIdRef.current = null;
                 
-                if (event.error === 'interrupted' && handsFreeStateRef.current) {
+                if (handsFreeStateRef.current) {
                   setTimeout(() => {
                     if (handsFreeStateRef.current) {
                       setHandsFreeStatus('listening');
@@ -1047,9 +1027,7 @@ function App() {
                     }
                   }, 1000);
                 }
-              };
-
-              window.speechSynthesis.speak(finalUtterance);
+              });
             } else {
               // No remaining text - streaming TTS already completed everything
               console.log('🔊 All text already spoken via streaming TTS');
@@ -1310,8 +1288,10 @@ function App() {
       const textToSpeak = completeSentences[0];
       console.log('🔊 Streaming TTS chunk:', textToSpeak.substring(0, 50) + '...');
       
-      // Speak this chunk
-      speakTextChunk(textToSpeak);
+      // Speak this chunk (async - don't block streaming)
+      speakTextChunk(textToSpeak).catch(error => {
+        console.error('Streaming TTS chunk error:', error);
+      });
       
       // Update what we've spoken
       streamingTTSRef.current.spokenText = alreadySpoken + textToSpeak;
@@ -1324,7 +1304,9 @@ function App() {
         const textToSpeak = newText.substring(0, lastSpace + 1);
         console.log('🔊 Streaming TTS buffer chunk:', textToSpeak.substring(0, 50) + '...');
         
-        speakTextChunk(textToSpeak);
+        speakTextChunk(textToSpeak).catch(error => {
+          console.error('Streaming TTS buffer chunk error:', error);
+        });
         streamingTTSRef.current.spokenText = alreadySpoken + textToSpeak;
       }
     }
@@ -1347,8 +1329,12 @@ function App() {
     if (!ttsAvailableRef.current || !text.trim()) return;
     
     // Try ElevenLabs first, fallback to browser TTS
+    let elevenLabsSuccess = false;
+    
     try {
       if (elevenlabsApiKey) {
+        console.log('🎵 Streaming chunk with ElevenLabs:', text.substring(0, 30) + '...');
+        
         // Cancel any previous ElevenLabs audio
         if (currentElevenLabsAudioRef.current) {
           currentElevenLabsAudioRef.current.pause();
@@ -1364,14 +1350,21 @@ function App() {
         const audioBlob = await generateElevenLabsAudio(text);
         await playElevenLabsAudio(audioBlob);
         
-        return; // Success with ElevenLabs
+        elevenLabsSuccess = true;
+        console.log('🎵 ElevenLabs chunk completed successfully');
+        return; // Success with ElevenLabs - exit function
       }
     } catch (error) {
       console.warn('🔊 ElevenLabs chunk failed, using browser TTS fallback:', error.message);
+      elevenLabsSuccess = false;
     }
     
-    // Fallback to browser TTS
-    const utterance = new SpeechSynthesisUtterance(text);
+    // Only use browser TTS if ElevenLabs failed or not available
+    if (!elevenLabsSuccess) {
+      console.log('🔊 Using browser TTS for chunk:', text.substring(0, 30) + '...');
+      
+      // Fallback to browser TTS
+      const utterance = new SpeechSynthesisUtterance(text);
     
     // Configure voice settings for QSR environment
     utterance.rate = 0.9;
@@ -1402,13 +1395,14 @@ function App() {
       // Don't restart voice input here for streaming - wait for complete message
     };
 
-    utterance.onerror = (event) => {
-      if (event.error !== 'interrupted') {
-        console.error('Streaming TTS error:', event.error);
-      }
-    };
+      utterance.onerror = (event) => {
+        if (event.error !== 'interrupted') {
+          console.error('Streaming TTS error:', event.error);
+        }
+      };
 
-    window.speechSynthesis.speak(utterance);
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   const speakText = async (text, messageId = null) => {
