@@ -122,6 +122,65 @@ function App() {
   const currentTranscriptRef = useRef('');
   const transcriptWordCountRef = useRef(0);
 
+  // ElevenLabs API configuration
+  const elevenlabsApiKey = process.env.REACT_APP_ELEVENLABS_API_KEY;
+  const currentElevenLabsAudioRef = useRef(null);
+  
+  // ElevenLabs API function
+  const generateElevenLabsAudio = async (text) => {
+    if (!elevenlabsApiKey) {
+      throw new Error('ElevenLabs API key not available');
+    }
+
+    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
+      method: 'POST',
+      headers: {
+        'Accept': 'audio/mpeg',
+        'Content-Type': 'application/json',
+        'xi-api-key': elevenlabsApiKey
+      },
+      body: JSON.stringify({
+        text: text,
+        model_id: "eleven_multilingual_v2",
+        voice_settings: {
+          stability: 0.8,
+          similarity_boost: 0.8,
+          style: 0.2,
+          use_speaker_boost: true
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`ElevenLabs API error: ${response.status} ${response.statusText}`);
+    }
+
+    return response.blob();
+  };
+
+  const playElevenLabsAudio = (audioBlob) => {
+    return new Promise((resolve, reject) => {
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      
+      currentElevenLabsAudioRef.current = audio;
+      
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        currentElevenLabsAudioRef.current = null;
+        resolve();
+      };
+      
+      audio.onerror = () => {
+        URL.revokeObjectURL(audioUrl);
+        currentElevenLabsAudioRef.current = null;
+        reject(new Error('Audio playback failed'));
+      };
+      
+      audio.play().catch(reject);
+    });
+  };
+
   // Effects and event handlers
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1284,9 +1343,34 @@ function App() {
   };
 
   // Speak a chunk of text immediately
-  const speakTextChunk = (text) => {
+  const speakTextChunk = async (text) => {
     if (!ttsAvailableRef.current || !text.trim()) return;
     
+    // Try ElevenLabs first, fallback to browser TTS
+    try {
+      if (elevenlabsApiKey) {
+        // Cancel any previous ElevenLabs audio
+        if (currentElevenLabsAudioRef.current) {
+          currentElevenLabsAudioRef.current.pause();
+          currentElevenLabsAudioRef.current = null;
+        }
+
+        // Set speaking state immediately for UI responsiveness
+        setIsSpeaking(true);
+        if (handsFreeStateRef.current) {
+          setHandsFreeStatus('speaking');
+        }
+
+        const audioBlob = await generateElevenLabsAudio(text);
+        await playElevenLabsAudio(audioBlob);
+        
+        return; // Success with ElevenLabs
+      }
+    } catch (error) {
+      console.warn('🔊 ElevenLabs chunk failed, using browser TTS fallback:', error.message);
+    }
+    
+    // Fallback to browser TTS
     const utterance = new SpeechSynthesisUtterance(text);
     
     // Configure voice settings for QSR environment
@@ -1327,7 +1411,7 @@ function App() {
     window.speechSynthesis.speak(utterance);
   };
 
-  const speakText = (text, messageId = null) => {
+  const speakText = async (text, messageId = null) => {
     if (!ttsAvailableRef.current || !text.trim()) {
       if (messageId) currentTTSMessageIdRef.current = null; // Reset on failure
       return;
@@ -1337,12 +1421,79 @@ function App() {
     if (window.speechSynthesis.speaking) {
       window.speechSynthesis.cancel();
     }
+    
+    // Cancel any ElevenLabs audio
+    if (currentElevenLabsAudioRef.current) {
+      currentElevenLabsAudioRef.current.pause();
+      currentElevenLabsAudioRef.current = null;
+    }
 
     // Clean text for speech using helper function
     const cleanText = cleanTextForSpeech(text);
 
     if (!cleanText) return;
 
+    // Set speaking state immediately for UI responsiveness
+    setIsSpeaking(true);
+    if (handsFreeStateRef.current) {
+      setHandsFreeStatus('speaking');
+    }
+
+    // Try ElevenLabs first, fallback to browser TTS
+    try {
+      if (elevenlabsApiKey) {
+        console.log('🎵 Using ElevenLabs TTS for:', cleanText.substring(0, 50) + '...');
+        
+        const audioBlob = await generateElevenLabsAudio(cleanText);
+        
+        // Create audio element for better control
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        currentElevenLabsAudioRef.current = audio;
+        
+        // Handle TTS completion events
+        audio.onended = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+          
+          // Reset TTS message tracking
+          currentTTSMessageIdRef.current = null;
+          currentElevenLabsAudioRef.current = null;
+          
+          // In hands-free mode, automatically start next voice input
+          if (handsFreeStateRef.current) {
+            console.log('ElevenLabs TTS complete, restarting voice input');
+            setHandsFreeStatus('ready'); // Brief transition state
+            startAutoVoiceInput();
+          }
+        };
+        
+        audio.onerror = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+          currentTTSMessageIdRef.current = null;
+          currentElevenLabsAudioRef.current = null;
+          
+          if (handsFreeStateRef.current) {
+            setTimeout(() => {
+              if (handsFreeStateRef.current) {
+                startAutoVoiceInput();
+              }
+            }, 1000);
+          }
+        };
+        
+        await audio.play();
+        return; // Success with ElevenLabs
+      }
+    } catch (error) {
+      console.warn('🔊 ElevenLabs TTS failed, using browser TTS fallback:', error.message);
+      setIsSpeaking(false); // Reset speaking state on failure
+    }
+    
+    // Fallback to browser TTS
+    console.log('🔊 Using browser TTS fallback for:', cleanText.substring(0, 50) + '...');
+    
     const utterance = new SpeechSynthesisUtterance(cleanText);
     
     // Configure voice settings for QSR environment
@@ -1363,12 +1514,9 @@ function App() {
       utterance.voice = femaleVoice;
     }
 
-    // Event handlers
+    // Event handlers for browser TTS
     utterance.onstart = () => {
-      setIsSpeaking(true);
-      if (handsFreeStateRef.current) {
-        setHandsFreeStatus('speaking');
-      }
+      // Already set above for immediate UI feedback
     };
 
     utterance.onend = () => {
@@ -1379,7 +1527,7 @@ function App() {
       
       // In hands-free mode, automatically start next voice input
       if (handsFreeStateRef.current) {
-        console.log('TTS complete, restarting voice input');
+        console.log('Browser TTS complete, restarting voice input');
         setHandsFreeStatus('ready'); // Brief transition state
         startAutoVoiceInput();
       }
@@ -1411,10 +1559,19 @@ function App() {
 
   // Stop TTS if currently speaking
   const stopSpeaking = () => {
+    // Stop browser TTS
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
-      setIsSpeaking(false);
     }
+    
+    // Stop ElevenLabs audio
+    if (currentElevenLabsAudioRef.current) {
+      currentElevenLabsAudioRef.current.pause();
+      currentElevenLabsAudioRef.current = null;
+    }
+    
+    setIsSpeaking(false);
+    currentTTSMessageIdRef.current = null;
   };
 
   // Hands-free mode functions
