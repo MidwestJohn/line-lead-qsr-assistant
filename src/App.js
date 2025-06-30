@@ -1802,23 +1802,13 @@ function App() {
                 </div>
               )}
               
+              {/* Persistent bottom spacer - provides clearance for chip overlay */}
+              <div className="bottom-spacer" />
+              
               <div ref={messagesEndRef} />
             </div>
           )}
         </div>
-
-        {/* Hands-Free Status Chip - SIBLING to messages, positioned between messages and input */}
-        {handsFreeMode && handsFreeStatus !== 'idle' && (
-          <div className="hands-free-status-chip">
-            <Headphones className="chip-icon" />
-            <span className="chip-label">
-              {handsFreeStatus === 'ready' && 'Starting up...'}
-              {handsFreeStatus === 'listening' && 'Listening...'}
-              {handsFreeStatus === 'processing' && 'Assistant responding...'}
-              {handsFreeStatus === 'speaking' && 'Assistant responding...'}
-            </span>
-          </div>
-        )}
 
         <div className="input-container aui-composer">
           {/* Countdown UI removed - 2 second delay is too short to be useful */}
@@ -1871,6 +1861,19 @@ function App() {
           {messageQueue.length > 0 && (
             <div className="queue-indicator">
               📤 {messageQueue.length} message{messageQueue.length > 1 ? 's' : ''} queued
+            </div>
+          )}
+
+          {/* Hands-Free Status Chip - Positioned relative to input container wrapper */}
+          {handsFreeMode && handsFreeStatus !== 'idle' && (
+            <div className="hands-free-status-chip">
+              <Headphones className="chip-icon" />
+              <span className="chip-label">
+                {handsFreeStatus === 'ready' && 'Starting up...'}
+                {handsFreeStatus === 'listening' && 'Listening...'}
+                {handsFreeStatus === 'processing' && 'Assistant responding...'}
+                {handsFreeStatus === 'speaking' && 'Assistant responding...'}
+              </span>
             </div>
           )}
         </div>

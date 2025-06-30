@@ -164,10 +164,20 @@ body, .app {
 /* Performance optimization for streaming */
 .streaming-message {
   will-change: contents;
+  min-height: 60px; /* Minimum height to prevent jumping */
+  transition: height 0.2s ease-out; /* Smooth height transitions */
 }
 
 .streaming-message .message-text {
   animation: none; /* Disable fade animation during streaming for performance */
+  word-wrap: break-word;
+  line-height: 1.5;
+  overflow-wrap: break-word; /* Handle long words gracefully */
+}
+
+.streaming-message .message-content-wrapper {
+  transition: height 0.2s ease-out;
+  overflow: hidden; /* Prevent content overflow during transitions */
 }
 
 /* Fallback indicator */
@@ -786,10 +796,12 @@ body, .app {
 
 /* Homepage demo composer styling */
 .input-container.aui-composer {
+  position: relative; /* CRITICAL: Creates positioning context for status chip */
   background: #ffffff; /* Keep footer white */
   border-top: 1px solid var(--aui-border);
   padding: 16px;
   padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+  /* Removed margin-top - let chip overlay instead of reducing message space */
 }
 
 .input-wrapper {
@@ -1062,10 +1074,10 @@ body, .app {
   transform: translateY(0);
 }
 
-/* Hands-Free Status Chip - FIXED positioning as sibling element */
+/* Hands-Free Status Chip - Positioned relative to input container wrapper */
 .hands-free-status-chip {
-  position: fixed;
-  bottom: calc(88px + env(safe-area-inset-bottom, 0px) + 16px); /* Above input field + margin */
+  position: absolute;
+  top: -48px; /* 8px gap + chip height above input container */
   left: 50%;
   transform: translateX(-50%); /* Center horizontally */
   
@@ -1091,7 +1103,7 @@ body, .app {
   box-shadow: var(--aui-shadow-lg);
   font-size: 14px;
   font-weight: 500;
-  z-index: 1000; /* High z-index for overlay positioning */
+  z-index: 100; /* Above input container content */
   backdrop-filter: blur(8px);
   animation: handsFreeActive 2s ease-in-out infinite;
 }
@@ -1124,9 +1136,24 @@ body, .app {
   }
 }
 
-/* Messages container padding - creates empty space for readability */
+/* Messages container - no bottom padding needed with spacer approach */
 .messages-scroll {
-  padding-bottom: 80px; /* Creates empty space for comfortable scrolling */
+  scroll-behavior: smooth; /* Smooth scrolling during content updates */
+}
+
+/* Smooth scroll behavior for streaming content */
+.messages-scroll.aui-thread-viewport {
+  scroll-behavior: smooth;
+  overflow-anchor: auto; /* Prevent scroll jumping during content changes */
+}
+
+/* Persistent bottom spacer - provides dedicated clearance for chip overlay */
+.bottom-spacer {
+  height: 60px; /* Optimized height for chip clearance and action button access */
+  width: 100%;
+  flex-shrink: 0; /* Never collapse */
+  pointer-events: none; /* Allow interaction through it */
+  background: transparent; /* Invisible but takes up space */
 }
 
 .silence-toggle-btn {
@@ -1291,11 +1318,15 @@ body, .app {
 @media (max-height: 500px) {
   .messages-scroll {
     padding: 4px; /* Minimal padding when space is very constrained */
-    padding-bottom: 60px; /* Reduce clearance but maintain empty space for chip */
+    /* No bottom padding needed - spacer element handles clearance */
+  }
+  
+  .bottom-spacer {
+    height: 48px; /* Compact clearance on mobile */
   }
   
   .hands-free-status-chip {
-    bottom: 8px; /* Keep same 8px positioning on mobile */
+    top: -48px; /* Keep same positioning - overlay behavior */
     height: 40px; /* Maintain fixed height on mobile */
   }
   
