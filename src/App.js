@@ -72,6 +72,7 @@ function App() {
   // Voice input state
   const [isRecording, setIsRecording] = useState(false);
   const [voiceAvailable, setVoiceAvailable] = useState(false);
+  const speechRecognitionRunningRef = useRef(false);
   
   // Text-to-Speech state
   const [ttsAvailable, setTtsAvailable] = useState(false);
@@ -250,6 +251,7 @@ function App() {
           // Event handlers
           recognition.onstart = () => {
             console.log('📢 Speech recognition started - handsFreeMode:', handsFreeStateRef.current, 'silenceDetectionEnabled:', silenceDetectionStateRef.current);
+            speechRecognitionRunningRef.current = true;
             setIsRecording(true);
             messageSentRef.current = false; // Reset message sent flag for new session
             streamingTTSRef.current = { isActive: false, spokenText: '', remainingText: '' }; // Reset streaming TTS
@@ -411,6 +413,7 @@ function App() {
           recognition.onend = () => {
             const speechEndTime = performance.now();
             console.log('🎤 Speech ended at:', speechEndTime);
+            speechRecognitionRunningRef.current = false;
             setIsRecording(false);
             
             // Check if message already sent via final result trigger
@@ -1239,6 +1242,13 @@ function App() {
     } else {
       // Start recording
       console.log('Starting voice recording... handsFreeMode:', handsFreeStateRef.current);
+      
+      // Check if already running to prevent "recognition has already started" error
+      if (speechRecognitionRunningRef.current) {
+        console.log('🎤 Speech recognition already running, skipping start');
+        return;
+      }
+      
       try {
         // Clear any existing text and reset transcript-based detection state
         setInputText('');
@@ -1248,6 +1258,7 @@ function App() {
         stopTranscriptTimer();
         
         console.log('🚀 About to start speech recognition - handsFreeMode:', handsFreeStateRef.current);
+        speechRecognitionRunningRef.current = true;
         speechRecognitionRef.current.start();
       } catch (error) {
         console.error('Failed to start speech recognition:', error);
@@ -1324,271 +1335,118 @@ function App() {
       .trim();
   };
 
-  // Speak a chunk of text immediately
+  // Speak a chunk of text immediately - ElevenLabs ONLY
   const speakTextChunk = async (text) => {
     if (!ttsAvailableRef.current || !text.trim()) return;
-
-    // CRITICAL: Stop microphone during TTS to prevent feedback loop
-    if (handsFreeStateRef.current && speechRecognitionRef.current) {
-      console.log('🎤 Stopping microphone during chunk TTS to prevent feedback');
-      try {
-        speechRecognitionRef.current.stop();
-      } catch (e) {
-        console.log('🎤 Microphone already stopped');
-      }
+    if (!elevenlabsApiKey) {
+      console.warn('🔊 ElevenLabs API key not available, skipping TTS chunk');
+      return;
     }
-    
-    // Try ElevenLabs first, fallback to browser TTS
-    let elevenLabsSuccess = false;
-    
+
     try {
-      if (elevenlabsApiKey) {
-        console.log('🎵 Streaming chunk with ElevenLabs:', text.substring(0, 30) + '...');
-        
-        // Cancel any previous ElevenLabs audio
-        if (currentElevenLabsAudioRef.current) {
-          currentElevenLabsAudioRef.current.pause();
-          currentElevenLabsAudioRef.current = null;
-        }
-
-        // Set speaking state immediately for UI responsiveness
-        setIsSpeaking(true);
-        if (handsFreeStateRef.current) {
-          setHandsFreeStatus('speaking');
-        }
-
-        const audioBlob = await generateElevenLabsAudio(text);
-        await playElevenLabsAudio(audioBlob);
-        
-        elevenLabsSuccess = true;
-        console.log('🎵 ElevenLabs chunk completed successfully');
-        return; // Success with ElevenLabs - exit function
-      }
-    } catch (error) {
-      console.warn('🔊 ElevenLabs chunk failed, using browser TTS fallback:', error.message);
-      elevenLabsSuccess = false;
-    }
-    
-    // Only use browser TTS if ElevenLabs failed or not available
-    if (!elevenLabsSuccess) {
-      console.log('🔊 Using browser TTS for chunk:', text.substring(0, 30) + '...');
+      console.log('🎵 ElevenLabs chunk:', text.substring(0, 30) + '...');
       
-      // Fallback to browser TTS
-      const utterance = new SpeechSynthesisUtterance(text);
-    
-    // Configure voice settings for QSR environment
-    utterance.rate = 0.9;
-    utterance.pitch = 1.0;
-    utterance.volume = 0.8;
-    
-    // Try to use a female voice
-    const voices = window.speechSynthesis.getVoices();
-    const femaleVoice = voices.find(voice => 
-      voice.name.toLowerCase().includes('female') || 
-      voice.name.toLowerCase().includes('zira') ||
-      voice.name.toLowerCase().includes('susan') ||
-      voice.name.toLowerCase().includes('samantha')
-    );
-    
-    if (femaleVoice) {
-      utterance.voice = femaleVoice;
-    }
+      // Cancel any previous ElevenLabs audio
+      if (currentElevenLabsAudioRef.current) {
+        currentElevenLabsAudioRef.current.pause();
+        currentElevenLabsAudioRef.current = null;
+      }
 
-    utterance.onstart = () => {
+      // Set speaking state
       setIsSpeaking(true);
       if (handsFreeStateRef.current) {
         setHandsFreeStatus('speaking');
       }
-    };
 
-    utterance.onend = () => {
-      // Don't restart voice input here for streaming - wait for complete message
-    };
-
-      utterance.onerror = (event) => {
-        if (event.error !== 'interrupted') {
-          console.error('Streaming TTS error:', event.error);
-        }
-      };
-
-      window.speechSynthesis.speak(utterance);
+      const audioBlob = await generateElevenLabsAudio(text);
+      await playElevenLabsAudio(audioBlob);
+      
+      console.log('🎵 ElevenLabs chunk completed');
+    } catch (error) {
+      console.error('🔊 ElevenLabs chunk failed:', error.message);
+      setIsSpeaking(false);
     }
   };
 
+  // Main TTS function - ElevenLabs ONLY
   const speakText = async (text, messageId = null) => {
     if (!ttsAvailableRef.current || !text.trim()) {
-      if (messageId) currentTTSMessageIdRef.current = null; // Reset on failure
+      if (messageId) currentTTSMessageIdRef.current = null;
       return;
     }
 
-    // Stop any ongoing speech to prevent conflicts
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
+    if (!elevenlabsApiKey) {
+      console.warn('🔊 ElevenLabs API key not available, TTS disabled');
+      if (messageId) currentTTSMessageIdRef.current = null;
+      return;
     }
-    
-    // Cancel any ElevenLabs audio
+
+    // Stop any ongoing audio
     if (currentElevenLabsAudioRef.current) {
       currentElevenLabsAudioRef.current.pause();
       currentElevenLabsAudioRef.current = null;
     }
 
-    // Clean text for speech using helper function
+    // Clean text for speech
     const cleanText = cleanTextForSpeech(text);
-
     if (!cleanText) return;
 
-    // CRITICAL: Stop microphone during TTS to prevent feedback loop
-    if (handsFreeStateRef.current && speechRecognitionRef.current) {
-      console.log('🎤 Stopping microphone during TTS to prevent feedback');
-      try {
-        speechRecognitionRef.current.stop();
-      } catch (e) {
-        console.log('🎤 Microphone already stopped');
-      }
-    }
-
-    // Set speaking state immediately for UI responsiveness
-    setIsSpeaking(true);
-    if (handsFreeStateRef.current) {
-      setHandsFreeStatus('speaking');
-    }
-
-    // Flag to prevent dual TTS execution
-    let ttsCompleted = false;
-
-    // Try ElevenLabs first, fallback to browser TTS
     try {
-      if (elevenlabsApiKey && !ttsCompleted) {
-        console.log('🎵 Using ElevenLabs TTS for:', cleanText.substring(0, 50) + '...');
-        
-        const audioBlob = await generateElevenLabsAudio(cleanText);
-        
-        // Create audio element for better control
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-        currentElevenLabsAudioRef.current = audio;
-        
-        // Handle TTS completion events
-        audio.onended = () => {
-          setIsSpeaking(false);
-          URL.revokeObjectURL(audioUrl);
-          
-          // Reset TTS message tracking
-          currentTTSMessageIdRef.current = null;
-          currentElevenLabsAudioRef.current = null;
-          
-          // In hands-free mode, automatically start next voice input
-          if (handsFreeStateRef.current) {
-            console.log('ElevenLabs TTS complete, restarting voice input');
-            setHandsFreeStatus('ready'); // Brief transition state
-            setTimeout(() => startAutoVoiceInput(), 1000); // Delay to prevent feedback
-          }
-        };
-        
-        audio.onerror = () => {
-          setIsSpeaking(false);
-          URL.revokeObjectURL(audioUrl);
-          currentTTSMessageIdRef.current = null;
-          currentElevenLabsAudioRef.current = null;
-          
-          if (handsFreeStateRef.current) {
-            setTimeout(() => {
-              if (handsFreeStateRef.current) {
-                startAutoVoiceInput();
-              }
-            }, 1000);
-          }
-        };
-        
-        await audio.play();
-        ttsCompleted = true;
-        console.log('🎵 ElevenLabs TTS started successfully - BLOCKING browser TTS fallback');
-        return; // Success with ElevenLabs - EXIT FUNCTION
-      }
-    } catch (error) {
-      console.warn('🔊 ElevenLabs TTS failed, will try browser TTS fallback:', error.message);
-      setIsSpeaking(false); // Reset speaking state on failure
-      ttsCompleted = false;
-    }
-    
-    // Only use browser TTS if ElevenLabs failed
-    if (!ttsCompleted) {
-      console.log('🔊 Using browser TTS fallback for:', cleanText.substring(0, 50) + '...');
-    
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    
-    // Configure voice settings for QSR environment
-    utterance.rate = 0.9;    // Slightly slower for clarity
-    utterance.pitch = 1.0;   // Normal pitch
-    utterance.volume = 0.8;  // Comfortable volume
-    
-    // Try to use a female voice (Lina assistant personality)
-    const voices = window.speechSynthesis.getVoices();
-    const femaleVoice = voices.find(voice => 
-      voice.name.toLowerCase().includes('female') || 
-      voice.name.toLowerCase().includes('zira') ||
-      voice.name.toLowerCase().includes('susan') ||
-      voice.name.toLowerCase().includes('samantha')
-    );
-    
-    if (femaleVoice) {
-      utterance.voice = femaleVoice;
-    }
-
-    // Event handlers for browser TTS
-    utterance.onstart = () => {
-      // Already set above for immediate UI feedback
-    };
-
-    utterance.onend = () => {
-      setIsSpeaking(false);
+      console.log('🎵 ElevenLabs TTS:', cleanText.substring(0, 50) + '...');
       
-      // Reset TTS message tracking
-      currentTTSMessageIdRef.current = null;
-      
-      // In hands-free mode, automatically start next voice input
+      // Set speaking state
+      setIsSpeaking(true);
       if (handsFreeStateRef.current) {
-        console.log('Browser TTS complete, restarting voice input');
-        setHandsFreeStatus('ready'); // Brief transition state
-        startAutoVoiceInput();
+        setHandsFreeStatus('speaking');
       }
-    };
 
-    utterance.onerror = (event) => {
+      const audioBlob = await generateElevenLabsAudio(cleanText);
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      currentElevenLabsAudioRef.current = audio;
+
+      // Handle completion
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+        currentTTSMessageIdRef.current = null;
+        currentElevenLabsAudioRef.current = null;
+        
+        if (handsFreeStateRef.current) {
+          console.log('🎵 TTS complete, restarting voice input');
+          setHandsFreeStatus('ready');
+          setTimeout(() => startAutoVoiceInput(), 1000);
+        }
+      };
+
+      // Handle errors
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+        currentTTSMessageIdRef.current = null;
+        currentElevenLabsAudioRef.current = null;
+        
+        if (handsFreeStateRef.current) {
+          setTimeout(() => startAutoVoiceInput(), 1000);
+        }
+      };
+
+      await audio.play();
+      console.log('🎵 ElevenLabs TTS started successfully');
+      
+    } catch (error) {
+      console.error('🔊 ElevenLabs TTS failed:', error.message);
       setIsSpeaking(false);
+      if (messageId) currentTTSMessageIdRef.current = null;
       
-      // Reset TTS message tracking on error
-      currentTTSMessageIdRef.current = null;
-      
-      // If interrupted error and in hands-free mode, still continue the flow
-      if (event.error === 'interrupted' && handsFreeStateRef.current) {
-        setTimeout(() => {
-          if (handsFreeStateRef.current) {
-            startAutoVoiceInput();
-          }
-        }, 1000);
+      if (handsFreeStateRef.current) {
+        setTimeout(() => startAutoVoiceInput(), 1000);
       }
-      
-      if (event.error !== 'interrupted') {
-        console.error('Speech synthesis error:', event.error);
-      }
-    };
-
-      // Speak the text
-      window.speechSynthesis.speak(utterance);
-    } else {
-      console.log('🚫 Browser TTS blocked - ElevenLabs already handled TTS');
     }
   };
 
-  // Stop TTS if currently speaking
+  // Stop TTS if currently speaking - ElevenLabs ONLY
   const stopSpeaking = () => {
-    // Stop browser TTS
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    
-    // Stop ElevenLabs audio
     if (currentElevenLabsAudioRef.current) {
       currentElevenLabsAudioRef.current.pause();
       currentElevenLabsAudioRef.current = null;
@@ -1615,7 +1473,7 @@ function App() {
     
     // Brief delay to allow TTS to fully complete, then start voice recognition
     autoVoiceTimerRef.current = setTimeout(() => {
-      if (handsFreeStateRef.current && !isRecording && !isSpeaking && !window.speechSynthesis.speaking) {
+      if (handsFreeStateRef.current && !isRecording && !isSpeaking) {
         handleVoiceInput(); // Start voice recognition
       }
     }, 500); // Shorter delay - just enough for TTS cleanup
