@@ -127,9 +127,10 @@ function App() {
   const elevenlabsApiKey = process.env.REACT_APP_ELEVENLABS_API_KEY;
   const currentElevenLabsAudioRef = useRef(null);
   
-  // TTS Queue system to prevent race conditions
+  // TTS Queue system with audio pre-loading to eliminate gaps
   const ttsQueueRef = useRef([]);
   const ttsPlayingRef = useRef(false);
+  const audioBufferRef = useRef(new Map()); // Pre-generated audio blobs
   
   // ElevenLabs API function
   const generateElevenLabsAudio = async (text) => {
@@ -186,7 +187,20 @@ function App() {
     });
   };
 
-  // TTS Queue processor to ensure sequential playback
+  // Pre-generate audio for queue items to eliminate gaps
+  const preGenerateAudio = async (queueId, text) => {
+    try {
+      console.log(`🎵 Pre-generating audio for queue item ${queueId}:`, text.substring(0, 30) + '...');
+      const audioBlob = await generateElevenLabsAudio(text);
+      audioBufferRef.current.set(queueId, audioBlob);
+      console.log(`🎵 Pre-generation complete for queue item ${queueId}`);
+    } catch (error) {
+      console.error(`🔊 Pre-generation failed for queue item ${queueId}:`, error.message);
+      audioBufferRef.current.set(queueId, null); // Mark as failed
+    }
+  };
+
+  // TTS Queue processor with pre-loading for gap-free playback
   const processTTSQueue = async () => {
     if (ttsPlayingRef.current || ttsQueueRef.current.length === 0) {
       return;
@@ -195,9 +209,17 @@ function App() {
     ttsPlayingRef.current = true;
     console.log('🎵 Processing TTS queue, items:', ttsQueueRef.current.length);
 
+    // Start pre-generating all items in parallel
+    const queueItems = [...ttsQueueRef.current];
+    queueItems.forEach((item, index) => {
+      if (!audioBufferRef.current.has(item.queueId)) {
+        preGenerateAudio(item.queueId, item.text);
+      }
+    });
+
     while (ttsQueueRef.current.length > 0) {
       const queueItem = ttsQueueRef.current.shift();
-      const { text, type, resolve, reject } = queueItem;
+      const { text, type, resolve, reject, queueId } = queueItem;
 
       try {
         console.log(`🎵 Playing ${type}:`, text.substring(0, 30) + '...');
@@ -208,13 +230,41 @@ function App() {
           setHandsFreeStatus('speaking');
         }
 
-        const audioBlob = await generateElevenLabsAudio(text);
+        // Wait for pre-generated audio or generate now if not ready
+        let audioBlob = audioBufferRef.current.get(queueId);
+        
+        if (audioBlob === undefined) {
+          // Still generating - wait for it
+          console.log(`🎵 Waiting for pre-generation of queue item ${queueId}...`);
+          let attempts = 0;
+          while (audioBlob === undefined && attempts < 50) { // Max 5 seconds wait
+            await new Promise(resolve => setTimeout(resolve, 100));
+            audioBlob = audioBufferRef.current.get(queueId);
+            attempts++;
+          }
+        }
+        
+        if (audioBlob === null) {
+          throw new Error('Pre-generation failed');
+        }
+        
+        if (audioBlob === undefined) {
+          // Fallback: generate now
+          console.log(`🎵 Fallback generation for queue item ${queueId}`);
+          audioBlob = await generateElevenLabsAudio(text);
+        }
+
+        // Clean up buffer
+        audioBufferRef.current.delete(queueId);
+        
+        // Play immediately - no generation delay!
         await playElevenLabsAudio(audioBlob);
         
-        console.log(`🎵 Completed ${type}`);
+        console.log(`🎵 Completed ${type} (gap-free)`);
         resolve();
       } catch (error) {
         console.error(`🔊 ${type} failed:`, error.message);
+        audioBufferRef.current.delete(queueItem.queueId);
         reject(error);
       }
     }
@@ -231,11 +281,20 @@ function App() {
     }
   };
 
-  // Add TTS to queue for sequential playback
+  // Add TTS to queue with pre-generation for gap-free playback
   const queueTTS = (text, type = 'chunk') => {
     return new Promise((resolve, reject) => {
-      ttsQueueRef.current.push({ text, type, resolve, reject });
-      console.log(`🎵 Queued ${type}, queue length:`, ttsQueueRef.current.length);
+      const queueId = `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const queueItem = { text, type, resolve, reject, queueId };
+      
+      ttsQueueRef.current.push(queueItem);
+      console.log(`🎵 Queued ${type} (ID: ${queueId}), queue length:`, ttsQueueRef.current.length);
+      
+      // Start pre-generating immediately for this item
+      if (!audioBufferRef.current.has(queueId)) {
+        preGenerateAudio(queueId, text);
+      }
+      
       processTTSQueue().catch(console.error);
     });
   };
@@ -1442,9 +1501,10 @@ function App() {
       currentElevenLabsAudioRef.current = null;
     }
     
-    // Clear TTS queue to stop all pending audio
+    // Clear TTS queue and audio buffer to stop all pending audio
     ttsQueueRef.current = [];
     ttsPlayingRef.current = false;
+    audioBufferRef.current.clear();
     
     setIsSpeaking(false);
     currentTTSMessageIdRef.current = null;
