@@ -127,6 +127,10 @@ function App() {
   const elevenlabsApiKey = process.env.REACT_APP_ELEVENLABS_API_KEY;
   const currentElevenLabsAudioRef = useRef(null);
   
+  // TTS Queue system to prevent race conditions
+  const ttsQueueRef = useRef([]);
+  const ttsPlayingRef = useRef(false);
+  
   // ElevenLabs API function
   const generateElevenLabsAudio = async (text) => {
     if (!elevenlabsApiKey) {
@@ -179,6 +183,60 @@ function App() {
       };
       
       audio.play().catch(reject);
+    });
+  };
+
+  // TTS Queue processor to ensure sequential playback
+  const processTTSQueue = async () => {
+    if (ttsPlayingRef.current || ttsQueueRef.current.length === 0) {
+      return;
+    }
+
+    ttsPlayingRef.current = true;
+    console.log('🎵 Processing TTS queue, items:', ttsQueueRef.current.length);
+
+    while (ttsQueueRef.current.length > 0) {
+      const queueItem = ttsQueueRef.current.shift();
+      const { text, type, resolve, reject } = queueItem;
+
+      try {
+        console.log(`🎵 Playing ${type}:`, text.substring(0, 30) + '...');
+        
+        // Set speaking state
+        setIsSpeaking(true);
+        if (handsFreeStateRef.current) {
+          setHandsFreeStatus('speaking');
+        }
+
+        const audioBlob = await generateElevenLabsAudio(text);
+        await playElevenLabsAudio(audioBlob);
+        
+        console.log(`🎵 Completed ${type}`);
+        resolve();
+      } catch (error) {
+        console.error(`🔊 ${type} failed:`, error.message);
+        reject(error);
+      }
+    }
+
+    // Reset speaking state after queue is empty
+    setIsSpeaking(false);
+    ttsPlayingRef.current = false;
+
+    // In hands-free mode, restart voice input after all TTS completes
+    if (handsFreeStateRef.current) {
+      console.log('🎵 All TTS completed, restarting voice input');
+      setHandsFreeStatus('ready');
+      setTimeout(() => startAutoVoiceInput(), 1000);
+    }
+  };
+
+  // Add TTS to queue for sequential playback
+  const queueTTS = (text, type = 'chunk') => {
+    return new Promise((resolve, reject) => {
+      ttsQueueRef.current.push({ text, type, resolve, reject });
+      console.log(`🎵 Queued ${type}, queue length:`, ttsQueueRef.current.length);
+      processTTSQueue().catch(console.error);
     });
   };
 
@@ -1335,7 +1393,7 @@ function App() {
       .trim();
   };
 
-  // Speak a chunk of text immediately - ElevenLabs ONLY
+  // Speak a chunk of text using queue system - ElevenLabs ONLY
   const speakTextChunk = async (text) => {
     if (!ttsAvailableRef.current || !text.trim()) return;
     if (!elevenlabsApiKey) {
@@ -1344,31 +1402,13 @@ function App() {
     }
 
     try {
-      console.log('🎵 ElevenLabs chunk:', text.substring(0, 30) + '...');
-      
-      // Cancel any previous ElevenLabs audio
-      if (currentElevenLabsAudioRef.current) {
-        currentElevenLabsAudioRef.current.pause();
-        currentElevenLabsAudioRef.current = null;
-      }
-
-      // Set speaking state
-      setIsSpeaking(true);
-      if (handsFreeStateRef.current) {
-        setHandsFreeStatus('speaking');
-      }
-
-      const audioBlob = await generateElevenLabsAudio(text);
-      await playElevenLabsAudio(audioBlob);
-      
-      console.log('🎵 ElevenLabs chunk completed');
+      await queueTTS(text, 'streaming-chunk');
     } catch (error) {
-      console.error('🔊 ElevenLabs chunk failed:', error.message);
-      setIsSpeaking(false);
+      console.error('🔊 TTS chunk failed:', error.message);
     }
   };
 
-  // Main TTS function - ElevenLabs ONLY
+  // Main TTS function using queue system - ElevenLabs ONLY
   const speakText = async (text, messageId = null) => {
     if (!ttsAvailableRef.current || !text.trim()) {
       if (messageId) currentTTSMessageIdRef.current = null;
@@ -1381,76 +1421,30 @@ function App() {
       return;
     }
 
-    // Stop any ongoing audio
-    if (currentElevenLabsAudioRef.current) {
-      currentElevenLabsAudioRef.current.pause();
-      currentElevenLabsAudioRef.current = null;
-    }
-
     // Clean text for speech
     const cleanText = cleanTextForSpeech(text);
     if (!cleanText) return;
 
     try {
-      console.log('🎵 ElevenLabs TTS:', cleanText.substring(0, 50) + '...');
-      
-      // Set speaking state
-      setIsSpeaking(true);
-      if (handsFreeStateRef.current) {
-        setHandsFreeStatus('speaking');
-      }
-
-      const audioBlob = await generateElevenLabsAudio(cleanText);
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      currentElevenLabsAudioRef.current = audio;
-
-      // Handle completion
-      audio.onended = () => {
-        setIsSpeaking(false);
-        URL.revokeObjectURL(audioUrl);
-        currentTTSMessageIdRef.current = null;
-        currentElevenLabsAudioRef.current = null;
-        
-        if (handsFreeStateRef.current) {
-          console.log('🎵 TTS complete, restarting voice input');
-          setHandsFreeStatus('ready');
-          setTimeout(() => startAutoVoiceInput(), 1000);
-        }
-      };
-
-      // Handle errors
-      audio.onerror = () => {
-        setIsSpeaking(false);
-        URL.revokeObjectURL(audioUrl);
-        currentTTSMessageIdRef.current = null;
-        currentElevenLabsAudioRef.current = null;
-        
-        if (handsFreeStateRef.current) {
-          setTimeout(() => startAutoVoiceInput(), 1000);
-        }
-      };
-
-      await audio.play();
-      console.log('🎵 ElevenLabs TTS started successfully');
-      
+      await queueTTS(cleanText, 'full-message');
+      console.log('🎵 Full message TTS completed successfully');
     } catch (error) {
-      console.error('🔊 ElevenLabs TTS failed:', error.message);
-      setIsSpeaking(false);
+      console.error('🔊 Full message TTS failed:', error.message);
       if (messageId) currentTTSMessageIdRef.current = null;
-      
-      if (handsFreeStateRef.current) {
-        setTimeout(() => startAutoVoiceInput(), 1000);
-      }
     }
   };
 
   // Stop TTS if currently speaking - ElevenLabs ONLY
   const stopSpeaking = () => {
+    // Stop current audio
     if (currentElevenLabsAudioRef.current) {
       currentElevenLabsAudioRef.current.pause();
       currentElevenLabsAudioRef.current = null;
     }
+    
+    // Clear TTS queue to stop all pending audio
+    ttsQueueRef.current = [];
+    ttsPlayingRef.current = false;
     
     setIsSpeaking(false);
     currentTTSMessageIdRef.current = null;
