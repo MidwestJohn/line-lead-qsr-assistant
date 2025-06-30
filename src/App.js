@@ -87,6 +87,11 @@ function App() {
   const [silenceCountdown, setSilenceCountdown] = useState(0);
   const [isCountingDown, setIsCountingDown] = useState(false);
   
+  // Keep silence detection ref in sync
+  useEffect(() => {
+    silenceDetectionStateRef.current = silenceDetectionEnabled;
+  }, [silenceDetectionEnabled]);
+  
   // Performance optimization refs
   const messagesEndRef = useRef(null);
   const streamingTimeoutRef = useRef(null);
@@ -102,9 +107,17 @@ function App() {
   // Hands-free mode refs
   const autoVoiceTimerRef = useRef(null);
   const handsFreeTimeoutRef = useRef(null);
+  const handsFreeStateRef = useRef(false);
+  const silenceDetectionStateRef = useRef(true);
+  const ttsAvailableRef = useRef(false);
+  const voiceAvailableRef = useRef(false);
+  const currentTTSMessageIdRef = useRef(null);
+  const messageSentRef = useRef(false);
+  const streamingTTSRef = useRef({ isActive: false, spokenText: '', remainingText: '', isCompleting: false });
   
   // Transcript-based silence detection refs
   const silenceTimerRef = useRef(null);
+  const transcriptDebounceTimerRef = useRef(null);
   const lastTranscriptUpdateRef = useRef(null);
   const currentTranscriptRef = useRef('');
   const transcriptWordCountRef = useRef(0);
@@ -177,9 +190,11 @@ function App() {
           
           // Event handlers
           recognition.onstart = () => {
-            console.log('Speech recognition started');
+            console.log('📢 Speech recognition started - handsFreeMode:', handsFreeStateRef.current, 'silenceDetectionEnabled:', silenceDetectionStateRef.current);
             setIsRecording(true);
-            if (handsFreeMode) {
+            messageSentRef.current = false; // Reset message sent flag for new session
+            streamingTTSRef.current = { isActive: false, spokenText: '', remainingText: '' }; // Reset streaming TTS
+            if (handsFreeStateRef.current) {
               setHandsFreeStatus('listening');
             }
           };
@@ -188,21 +203,40 @@ function App() {
             let transcript = '';
             let isFinal = false;
             
-            // Get the latest result
-            for (let i = event.resultIndex; i < event.results.length; i++) {
+            // Get ALL results to build complete transcript
+            for (let i = 0; i < event.results.length; i++) {
               transcript += event.results[i][0].transcript;
               if (event.results[i].isFinal) {
                 isFinal = true;
               }
             }
             
+            console.log('🎙️ Raw transcript accumulation:', transcript, 'isFinal:', isFinal, 'resultIndex:', event.resultIndex, 'totalResults:', event.results.length);
+            
             // Update input with transcript (for interim results)
             if (transcript.trim()) {
               setInputText(transcript.trim());
               
+              // If user continues speaking with NEW content during countdown, cancel the auto-send
+              if (!isFinal && isCountingDown) {
+                const currentLength = currentTranscriptRef.current.length;
+                const newLength = transcript.trim().length;
+                
+                // Only cancel if transcript is significantly longer (user added new words)
+                if (newLength > currentLength + 5) { // 5+ new characters = continuing sentence
+                  console.log('🗣️ User continuing sentence - canceling countdown. Old:', currentLength, 'New:', newLength);
+                  stopTranscriptTimer();
+                  setIsCountingDown(false);
+                  setSilenceCountdown(0);
+                  messageSentRef.current = false; // Reset send flag
+                } else {
+                  console.log('📝 Minor transcript update during countdown, not canceling');
+                }
+              }
+              
               // Update transcript timestamp for silence detection
-              if (handsFreeMode && silenceDetectionEnabled) {
-                updateTranscriptTimestamp(transcript.trim());
+              if (handsFreeStateRef.current && silenceDetectionStateRef.current) {
+                updateTranscriptTimestamp(transcript.trim(), isFinal);
               }
               
               // Auto-expand textarea
@@ -218,7 +252,7 @@ function App() {
               }, 0);
               
               // Handle voice commands and auto-send (only when silence detection is disabled)
-              if (handsFreeMode && isFinal && transcript.trim().length > 0 && !silenceDetectionEnabled) {
+              if (handsFreeStateRef.current && isFinal && transcript.trim().length > 0 && !silenceDetectionStateRef.current) {
                 const command = transcript.trim().toLowerCase();
                 
                 // Handle voice commands
@@ -238,13 +272,62 @@ function App() {
               }
               
               // Handle voice commands even with silence detection enabled
-              if (handsFreeMode && isFinal && silenceDetectionEnabled) {
+              if (handsFreeStateRef.current && isFinal && silenceDetectionStateRef.current) {
                 const command = transcript.trim().toLowerCase();
                 if (command === 'stop' || command === 'exit' || command === 'end hands free') {
-                  console.log('Voice command: Exiting hands-free mode');
+                  console.log('Voice command detected: Exiting hands-free mode');
                   exitHandsFreeMode();
                   setInputText(''); // Clear the command from input
                   return;
+                }
+                
+                // SMART DELAY: 2-second countdown on final result (allows thinking time)
+                if (transcriptWordCountRef.current >= 2 && !messageSentRef.current) {
+                  const finalResultTime = performance.now();
+                  console.log('⏱️ Final result received at:', finalResultTime);
+                  console.log('⏱️ Starting 2-second smart delay for FULL transcript:', currentTranscriptRef.current);
+                  
+                  // Clear any existing timers
+                  stopTranscriptTimer();
+                  
+                  // Start 2-second countdown with visual feedback
+                  setSilenceCountdown(2);
+                  setIsCountingDown(true);
+                  
+                  let countdown = 2;
+                  const smartDelayTimer = () => {
+                    countdown--;
+                    setSilenceCountdown(countdown);
+                    
+                    if (countdown > 0) {
+                      silenceTimerRef.current = setTimeout(smartDelayTimer, 1000);
+                    } else {
+                      // 2 seconds elapsed - now send the FULL accumulated message
+                      if (!messageSentRef.current && handsFreeStateRef.current) {
+                        const fullTranscript = currentTranscriptRef.current.trim();
+                        console.log('⚡ Smart delay complete - sending FULL message:', fullTranscript);
+                        
+                        messageSentRef.current = true;
+                        setIsCountingDown(false);
+                        setSilenceCountdown(0);
+                        
+                        // Stop speech recognition
+                        if (speechRecognitionRef.current) {
+                          speechRecognitionRef.current.stop();
+                        }
+                        
+                        setIsRecording(false);
+                        setHandsFreeStatus('processing');
+                        
+                        // Send the FULL accumulated message
+                        sendMessageWithText(fullTranscript);
+                      }
+                    }
+                  };
+                  
+                  // Start the countdown
+                  smartDelayTimer();
+                  return; // Exit early to prevent other processing
                 }
               }
             }
@@ -267,23 +350,31 @@ function App() {
           };
           
           recognition.onend = () => {
-            console.log('Speech recognition ended');
+            const speechEndTime = performance.now();
+            console.log('🎤 Speech ended at:', speechEndTime);
             setIsRecording(false);
             
-            // If in hands-free mode with silence detection, auto-send if we have enough content
-            if (handsFreeMode && silenceDetectionEnabled && transcriptWordCountRef.current >= 2) {
-              console.log('Speech recognition ended with sufficient content - auto-sending');
-              console.log('Final transcript:', currentTranscriptRef.current);
-              console.log('Word count:', transcriptWordCountRef.current);
+            // Check if message already sent via final result trigger
+            if (messageSentRef.current) {
+              console.log('📤 Message already sent via final result trigger, skipping onend send');
+              return;
+            }
+            
+            // FALLBACK auto-send on speech end if we have enough content (only if not already sent)
+            if (handsFreeStateRef.current && silenceDetectionStateRef.current && transcriptWordCountRef.current >= 2) {
+              console.log('⚡ FALLBACK auto-send path (onend):', currentTranscriptRef.current);
               
-              // Clear any countdown since we're auto-sending now
+              // Clear any countdown since we're auto-sending immediately
               stopTranscriptTimer();
               
-              if (inputText.trim()) {
+              const transcriptToSend = currentTranscriptRef.current.trim();
+              if (transcriptToSend) {
+                const sendStartTime = performance.now();
+                console.log('📤 Message send start at:', sendStartTime, 'Delay from speech end:', sendStartTime - speechEndTime, 'ms');
+                
                 setHandsFreeStatus('processing');
-                setTimeout(() => {
-                  sendMessage();
-                }, 100);
+                // Send immediately without any delays
+                sendMessageWithText(transcriptToSend);
               }
             } else if (handsFreeMode) {
               setHandsFreeStatus('processing');
@@ -292,14 +383,17 @@ function App() {
           
           speechRecognitionRef.current = recognition;
           setVoiceAvailable(true);
+          voiceAvailableRef.current = true;
           
         } catch (error) {
           console.error('Failed to initialize speech recognition:', error);
           setVoiceAvailable(false);
+          voiceAvailableRef.current = false;
         }
       } else {
         console.log('Speech recognition not supported in this browser');
         setVoiceAvailable(false);
+        voiceAvailableRef.current = false;
       }
     };
     
@@ -309,9 +403,11 @@ function App() {
     const checkTTSAvailability = () => {
       if ('speechSynthesis' in window) {
         setTtsAvailable(true);
+        ttsAvailableRef.current = true;
         console.log('Text-to-Speech available');
       } else {
         setTtsAvailable(false);
+        ttsAvailableRef.current = false;
         console.log('Text-to-Speech not supported');
       }
     };
@@ -332,17 +428,23 @@ function App() {
 
   // Handle hands-free mode changes
   useEffect(() => {
+    console.log('🎧 Hands-free mode useEffect triggered. handsFreeMode:', handsFreeMode);
+    handsFreeStateRef.current = handsFreeMode; // Keep ref in sync
+    
     if (handsFreeMode) {
-      console.log('Entering hands-free mode');
+      console.log('✅ Entering hands-free mode');
       setHandsFreeStatus('ready');
       resetHandsFreeTimeout();
       
       // Start with voice input if not currently in any active state
       if (!isRecording && !isSpeaking && !messageStatus.isLoading) {
+        console.log('🎤 Auto-starting voice input');
         startAutoVoiceInput();
+      } else {
+        console.log('⏸️ Not auto-starting voice input - isRecording:', isRecording, 'isSpeaking:', isSpeaking, 'isLoading:', messageStatus.isLoading);
       }
     } else {
-      console.log('Exiting hands-free mode');
+      console.log('❌ Exiting hands-free mode');
       setHandsFreeStatus('idle');
       
       // Clear all timers and stop any active voice operations
@@ -464,9 +566,70 @@ function App() {
     }
   };
 
+  // Helper function to send message with specific text (for auto-send from speech recognition)
+  const sendMessageWithText = async (messageText) => {
+    const functionStartTime = performance.now();
+    console.log('📤 sendMessageWithText start at:', functionStartTime);
+    
+    if (!messageText || messageText.trim() === '' || messageStatus.isLoading) {
+      return;
+    }
+
+    // Check if services are ready (more lenient for auto-send when online)
+    if (!serviceStatus.isHealthy && !serviceStatus.isReady && !isOnline) {
+      const warningMessage = {
+        id: Date.now(),
+        text: "⚠️ Services are starting up. Please wait a moment and try again.",
+        sender: 'assistant',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, warningMessage]);
+      return;
+    }
+
+    const currentMessage = messageText.trim();
+    const messageId = Date.now();
+    
+    // Clear input text (in case it was set)
+    setInputText('');
+    
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '40px';
+    }
+
+    // If offline, queue the message
+    if (!isOnline) {
+      const userMessage = {
+        id: messageId,
+        text: currentMessage,
+        sender: 'user',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, userMessage]);
+      setMessageQueue(prev => [...prev, { text: currentMessage, id: messageId }]);
+      
+      const offlineMessage = {
+        id: messageId + 1,
+        text: "📱 You're offline. Message will be sent when connection is restored.",
+        sender: 'assistant',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, offlineMessage]);
+      return;
+    }
+
+    await sendMessageWithRetry(currentMessage, messageId);
+  };
+
   // Enhanced message sending with retry logic
   const sendMessage = async () => {
-    if (inputText.trim() === '' || messageStatus.isLoading) return;
+    console.log('📤 sendMessage called - inputText:', inputText.trim(), 'isLoading:', messageStatus.isLoading);
+    if (inputText.trim() === '' || messageStatus.isLoading) {
+      console.log('❌ sendMessage early return - empty text or loading');
+      return;
+    }
 
     // Check if services are ready
     if (!serviceStatus.isHealthy && !serviceStatus.isReady) {
@@ -515,6 +678,9 @@ function App() {
   };
 
   const sendMessageWithRetry = async (messageText, messageId) => {
+    const retryFunctionStart = performance.now();
+    console.log('🚀 sendMessageWithRetry function start at:', retryFunctionStart);
+    
     const userMessage = {
       id: messageId,
       text: messageText,
@@ -522,11 +688,26 @@ function App() {
       timestamp: new Date()
     };
 
-    // Add user message immediately
+    // Add user message immediately and force React to flush
+    const messageAddTime = performance.now();
+    console.log('💬 Adding user message to UI at:', messageAddTime);
     setMessages(prev => [...prev, userMessage]);
-
-    // Show "thinking" state first
-    setIsThinking(true);
+    
+    // For hands-free mode, show user message instantly with immediate feedback
+    if (handsFreeStateRef.current) {
+      // Skip the thinking state entirely for faster perceived response
+      console.log('⚡ Skipping thinking state for hands-free mode');
+      
+      // Show immediate processing feedback
+      setHandsFreeStatus('processing');
+      setIsWaitingForResponse(true);
+      
+      // Show immediate processing feedback without interrupting streaming UX
+      setHandsFreeStatus('processing');
+      setIsWaitingForResponse(true);
+    } else {
+      setIsThinking(true);
+    }
     setMessageStatus({
       isLoading: true,
       isRetrying: false,
@@ -546,8 +727,11 @@ function App() {
     }, 30000);
 
     try {
-      // Small delay to show "thinking" state
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // For hands-free mode, skip delay for faster response
+      const delay = handsFreeStateRef.current ? 0 : 200; // Much shorter delay, none for hands-free
+      if (delay > 0) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
       
       setIsThinking(false);
       setIsWaitingForResponse(true);
@@ -558,11 +742,19 @@ function App() {
       let accumulatedText = '';
       let messageCreated = false;
       
+      const apiCallStart = performance.now();
+      console.log('🌐 Starting API call at:', apiCallStart);
+      
       const result = await ChatService.sendMessageStream(messageText, {
         onChunk: (chunk) => {
+          if (!messageCreated) {
+            const firstChunkTime = performance.now();
+            console.log('📨 First chunk received at:', firstChunkTime);
+          }
+          
           accumulatedText += chunk;
           
-          // Create the message on first chunk
+          // Create the message on first chunk (original behavior)
           if (!messageCreated) {
             const initialStreamingMessage = {
               id: streamingMsgId,
@@ -573,9 +765,20 @@ function App() {
             };
             setMessages(prev => [...prev, initialStreamingMessage]);
             messageCreated = true;
+            
+            // Initialize streaming TTS for hands-free mode
+            if (handsFreeStateRef.current && ttsAvailableRef.current) {
+              streamingTTSRef.current = { isActive: true, spokenText: '', remainingText: accumulatedText };
+              console.log('🔊 Streaming TTS initialized');
+            }
           } else {
             // Update existing message
             updateStreamingMessage(streamingMsgId, accumulatedText);
+          }
+          
+          // Handle streaming TTS if active
+          if (streamingTTSRef.current.isActive) {
+            handleStreamingTTS(accumulatedText);
           }
         },
         onError: (error) => {
@@ -678,6 +881,9 @@ function App() {
   };
 
   const completeStreaming = (streamingMsgId, metadata) => {
+    const completionTime = performance.now();
+    console.log('🎯 Stream completion at:', completionTime, 'for message:', streamingMsgId);
+    
     setIsStreaming(false);
     setIsThinking(false);
     setIsWaitingForResponse(false);
@@ -697,18 +903,126 @@ function App() {
       error: null
     });
 
-    // In hands-free mode, automatically start TTS for the response
-    if (handsFreeMode && ttsAvailable) {
-      setTimeout(() => {
-        // Find the completed message and speak it
+    // Handle final TTS completion for hands-free mode
+    if (handsFreeStateRef.current && ttsAvailableRef.current) {
+      // Prevent duplicate processing - check both message ID and completing state
+      if (currentTTSMessageIdRef.current === streamingMsgId || streamingTTSRef.current.isCompleting) {
+        console.log('🔊 TTS completion already processed for message:', streamingMsgId, 'isCompleting:', streamingTTSRef.current.isCompleting);
+        return;
+      }
+      
+      // Mark as completing FIRST to prevent race conditions
+      streamingTTSRef.current.isCompleting = true;
+      currentTTSMessageIdRef.current = streamingMsgId;
+      
+      console.log('🔊 Processing final TTS for message:', streamingMsgId, 'isActive:', streamingTTSRef.current.isActive);
+      
+      if (streamingTTSRef.current.isActive) {
+        // Add a processed flag to prevent multiple executions
+        let ttsProcessed = false;
+        
+        // Use setMessages to get the current state reliably
         setMessages(current => {
+          // Prevent multiple executions within the same callback
+          if (ttsProcessed) {
+            console.log('🔊 TTS already processed in this callback, skipping');
+            return current;
+          }
+          ttsProcessed = true;
+          
           const completedMessage = current.find(msg => msg.id === streamingMsgId);
+          console.log('🔊 Found completed message:', !!completedMessage, 'text length:', completedMessage?.text?.length);
+          
           if (completedMessage && completedMessage.text) {
-            speakText(completedMessage.text);
+            const fullText = cleanTextForSpeech(completedMessage.text);
+            const remainingText = fullText.substring(streamingTTSRef.current.spokenText.length).trim();
+            
+            console.log('🔊 Full text length:', fullText.length, 'Spoken length:', streamingTTSRef.current.spokenText.length, 'Remaining:', remainingText.length);
+            
+            if (remainingText) {
+              console.log('🔊 Speaking final remaining text:', remainingText.substring(0, 50) + '...');
+              
+              // Create final utterance with proper cleanup
+              const finalUtterance = new SpeechSynthesisUtterance(remainingText);
+              finalUtterance.rate = 0.9;
+              finalUtterance.pitch = 1.0;
+              finalUtterance.volume = 0.8;
+              
+              const voices = window.speechSynthesis.getVoices();
+              const femaleVoice = voices.find(voice => 
+                voice.name.toLowerCase().includes('female') || 
+                voice.name.toLowerCase().includes('zira') ||
+                voice.name.toLowerCase().includes('susan') ||
+                voice.name.toLowerCase().includes('samantha')
+              );
+              
+              if (femaleVoice) {
+                finalUtterance.voice = femaleVoice;
+              }
+
+              // Single completion handler
+              finalUtterance.onend = () => {
+                console.log('🔊 Final TTS chunk completed');
+                setIsSpeaking(false);
+                streamingTTSRef.current = { isActive: false, spokenText: '', remainingText: '', isCompleting: false };
+                currentTTSMessageIdRef.current = null;
+                
+                if (handsFreeStateRef.current) {
+                  console.log('🔊 Streaming TTS complete, restarting voice input');
+                  setHandsFreeStatus('listening'); // Go directly to listening
+                  startAutoVoiceInput();
+                }
+              };
+
+              finalUtterance.onerror = (event) => {
+                console.log('🔊 Final TTS error:', event.error);
+                setIsSpeaking(false);
+                streamingTTSRef.current = { isActive: false, spokenText: '', remainingText: '', isCompleting: false };
+                currentTTSMessageIdRef.current = null;
+                
+                if (event.error === 'interrupted' && handsFreeStateRef.current) {
+                  setTimeout(() => {
+                    if (handsFreeStateRef.current) {
+                      setHandsFreeStatus('listening');
+                      startAutoVoiceInput();
+                    }
+                  }, 1000);
+                }
+              };
+
+              window.speechSynthesis.speak(finalUtterance);
+            } else {
+              // No remaining text - streaming TTS already completed everything
+              console.log('🔊 All text already spoken via streaming TTS');
+              setIsSpeaking(false);
+              streamingTTSRef.current = { isActive: false, spokenText: '', remainingText: '' };
+              currentTTSMessageIdRef.current = null;
+              
+              if (handsFreeStateRef.current) {
+                setHandsFreeStatus('listening'); // Go directly to listening
+                startAutoVoiceInput();
+              }
+            }
+          } else {
+            console.log('🔊 No completed message found for ID:', streamingMsgId);
+            streamingTTSRef.current.isCompleting = false;
+            currentTTSMessageIdRef.current = null;
           }
           return current;
         });
-      }, 500); // Small delay to ensure message is rendered
+      } else {
+        // Fallback to regular TTS if streaming wasn't active
+        console.log('🔊 Fallback to regular TTS (streaming not active)');
+        setMessages(current => {
+          const completedMessage = current.find(msg => msg.id === streamingMsgId);
+          if (completedMessage && completedMessage.text) {
+            speakText(completedMessage.text, streamingMsgId);
+          } else {
+            currentTTSMessageIdRef.current = null;
+          }
+          return current;
+        });
+      }
     }
   };
 
@@ -875,7 +1189,7 @@ function App() {
 
   // Voice input handler
   const handleVoiceInput = () => {
-    if (!voiceAvailable || !speechRecognitionRef.current) {
+    if (!voiceAvailableRef.current || !speechRecognitionRef.current) {
       console.warn('Voice input not available');
       return;
     }
@@ -887,7 +1201,7 @@ function App() {
       setIsRecording(false);
     } else {
       // Start recording
-      console.log('Starting voice recording...');
+      console.log('Starting voice recording... handsFreeMode:', handsFreeStateRef.current);
       try {
         // Clear any existing text and reset transcript-based detection state
         setInputText('');
@@ -896,6 +1210,7 @@ function App() {
         lastTranscriptUpdateRef.current = null;
         stopTranscriptTimer();
         
+        console.log('🚀 About to start speech recognition - handsFreeMode:', handsFreeStateRef.current);
         speechRecognitionRef.current.start();
       } catch (error) {
         console.error('Failed to start speech recognition:', error);
@@ -918,14 +1233,47 @@ function App() {
   };
 
   // Text-to-Speech handler
-  const speakText = (text) => {
-    if (!ttsAvailable || !text.trim()) return;
+  // Streaming TTS handler - speaks text as it arrives in chunks
+  const handleStreamingTTS = (fullText) => {
+    if (!streamingTTSRef.current.isActive || !handsFreeStateRef.current) return;
+    
+    const cleanFullText = cleanTextForSpeech(fullText);
+    const alreadySpoken = streamingTTSRef.current.spokenText;
+    
+    // Find new text that hasn't been spoken yet
+    let newText = cleanFullText.substring(alreadySpoken.length);
+    
+    // Only speak if we have a complete sentence or significant chunk
+    const sentenceEnders = /[.!?]\s+/g;
+    const completeSentences = newText.match(/^.*?[.!?]\s+/);
+    
+    if (completeSentences) {
+      const textToSpeak = completeSentences[0];
+      console.log('🔊 Streaming TTS chunk:', textToSpeak.substring(0, 50) + '...');
+      
+      // Speak this chunk
+      speakTextChunk(textToSpeak);
+      
+      // Update what we've spoken
+      streamingTTSRef.current.spokenText = alreadySpoken + textToSpeak;
+    }
+    // Buffer threshold: start speaking after 100+ characters even without sentence end
+    else if (newText.length > 100 && !window.speechSynthesis.speaking) {
+      // Find a good breaking point (word boundary)
+      const lastSpace = newText.lastIndexOf(' ', 100);
+      if (lastSpace > 50) {
+        const textToSpeak = newText.substring(0, lastSpace + 1);
+        console.log('🔊 Streaming TTS buffer chunk:', textToSpeak.substring(0, 50) + '...');
+        
+        speakTextChunk(textToSpeak);
+        streamingTTSRef.current.spokenText = alreadySpoken + textToSpeak;
+      }
+    }
+  };
 
-    // Stop any ongoing speech
-    window.speechSynthesis.cancel();
-
-    // Clean text for speech (remove markdown and special characters)
-    const cleanText = text
+  // Helper function to clean text for speech
+  const cleanTextForSpeech = (text) => {
+    return text
       .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markdown
       .replace(/\*(.*?)\*/g, '$1')     // Remove italic markdown
       .replace(/`(.*?)`/g, '$1')       // Remove code markdown
@@ -933,6 +1281,65 @@ function App() {
       .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Convert links to text
       .replace(/\n+/g, '. ')           // Convert line breaks to pauses
       .trim();
+  };
+
+  // Speak a chunk of text immediately
+  const speakTextChunk = (text) => {
+    if (!ttsAvailableRef.current || !text.trim()) return;
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Configure voice settings for QSR environment
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.volume = 0.8;
+    
+    // Try to use a female voice
+    const voices = window.speechSynthesis.getVoices();
+    const femaleVoice = voices.find(voice => 
+      voice.name.toLowerCase().includes('female') || 
+      voice.name.toLowerCase().includes('zira') ||
+      voice.name.toLowerCase().includes('susan') ||
+      voice.name.toLowerCase().includes('samantha')
+    );
+    
+    if (femaleVoice) {
+      utterance.voice = femaleVoice;
+    }
+
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+      if (handsFreeStateRef.current) {
+        setHandsFreeStatus('speaking');
+      }
+    };
+
+    utterance.onend = () => {
+      // Don't restart voice input here for streaming - wait for complete message
+    };
+
+    utterance.onerror = (event) => {
+      if (event.error !== 'interrupted') {
+        console.error('Streaming TTS error:', event.error);
+      }
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const speakText = (text, messageId = null) => {
+    if (!ttsAvailableRef.current || !text.trim()) {
+      if (messageId) currentTTSMessageIdRef.current = null; // Reset on failure
+      return;
+    }
+
+    // Stop any ongoing speech to prevent conflicts
+    if (window.speechSynthesis.speaking) {
+      window.speechSynthesis.cancel();
+    }
+
+    // Clean text for speech using helper function
+    const cleanText = cleanTextForSpeech(text);
 
     if (!cleanText) return;
 
@@ -959,25 +1366,43 @@ function App() {
     // Event handlers
     utterance.onstart = () => {
       setIsSpeaking(true);
-      if (handsFreeMode) {
+      if (handsFreeStateRef.current) {
         setHandsFreeStatus('speaking');
       }
-      console.log('Started speaking assistant response');
     };
 
     utterance.onend = () => {
       setIsSpeaking(false);
-      console.log('Finished speaking assistant response');
+      
+      // Reset TTS message tracking
+      currentTTSMessageIdRef.current = null;
       
       // In hands-free mode, automatically start next voice input
-      if (handsFreeMode) {
+      if (handsFreeStateRef.current) {
+        console.log('TTS complete, restarting voice input');
+        setHandsFreeStatus('ready'); // Brief transition state
         startAutoVoiceInput();
       }
     };
 
     utterance.onerror = (event) => {
       setIsSpeaking(false);
-      console.error('Speech synthesis error:', event.error);
+      
+      // Reset TTS message tracking on error
+      currentTTSMessageIdRef.current = null;
+      
+      // If interrupted error and in hands-free mode, still continue the flow
+      if (event.error === 'interrupted' && handsFreeStateRef.current) {
+        setTimeout(() => {
+          if (handsFreeStateRef.current) {
+            startAutoVoiceInput();
+          }
+        }, 1000);
+      }
+      
+      if (event.error !== 'interrupted') {
+        console.error('Speech synthesis error:', event.error);
+      }
     };
 
     // Speak the text
@@ -994,26 +1419,30 @@ function App() {
 
   // Hands-free mode functions
   const startAutoVoiceInput = () => {
-    if (!handsFreeMode || !voiceAvailable) return;
+    if (!handsFreeStateRef.current || !voiceAvailableRef.current) {
+      return;
+    }
     
     // Clear any existing timer
     if (autoVoiceTimerRef.current) {
       clearTimeout(autoVoiceTimerRef.current);
     }
     
-    // Set status to ready with countdown
-    setHandsFreeStatus('ready');
+    // Go directly to listening - no need for "ready" state after initial setup
+    console.log('Voice input restarted');
+    setHandsFreeStatus('listening');
     
-    // Wait 2 seconds then start voice input
+    // Brief delay to allow TTS to fully complete, then start voice recognition
     autoVoiceTimerRef.current = setTimeout(() => {
-      if (handsFreeMode && !isRecording && !isSpeaking) {
-        setHandsFreeStatus('listening');
+      if (handsFreeStateRef.current && !isRecording && !isSpeaking && !window.speechSynthesis.speaking) {
         handleVoiceInput(); // Start voice recognition
       }
-    }, 2000);
+    }, 500); // Shorter delay - just enough for TTS cleanup
   };
 
   const exitHandsFreeMode = () => {
+    console.log('🚨 exitHandsFreeMode called! Stack trace:');
+    console.trace();
     setHandsFreeMode(false);
     setHandsFreeStatus('idle');
     
@@ -1056,16 +1485,12 @@ function App() {
 
   // Transcript-based silence detection functions
   const startTranscriptTimer = () => {
-    console.log('🎯 startTranscriptTimer called - handsFree:', handsFreeMode, 'silenceEnabled:', silenceDetectionEnabled);
-    
-    if (!handsFreeMode || !silenceDetectionEnabled) {
-      console.log('❌ Timer conditions not met');
+    if (!handsFreeStateRef.current || !silenceDetectionStateRef.current) {
       return;
     }
     
     // Check if we have minimum speech (2+ words)
     if (transcriptWordCountRef.current < 2) {
-      console.log('❌ Insufficient speech for auto-send:', transcriptWordCountRef.current, 'words');
       return;
     }
     
@@ -1074,54 +1499,30 @@ function App() {
       clearTimeout(silenceTimerRef.current);
     }
     
-    console.log('✅ Starting transcript-based silence timer: 3.5 seconds total');
-    console.log('📄 Current transcript:', currentTranscriptRef.current);
-    console.log('🔢 Word count:', transcriptWordCountRef.current);
-    
-    // Wait 500ms to ensure speech has actually ended, then start 3-second countdown
+    // Aggressive timing: only 1.5 seconds total silence detection
+    // Wait 200ms buffer, then 1.3s countdown = 1.5s total
     silenceTimerRef.current = setTimeout(() => {
-      console.log('⏱️ 500ms buffer complete, starting 3-second countdown');
-      
-      if (!handsFreeMode || !silenceDetectionEnabled) {
-        console.log('❌ Conditions changed during buffer');
+      if (!handsFreeStateRef.current || !silenceDetectionStateRef.current) {
         return;
       }
       
-      // Start visual countdown from 3 seconds (3.5s total delay)
-      setSilenceCountdown(3);
+      // Start visual countdown from 1 second (1.5s total delay)
+      setSilenceCountdown(1);
       setIsCountingDown(true);
       
-      let countdown = 3;
-      const updateCountdown = () => {
-        countdown--;
-        setSilenceCountdown(countdown);
-        console.log('⏰ Countdown:', countdown);
+      // Much faster countdown
+      silenceTimerRef.current = setTimeout(() => {
+        setIsCountingDown(false);
+        setSilenceCountdown(0);
+        setHandsFreeStatus('processing');
         
-        if (countdown > 0) {
-          silenceTimerRef.current = setTimeout(updateCountdown, 1000);
-        } else {
-          // Countdown finished - auto-send message
-          console.log('🚀 Transcript silence timer completed: Auto-sending message');
-          console.log('📝 Final transcript:', currentTranscriptRef.current);
-          console.log('🔢 Final word count:', transcriptWordCountRef.current);
-          console.log('💬 Input text:', inputText.trim());
-          
-          setIsCountingDown(false);
-          setSilenceCountdown(0);
-          
-          if (inputText.trim() && handsFreeMode && transcriptWordCountRef.current >= 2) {
-            setHandsFreeStatus('processing');
-            setTimeout(() => {
-              sendMessage();
-            }, 100);
-          } else {
-            console.log('❌ Auto-send conditions not met at completion');
-          }
+        const transcriptToSend = currentTranscriptRef.current.trim();
+        if (transcriptToSend && transcriptWordCountRef.current >= 2) {
+          console.log('Silence timer auto-send:', transcriptToSend);
+          sendMessageWithText(transcriptToSend);
         }
-      };
-      
-      silenceTimerRef.current = setTimeout(updateCountdown, 1000);
-    }, 500); // Initial 500ms delay before starting visual countdown
+      }, 1300); // 1.3 second countdown
+    }, 200); // Reduced buffer to 200ms
   };
 
   const stopTranscriptTimer = () => {
@@ -1129,12 +1530,17 @@ function App() {
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
     }
+    if (transcriptDebounceTimerRef.current) {
+      clearTimeout(transcriptDebounceTimerRef.current);
+      transcriptDebounceTimerRef.current = null;
+    }
     setIsCountingDown(false);
     setSilenceCountdown(0);
-    console.log('Transcript timer stopped');
+    messageSentRef.current = false; // Reset send flag to allow future sends
+    console.log('Transcript timer and debounce timer stopped');
   };
 
-  const updateTranscriptTimestamp = (transcript) => {
+  const updateTranscriptTimestamp = (transcript, isFinal) => {
     const words = transcript.trim().split(' ').filter(word => word.length > 0);
     const wordCount = words.length;
     
@@ -1143,29 +1549,26 @@ function App() {
     currentTranscriptRef.current = transcript;
     transcriptWordCountRef.current = wordCount;
     
-    console.log('📝 Transcript updated:', transcript, '| Words:', wordCount, '| Time:', new Date().toLocaleTimeString());
-    
-    // Reset any existing timer since new speech was detected
+    // Clear any existing timers
     stopTranscriptTimer();
-    
-    // Start new timer if we have sufficient speech content
-    if (handsFreeMode && silenceDetectionEnabled && wordCount >= 2) {
-      console.log('⏰ Scheduling silence timer for transcript with', wordCount, 'words');
-      
-      // Shorter delay for more responsive detection
-      setTimeout(() => {
-        // Only start timer if transcript hasn't been updated again and we're still recording
-        const timeSinceUpdate = Date.now() - (lastTranscriptUpdateRef.current || 0);
-        if (timeSinceUpdate >= 300 && isRecording) { // 300ms without updates
-          console.log('🚀 Starting transcript timer - last update was', timeSinceUpdate, 'ms ago');
-          startTranscriptTimer();
-        } else {
-          console.log('⏸️ Timer not started - timeSinceUpdate:', timeSinceUpdate, 'ms, isRecording:', isRecording);
-        }
-      }, 400);
-    } else {
-      console.log('❌ Timer not eligible - handsFree:', handsFreeMode, 'silenceEnabled:', silenceDetectionEnabled, 'words:', wordCount);
+    if (transcriptDebounceTimerRef.current) {
+      clearTimeout(transcriptDebounceTimerRef.current);
     }
+    
+    // Only proceed if we have enough words
+    if (!handsFreeStateRef.current || !silenceDetectionStateRef.current || wordCount < 2) {
+      return;
+    }
+    
+    // Use debounced approach: wait for transcript updates to stop
+    const debounceDelay = isFinal ? 100 : 300; // Extremely aggressive timing for fast response
+    
+    transcriptDebounceTimerRef.current = setTimeout(() => {
+      // Double-check we still meet conditions
+      if (handsFreeStateRef.current && silenceDetectionStateRef.current && transcriptWordCountRef.current >= 2 && isRecording) {
+        startTranscriptTimer();
+      }
+    }, debounceDelay);
   };
 
   // Get loading text based on current state
@@ -1219,17 +1622,14 @@ function App() {
               {voiceAvailable && ttsAvailable && !showUpload && (
                 <button 
                   className={`hands-free-toggle ${handsFreeMode ? 'active' : ''}`}
-                  onClick={() => setHandsFreeMode(!handsFreeMode)}
+                  onClick={() => {
+                    console.log('🎧 Hands-free toggle clicked. Current state:', handsFreeMode, '→ New state:', !handsFreeMode);
+                    setHandsFreeMode(!handsFreeMode);
+                  }}
                   title={handsFreeMode ? "Exit Hands-Free Mode" : "Enter Hands-Free Mode"}
                   aria-label={handsFreeMode ? "Exit hands-free conversation" : "Start hands-free conversation"}
                 >
                   <Headphones className="toggle-icon" />
-                  {handsFreeMode && (
-                    <span className="hands-free-status">
-                      {handsFreeStatus}
-                      {silenceDetectionEnabled && <span className="silence-indicator">📶</span>}
-                    </span>
-                  )}
                 </button>
               )}
               
@@ -1402,62 +1802,26 @@ function App() {
                 </div>
               )}
               
-              {/* Hands-Free Status Indicator */}
-              {handsFreeMode && handsFreeStatus !== 'idle' && (
-                <div className="hands-free-indicator">
-                  <div className="hands-free-content">
-                    <Headphones className="hands-free-icon" />
-                    <span className="hands-free-text">
-                      {handsFreeStatus === 'ready' && 'Ready to listen...'}
-                      {handsFreeStatus === 'listening' && (
-                        silenceDetectionEnabled ? 'Listening... (Auto-send after 3.5s silence)' : 'Listening for your question...'
-                      )}
-                      {handsFreeStatus === 'processing' && 'Processing your request...'}
-                      {handsFreeStatus === 'speaking' && 'Assistant responding...'}
-                    </span>
-                    {handsFreeStatus === 'listening' && (
-                      <button 
-                        className="silence-toggle-btn"
-                        onClick={() => setSilenceDetectionEnabled(!silenceDetectionEnabled)}
-                        title={silenceDetectionEnabled ? "Disable auto-send" : "Enable auto-send"}
-                      >
-                        {silenceDetectionEnabled ? '⏰' : '🔇'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-              
               <div ref={messagesEndRef} />
             </div>
           )}
         </div>
 
+        {/* Hands-Free Status Chip - SIBLING to messages, positioned between messages and input */}
+        {handsFreeMode && handsFreeStatus !== 'idle' && (
+          <div className="hands-free-status-chip">
+            <Headphones className="chip-icon" />
+            <span className="chip-label">
+              {handsFreeStatus === 'ready' && 'Starting up...'}
+              {handsFreeStatus === 'listening' && 'Listening...'}
+              {handsFreeStatus === 'processing' && 'Assistant responding...'}
+              {handsFreeStatus === 'speaking' && 'Assistant responding...'}
+            </span>
+          </div>
+        )}
+
         <div className="input-container aui-composer">
-          {/* Silence Detection Countdown */}
-          {isCountingDown && silenceDetectionEnabled && handsFreeMode && (
-            <div className="silence-countdown">
-              <div className="countdown-content">
-                <span className="countdown-text">Auto-sending in {silenceCountdown} second{silenceCountdown !== 1 ? 's' : ''}...</span>
-                <div className="countdown-bar">
-                  <div 
-                    className="countdown-progress" 
-                    style={{
-                      width: `${(silenceCountdown / 3) * 100}%`,
-                      backgroundColor: silenceCountdown > 2 ? '#10b981' : silenceCountdown > 1 ? '#f59e0b' : '#ef4444'
-                    }}
-                  ></div>
-                </div>
-                <button 
-                  className="cancel-countdown-btn"
-                  onClick={stopTranscriptTimer}
-                  title="Cancel auto-send"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Countdown UI removed - 2 second delay is too short to be useful */}
           
           <div className="input-wrapper">
             <textarea
