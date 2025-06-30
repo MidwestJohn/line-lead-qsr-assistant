@@ -1327,6 +1327,16 @@ function App() {
   // Speak a chunk of text immediately
   const speakTextChunk = async (text) => {
     if (!ttsAvailableRef.current || !text.trim()) return;
+
+    // CRITICAL: Stop microphone during TTS to prevent feedback loop
+    if (handsFreeStateRef.current && speechRecognitionRef.current) {
+      console.log('🎤 Stopping microphone during chunk TTS to prevent feedback');
+      try {
+        speechRecognitionRef.current.stop();
+      } catch (e) {
+        console.log('🎤 Microphone already stopped');
+      }
+    }
     
     // Try ElevenLabs first, fallback to browser TTS
     let elevenLabsSuccess = false;
@@ -1427,15 +1437,28 @@ function App() {
 
     if (!cleanText) return;
 
+    // CRITICAL: Stop microphone during TTS to prevent feedback loop
+    if (handsFreeStateRef.current && speechRecognitionRef.current) {
+      console.log('🎤 Stopping microphone during TTS to prevent feedback');
+      try {
+        speechRecognitionRef.current.stop();
+      } catch (e) {
+        console.log('🎤 Microphone already stopped');
+      }
+    }
+
     // Set speaking state immediately for UI responsiveness
     setIsSpeaking(true);
     if (handsFreeStateRef.current) {
       setHandsFreeStatus('speaking');
     }
 
+    // Flag to prevent dual TTS execution
+    let ttsCompleted = false;
+
     // Try ElevenLabs first, fallback to browser TTS
     try {
-      if (elevenlabsApiKey) {
+      if (elevenlabsApiKey && !ttsCompleted) {
         console.log('🎵 Using ElevenLabs TTS for:', cleanText.substring(0, 50) + '...');
         
         const audioBlob = await generateElevenLabsAudio(cleanText);
@@ -1458,7 +1481,7 @@ function App() {
           if (handsFreeStateRef.current) {
             console.log('ElevenLabs TTS complete, restarting voice input');
             setHandsFreeStatus('ready'); // Brief transition state
-            startAutoVoiceInput();
+            setTimeout(() => startAutoVoiceInput(), 1000); // Delay to prevent feedback
           }
         };
         
@@ -1478,15 +1501,19 @@ function App() {
         };
         
         await audio.play();
-        return; // Success with ElevenLabs
+        ttsCompleted = true;
+        console.log('🎵 ElevenLabs TTS started successfully - BLOCKING browser TTS fallback');
+        return; // Success with ElevenLabs - EXIT FUNCTION
       }
     } catch (error) {
-      console.warn('🔊 ElevenLabs TTS failed, using browser TTS fallback:', error.message);
+      console.warn('🔊 ElevenLabs TTS failed, will try browser TTS fallback:', error.message);
       setIsSpeaking(false); // Reset speaking state on failure
+      ttsCompleted = false;
     }
     
-    // Fallback to browser TTS
-    console.log('🔊 Using browser TTS fallback for:', cleanText.substring(0, 50) + '...');
+    // Only use browser TTS if ElevenLabs failed
+    if (!ttsCompleted) {
+      console.log('🔊 Using browser TTS fallback for:', cleanText.substring(0, 50) + '...');
     
     const utterance = new SpeechSynthesisUtterance(cleanText);
     
@@ -1547,8 +1574,11 @@ function App() {
       }
     };
 
-    // Speak the text
-    window.speechSynthesis.speak(utterance);
+      // Speak the text
+      window.speechSynthesis.speak(utterance);
+    } else {
+      console.log('🚫 Browser TTS blocked - ElevenLabs already handled TTS');
+    }
   };
 
   // Stop TTS if currently speaking
