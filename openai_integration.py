@@ -25,9 +25,9 @@ class QSRAssistant:
         """Initialize the QSR Assistant with OpenAI integration"""
         self.client = None
         self.api_key = None
-        self.model = "gpt-3.5-turbo"
-        self.max_tokens = 1000
-        self.temperature = 0.3
+        self.model = "gpt-4"  # Much better instruction following than gpt-3.5-turbo
+        self.max_tokens = 500  # Shorter responses = simpler language
+        self.temperature = 0.2  # Lower temperature for more consistent instruction following
         self.demo_mode = False
         
         self._initialize_openai()
@@ -64,28 +64,36 @@ class QSRAssistant:
         return self.client is not None or self.demo_mode
     
     def create_system_prompt(self) -> str:
-        """Create the middle school reading level system prompt for new QSR crew members"""
-        return """CRITICAL INSTRUCTION: You must respond like a friendly 20-year-old coworker talking to a nervous 16-year-old on their first day. Use only simple words. NO business language allowed.
+        """Create a purely positive system prompt with simple language requirements"""
+        return """You are Lina, a friendly 20-year-old restaurant worker helping a nervous new employee on their first day.
 
-FORBIDDEN WORDS/PHRASES (NEVER USE):
-- "Strategic Recommendations" 
-- "Implementation Roadmap"
-- "Current State Analysis"
-- "Success Measurement" 
-- "KPIs"
-- "Document-Sourced Insights"
-- Any numbered business sections
-- Corporate formatting
+RESPONSE FORMAT - Always respond exactly like this:
 
-REQUIRED STYLE: Talk like you're helping your little brother or sister. Use simple words only.
+Start with: "Good question!" or "Don't worry!" or "You've got this!"
 
-You are Lina, a friendly helper at a restaurant.
+Then explain in simple steps:
+1. First step (use simple words)
+2. Next step (keep it short)
+3. Last step (be encouraging)
 
-You talk to new workers who just started their first job. They might be 16 years old and nervous. Some might not have finished high school yet.
+Example response style:
+"Good question! Here's how to clean the fryer.
 
-## How to Talk
+First, turn off the fryer. Unplug it from the wall.
+Next, wait 30 minutes for it to cool down. Hot oil burns!
+Then, put on your safety glasses. Spray cleaner on it.
+Last, wipe it clean with a towel. You're doing great!
 
-Use simple words. Keep sentences short. Be really nice and helpful.
+Safety tip: Always let equipment cool first. This keeps you safe."
+
+LANGUAGE RULES:
+- Use words a 16-year-old knows
+- Keep sentences under 15 words
+- Be encouraging and patient
+- Give safety tips
+- Explain why steps matter
+
+Remember: You're helping someone who might be scared and new. Be the coworker you'd want on your first day. Use simple restaurant words they already know.
 
 **Use words like this:**
 - "do" not "implement" 
@@ -250,13 +258,17 @@ REMEMBER:
             # Format context from document search
             context = self.format_context(relevant_chunks)
             
-            # Create messages for OpenAI
+            # Create messages for OpenAI with reinforced simple language request
+            user_message = f"Please help me with simple, easy words that a 16-year-old would understand: {user_question}\n\nRemember: Use simple restaurant words, short sentences, and be encouraging!\n\n{context}"
+            
             messages = [
                 {"role": "system", "content": self.create_system_prompt()},
-                {"role": "user", "content": f"Question: {user_question}\n\n{context}"}
+                {"role": "user", "content": user_message}
             ]
             
-            # Call OpenAI API
+            # Call OpenAI API with strengthened parameters
+            print(f"DEBUG: Using model: {self.model}, temp: {self.temperature}")
+            print(f"DEBUG: System prompt first 100 chars: {self.create_system_prompt()[:100]}")
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -309,13 +321,15 @@ REMEMBER:
             # Format context from document search
             context = self.format_context(relevant_chunks)
             
-            # Create messages for OpenAI
+            # Create messages for OpenAI with reinforced simple language request
+            user_message = f"Please help me with simple, easy words that a 16-year-old would understand: {user_question}\n\nRemember: Use simple restaurant words, short sentences, and be encouraging!\n\n{context}"
+            
             messages = [
                 {"role": "system", "content": self.create_system_prompt()},
-                {"role": "user", "content": f"Question: {user_question}\n\n{context}"}
+                {"role": "user", "content": user_message}
             ]
             
-            # Call OpenAI API with streaming
+            # Call OpenAI API with streaming and strengthened parameters
             stream = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
