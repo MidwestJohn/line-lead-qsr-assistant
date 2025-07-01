@@ -151,7 +151,7 @@ function App() {
         voice_settings: {
           stability: 0.8,        // High for reliability and no hallucinations
           similarity_boost: 0.9, // High for voice consistency
-          style: 0.3,           // REDUCED from 0.6 - sweet spot for warmth without instability
+          style: 0.4,           // TEST: Upper limit of safe range for maximum personality
           use_speaker_boost: true
         }
       })
