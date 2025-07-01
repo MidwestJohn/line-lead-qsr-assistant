@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import Dict, List
+from typing import Dict, List, Optional
 import logging
 import datetime
 import json
@@ -20,8 +20,10 @@ from io import BytesIO
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from document_search import search_engine, load_documents_into_search_engine
 from openai_integration import qsr_assistant
+from voice_service import voice_service
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -96,6 +98,87 @@ def get_file_url(filename):
     if not filename:
         return None
     return f"/files/{filename}"
+
+def smart_sentence_split(text: str) -> List[str]:
+    """
+    Smart sentence splitting that preserves numbered lists and structured content.
+    
+    FIXES: Current chunker breaks numbered lists like "1. Check fryer" into ["1", ". Check fryer"]
+    SOLUTION: Recognize numbered list patterns and keep them intact
+    
+    NUMBERED LIST PATTERNS PRESERVED:
+    - "1. Text here."
+    - "2) Text here."  
+    - "• Text here."
+    - "- Text here."
+    - "Step 1: Text here."
+    - "a. Text here."
+    - "i. Text here."
+    """
+    import re
+    
+    if not text or len(text.strip()) < 15:
+        return [text] if text.strip() else []
+    
+    # First, identify and protect numbered list patterns
+    numbered_list_patterns = [
+        r'\b\d+\.\s[^.]*?\.',  # "1. Text here."
+        r'\b\d+\)\s[^.]*?\.',  # "2) Text here."
+        r'[•·▪▫-]\s[^.]*?\.',  # "• Text here." or "- Text here."
+        r'\b[Ss]tep\s+\d+:\s[^.]*?\.',  # "Step 1: Text here."
+        r'\b[a-z]\.\s[^.]*?\.',  # "a. Text here."
+        r'\b[ivx]+\.\s[^.]*?\.',  # "i. Text here."
+    ]
+    
+    # Combine all patterns
+    combined_pattern = '|'.join(f'({pattern})' for pattern in numbered_list_patterns)
+    
+    # Find all numbered list items
+    list_matches = []
+    for match in re.finditer(combined_pattern, text, re.IGNORECASE):
+        list_matches.append({
+            'start': match.start(),
+            'end': match.end(),
+            'text': match.group()
+        })
+    
+    # If no numbered lists found, use standard sentence splitting
+    if not list_matches:
+        # Standard sentence splitting with better regex
+        sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', text.strip())
+        return [s.strip() for s in sentences if s.strip() and len(s.strip()) >= 3]
+    
+    # Process text preserving numbered lists
+    sentences = []
+    last_end = 0
+    
+    for list_item in list_matches:
+        # Add any text before this numbered list item
+        if list_item['start'] > last_end:
+            before_text = text[last_end:list_item['start']].strip()
+            if before_text:
+                # Split the before text normally
+                before_sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', before_text)
+                sentences.extend([s.strip() for s in before_sentences if s.strip() and len(s.strip()) >= 3])
+        
+        # Add the complete numbered list item
+        sentences.append(list_item['text'].strip())
+        last_end = list_item['end']
+    
+    # Add any remaining text after the last numbered list
+    if last_end < len(text):
+        remaining_text = text[last_end:].strip()
+        if remaining_text:
+            remaining_sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', remaining_text)
+            sentences.extend([s.strip() for s in remaining_sentences if s.strip() and len(s.strip()) >= 3])
+    
+    # Final cleanup - ensure minimum chunk size and remove empty strings
+    final_sentences = []
+    for sentence in sentences:
+        if sentence and len(sentence.strip()) >= 3:
+            final_sentences.append(sentence.strip())
+    
+    return final_sentences if final_sentences else [text.strip()]
 
 def extract_pdf_text(pdf_content: bytes) -> tuple[str, int]:
     """Extract text from PDF content"""
@@ -225,6 +308,32 @@ class DeleteDocumentResponse(BaseModel):
     message: str
     document_id: str
     original_filename: str
+
+# Voice service models
+class VoiceRequest(BaseModel):
+    text: str
+
+class VoiceStatusResponse(BaseModel):
+    available: bool
+    voice_count: int = 0
+    current_voice: str = ""
+    voice_id: str = ""
+    error: str = ""
+
+class ChatVoiceRequest(BaseModel):
+    message: str
+
+class ChatVoiceResponse(BaseModel):
+    response: str
+    audio_available: bool
+    timestamp: str
+
+class ChatVoiceWithAudioResponse(BaseModel):
+    text_response: str
+    audio_data: Optional[str] = None
+    audio_available: bool
+    sources: List[str] = []
+    timestamp: str
 
 # Enhanced Health Check with Connection Management
 @app.get("/health", response_model=HealthResponse)
@@ -1092,6 +1201,190 @@ async def get_ai_status():
         logger.error(f"Error getting AI status: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to get AI status")
 
+# Voice endpoints
+@app.get("/voice-status", response_model=VoiceStatusResponse)
+async def get_voice_status():
+    """Get ElevenLabs voice service status"""
+    try:
+        status = await voice_service.get_voice_status()
+        return VoiceStatusResponse(**status)
+    except Exception as e:
+        logger.error(f"Error getting voice status: {str(e)}")
+        return VoiceStatusResponse(
+            available=False,
+            error=str(e)
+        )
+
+@app.post("/generate-audio")
+async def generate_audio(request: VoiceRequest):
+    """OPTIMIZED audio generation with proper error handling"""
+    try:
+        if not voice_service.is_available():
+            raise HTTPException(status_code=503, detail="Voice service not available")
+        
+        # Use the new safe audio generation method
+        audio_data = await voice_service.generate_audio_safely(request.text)
+        
+        if audio_data:
+            return Response(
+                content=audio_data,
+                media_type="audio/mpeg",
+                headers={
+                    "Content-Disposition": "inline; filename=audio.mp3",
+                    "Cache-Control": "no-cache"
+                }
+            )
+        else:
+            raise HTTPException(status_code=503, detail="Audio generation temporarily unavailable")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating audio: {str(e)}")
+        raise HTTPException(status_code=500, detail="Audio generation failed")
+
+@app.post("/chat-voice", response_model=ChatVoiceResponse)
+async def chat_with_voice(request: ChatVoiceRequest):
+    """OPTIMIZED chat endpoint with single audio generation (no chunking)"""
+    try:
+        # Get relevant document chunks (similar to the regular chat endpoint)
+        relevant_chunks = search_engine.search(request.message, top_k=3)
+        
+        # Get AI response with VOICE-OPTIMIZED constraints
+        response_data = await qsr_assistant.generate_voice_response(request.message, relevant_chunks)
+        ai_response = response_data.get("response", "I'm sorry, I couldn't process your request.")
+        
+        # CRITICAL: Limit response length to prevent chunking issues
+        if len(ai_response) > 400:
+            # Truncate to first complete sentence under 400 chars using smart sentence splitting
+            sentences = smart_sentence_split(ai_response)
+            truncated = ""
+            for sentence in sentences:
+                if len(truncated + sentence + ' ') <= 400:
+                    truncated += sentence + ' '
+                else:
+                    break
+            ai_response = truncated.strip() if truncated else ai_response[:400] + "."
+        
+        # Check if voice service is available
+        voice_available = voice_service.is_available()
+        
+        return ChatVoiceResponse(
+            response=ai_response,
+            audio_available=voice_available,
+            timestamp=datetime.datetime.now().isoformat()
+        )
+    except Exception as e:
+        logger.error(f"Error in chat with voice: {str(e)}")
+        raise HTTPException(status_code=500, detail="Chat processing failed")
+
+@app.post("/chat-voice-with-audio", response_model=ChatVoiceWithAudioResponse)
+async def chat_with_voice_and_audio(request: ChatVoiceRequest):
+    """OPTIMIZED endpoint that returns text + audio data in single request (eliminates chunking)"""
+    try:
+        # Get relevant document chunks
+        relevant_chunks = search_engine.search(request.message, top_k=3)
+        
+        # Get AI response with voice-optimized settings
+        response_data = await qsr_assistant.generate_voice_response(request.message, relevant_chunks)
+        ai_response = response_data.get("response", "I'm sorry, I couldn't process your request.")
+        
+        # CRITICAL: Ensure response is short enough for smooth voice generation
+        if len(ai_response) > 300:
+            # Find the last complete sentence under 300 characters using smart sentence splitting
+            sentences = smart_sentence_split(ai_response)
+            truncated = ""
+            for sentence in sentences:
+                if len(truncated + sentence + ' ') <= 300:
+                    truncated += sentence + ' '
+                else:
+                    break
+            ai_response = truncated.strip() if truncated else ai_response[:300] + "."
+        
+        # Extract sources from chunks
+        sources = []
+        for chunk in relevant_chunks:
+            if 'source' in chunk and chunk['source'] not in sources:
+                sources.append(chunk['source'])
+        
+        # Generate audio using optimized service
+        audio_bytes = None
+        audio_available = False
+        
+        if voice_service.is_available():
+            audio_bytes = await voice_service.generate_audio_safely(ai_response)
+            if audio_bytes:
+                import base64
+                audio_data = base64.b64encode(audio_bytes).decode()
+                audio_available = True
+            else:
+                audio_data = None
+        else:
+            audio_data = None
+        
+        return ChatVoiceWithAudioResponse(
+            text_response=ai_response,
+            audio_data=audio_data,
+            audio_available=audio_available,
+            sources=sources,
+            timestamp=datetime.datetime.now().isoformat()
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in chat with voice and audio: {str(e)}")
+        # Return text-only response on error
+        return ChatVoiceWithAudioResponse(
+            text_response="I'm sorry, I encountered an error processing your request.",
+            audio_data=None,
+            audio_available=False,
+            sources=[],
+            timestamp=datetime.datetime.now().isoformat()
+        )
+
+@app.post("/chat-voice-direct")
+async def chat_voice_direct(request: ChatVoiceRequest):
+    """DIAGNOSTIC: Direct voice endpoint bypassing all streaming for testing"""
+    try:
+        logger.info(f"🧪 DIAGNOSTIC: Direct voice request for: {request.message}")
+        
+        # Get simple response without streaming (bypass complex RAG)
+        response = qsr_assistant.client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Give a short, simple answer about restaurant work. Use exactly 20-30 words. Mention specific temperatures if relevant."},
+                {"role": "user", "content": request.message}
+            ],
+            temperature=0.3,
+            max_tokens=50,
+        )
+        
+        text_response = response.choices[0].message.content
+        logger.info(f"🧪 DIAGNOSTIC: Generated text response: '{text_response}'")
+        
+        # Direct ElevenLabs generation (no chunking, no streaming, no queue)
+        logger.info("🧪 DIAGNOSTIC: Calling ElevenLabs directly...")
+        audio_bytes = await voice_service.generate_audio_safely(text_response)
+        
+        if audio_bytes:
+            import base64
+            audio_data = base64.b64encode(audio_bytes).decode()
+            logger.info(f"🧪 DIAGNOSTIC: Audio generated successfully - {len(audio_bytes)} bytes")
+            
+            return {
+                "text_response": text_response,
+                "audio_data": audio_data,
+                "audio_type": "direct_single_file",
+                "bypass_streaming": True,
+                "audio_available": True,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        else:
+            logger.error("🧪 DIAGNOSTIC: Audio generation failed")
+            return {"error": "Audio generation failed"}
+        
+    except Exception as e:
+        logger.error(f"🧪 DIAGNOSTIC: Direct voice endpoint error: {str(e)}")
+        return {"error": str(e)}
+
 # Root endpoint
 @app.get("/")
 async def root():
@@ -1102,6 +1395,11 @@ async def root():
         "endpoints": {
             "health": "/health",
             "chat": "/chat",
+            "chat-voice": "/chat-voice",
+            "chat-voice-with-audio": "/chat-voice-with-audio",
+            "chat-voice-direct": "/chat-voice-direct",
+            "voice-status": "/voice-status",
+            "generate-audio": "/generate-audio",
             "upload": "/upload",
             "documents": "/documents",
             "search-stats": "/search-stats",

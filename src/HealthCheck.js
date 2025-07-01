@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiUtils } from './apiUtils';
+import { apiService } from './services/api';
 
 function HealthCheck() {
   const [health, setHealth] = useState(null);
@@ -17,7 +17,7 @@ function HealthCheck() {
   const checkHealth = async () => {
     try {
       setError(null);
-      const data = await apiUtils.healthCheck();
+      const data = await apiService.get('/health');
       setHealth(data);
     } catch (error) {
       console.error('Health check failed:', error);

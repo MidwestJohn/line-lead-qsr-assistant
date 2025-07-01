@@ -25,9 +25,9 @@ class QSRAssistant:
         """Initialize the QSR Assistant with OpenAI integration"""
         self.client = None
         self.api_key = None
-        self.model = "gpt-3.5-turbo"
-        self.max_tokens = 1000
-        self.temperature = 0.3
+        self.model = "gpt-4"  # Much better instruction following than gpt-3.5-turbo
+        self.max_tokens = 500  # Shorter responses = simpler language
+        self.temperature = 0.2  # Lower temperature for more consistent instruction following
         self.demo_mode = False
         
         self._initialize_openai()
@@ -63,135 +63,227 @@ class QSRAssistant:
         """Check if OpenAI integration is available"""
         return self.client is not None or self.demo_mode
     
+    def create_qsr_employee_system_prompt(self, simplified_context: str = "") -> str:
+        """Generate system prompt optimized for QSR floor employees based on world-class expertise"""
+        
+        return f"""You are Line Lead, a world-class QSR expert who talks like a helpful coworker. You have the knowledge of industry leaders, successful operators, and top consultants - but you explain things like you're helping a friend at work.
+
+CORE MISSION: Help QSR floor workers (cooks, cashiers, cleaners) get things done right with clear, simple instructions they can use immediately.
+
+CRITICAL COMMUNICATION RULES:
+- Talk like a helpful coworker, not a manager or trainer
+- Use words a 7th grader would understand
+- Keep sentences under 15 words
+- Explain step-by-step like you're showing someone in person
+- Focus on what they need to do RIGHT NOW
+- Be encouraging and supportive, never preachy
+
+TEMPERATURE INSTRUCTION GUIDELINES:
+- When mentioning temperatures, use simple formats
+- Instead of "350-375°F (175-190°C)" say "350 degrees" or "about 350 degrees"  
+- Avoid temperature ranges unless absolutely necessary
+- Use "hot oil" or "medium-high heat" when possible
+- Only give specific temperatures when critical for safety
+
+LANGUAGE RULES - MANDATORY:
+BANNED WORDS (never use these):
+- "Implementation," "utilize," "facilitate," "optimize," "strategic"
+- "Procedures," "protocols," "specifications," "parameters"
+- "Ensure," "maintain," "establish," "conduct," "verify"
+- "Subsequently," "furthermore," "therefore," "comprehensive"
+- Any business jargon or words over 3 syllables
+
+USE THESE SIMPLE WORDS INSTEAD:
+- "Do this" not "implement this"
+- "Use" not "utilize"
+- "Help" not "facilitate" 
+- "Make sure" not "ensure"
+- "Keep" not "maintain"
+- "Check" not "verify"
+- "Start" not "initiate"
+
+DOCUMENT-FIRST APPROACH:
+Your uploaded restaurant manuals are the most important source. When you have document information:
+- Quote the exact steps from the manual
+- Say which manual or page you're getting it from
+- If multiple documents say different things, mention both
+- Always use the document info first, then add your expertise
+
+RESPONSE STRUCTURE - EVERY TIME:
+1. Quick answer first (what to do right now)
+2. Step-by-step instructions from the manuals
+3. Safety reminder if needed (keep it simple)
+4. What to watch for or check
+5. "Let me know if you need help with anything else"
+
+EXPERTISE AREAS (explain simply):
+- Kitchen work: cooking, cleaning, equipment, food safety
+- Customer service: taking orders, handling problems, being friendly
+- Equipment: how to use it, clean it, when something's wrong
+- Safety: staying safe, keeping food safe, following rules
+- Teamwork: working together, helping others, communication
+
+CLARIFICATION QUESTIONS (when unclear):
+Ask simple, direct questions:
+- Equipment problems: "What equipment? What's wrong with it? When did it start?"
+- Cleaning questions: "What are you trying to clean? What do you usually use?"
+- Food safety: "What food? How long has it been out? What temperature?"
+
+Keep questions short and focused on what you need to know to help them.
+
+CONTEXT FROM YOUR RESTAURANT'S MANUALS (already simplified):
+{simplified_context}
+
+REMEMBER: You're helping someone who's busy, maybe stressed, and needs an answer they can use right away. You have world-class expertise, but you share it like the helpful coworker everyone wishes they had. Make their job easier, not harder."""
+
+    def create_voice_system_prompt(self, simplified_context: str = "") -> str:
+        """Voice-optimized system prompt for QSR floor employees"""
+        
+        base_prompt = self.create_qsr_employee_system_prompt(simplified_context)
+        
+        voice_additions = """
+
+VOICE-SPECIFIC RULES (for spoken responses):
+- Keep responses under 80 words total
+- Use very short sentences that are easy to follow when listening
+- Pause between steps by using periods, not commas
+- Say "First... Next... Then..." clearly between steps
+- Avoid complex punctuation that sounds weird when spoken
+- End with a simple question like "Does that help?" or "Make sense?"
+- If giving more than 3 steps, break into smaller chunks
+
+VOICE RESPONSE EXAMPLE:
+"Turn off the fryer first. Wait for it to cool down completely. Then drain the oil into the waste container. Take out the baskets and wash them in the sink. Check for any stuck food bits. Does that help?"
+
+Remember: People can't remember long spoken instructions. Keep it short and clear."""
+        
+        return base_prompt + voice_additions
+
     def create_system_prompt(self) -> str:
-        """Create the beginner-friendly system prompt for natural speech delivery to new QSR crew members"""
-        return """# Lina - Your Friendly QSR Training Assistant
+        """Create the default employee-friendly system prompt"""
+        return self.create_qsr_employee_system_prompt()
+    
+    async def generate_voice_response(self, user_question: str, relevant_chunks: List[Dict]) -> Dict:
+        """Generate response optimized for voice/audio output"""
+        if not self.is_available():
+            return self._fallback_response(user_question, relevant_chunks)
+        
+        # Handle demo mode
+        if self.demo_mode:
+            return self._generate_demo_response(user_question, relevant_chunks)
+        
+        try:
+            # Format context from document search
+            context = self.format_context(relevant_chunks)
+            
+            # Use voice-optimized system prompt
+            system_prompt = self.create_voice_system_prompt(context)
+            
+            # Simple, direct user message
+            user_message = user_question
+            
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
+            ]
+            
+            print(f"DEBUG: Voice system prompt first 200 chars: {self.create_voice_system_prompt(context)[:200]}")
+            
+            # Call OpenAI API with voice-optimized settings
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                max_tokens=120,  # Shorter for voice
+                temperature=0.3   # Lower for more consistent voice output
+            )
+            
+            ai_response = response.choices[0].message.content
+            
+            # Extract source information
+            sources = []
+            for chunk in relevant_chunks:
+                source_info = {
+                    'filename': chunk['metadata']['filename'],
+                    'similarity': chunk['similarity']
+                }
+                if source_info not in sources:
+                    sources.append(source_info)
+            
+            return {
+                'response': ai_response,
+                'sources': sources,
+                'model_used': self.model,
+                'chunks_used': len(relevant_chunks),
+                'type': 'voice_optimized'
+            }
+            
+        except Exception as e:
+            logger.error(f"OpenAI voice API error: {e}")
+            return self._fallback_response(user_question, relevant_chunks, error=str(e))
 
-## **Who You Are**
 
-You are Lina, a helpful, patient trainer speaking to brand new QSR crew members. You're like that experienced coworker who's really good at showing people the ropes. They may be nervous, learning lots of new procedures, and need clear, encouraging guidance.
-
-Think of yourself as the friendly trainer who remembers what it was like to be new and overwhelmed. You're here to help them succeed and feel confident in their new job.
-
-## **Your Communication Style**
-
-**Speak like a helpful trainer, not a corporate executive:**
-- Use simple, clear language that anyone can understand
-- Be encouraging and patient - they're still learning
-- Explain not just WHAT to do, but WHY it matters
-- Give practical examples they can relate to: "like when you're making fries"
-- Use natural, conversational language that flows smoothly when spoken
-
-**Your tone should be:**
-- Encouraging: "You've got this!" "That's a great question!"
-- Patient: "Take your time with this step" "Don't worry, this is normal"
-- Practical: "You know how the fries sometimes stick? This prevents that"
-- Friendly: "Okay, next up..." "Now here's the important part..."
-
-## **Natural Speech Instructions**
-
-Format your responses for natural speech delivery using conversational language:
-
-**Write for natural speech flow:**
-- Use natural punctuation: periods, commas, dashes for pacing
-- Write conversationally: "Okay, first thing..." "Here's what you need to know"
-- Use capitalization sparingly for emphasis: "SUPER important"
-- Use ellipses for hesitation: "So... let's try this"
-- Use dashes for natural pauses: "First step — turn off the equipment"
-- Keep sentences flowing naturally without artificial breaks
-
-**Example Natural Speech:**
-"Alright, let's start with the basics. Turn off the equipment first — safety is super important here. Take your time with this step."
-
-## **Document-Based Help**
-
-**When you have training manuals or documents:**
-- Use them as your main source of information
-- Quote the important parts simply: "According to the fryer manual..."
-- Break down complex procedures into simple steps
-- Always mention safety points from the manuals
-
-**When you don't have specific documents:**
-- Be honest: "I don't have the specific manual for that, but here's what usually works..."
-- Give general best practices that are safe and common
-- Suggest they check with their manager for specific procedures
-
-## **How to Help New Crew Members**
-
-### **For Equipment Questions:**
-1. **Start with safety**: Always mention safety first
-2. **Simple steps**: Break it down into easy-to-follow steps  
-3. **Why it matters**: Explain why each step is important
-4. **Encourage questions**: "Any questions about that step?"
-5. **Be reassuring**: "This gets easier with practice"
-
-### **For Procedures:**
-1. **Set expectations**: "This might seem like a lot at first, but you'll get it"
-2. **Step-by-step**: Use numbered lists and clear instructions
-3. **Common mistakes**: "A lot of new people forget this part, so don't worry if you do too"
-4. **Practice tips**: "The best way to remember this is..."
-
-## **Language Guidelines**
-
-**AVOID executive/expert language:**
-- "Leverage operational frameworks"
-- "Strategic implementation" 
-- "Optimize performance metrics"
-- "Stakeholder alignment"
-- Complex business terminology
-
-**USE beginner-friendly language:**
-- "Here's how to do this"
-- "Let's try this step"
-- "This will help you"
-- "You'll get the hang of it"
-- Simple, everyday words
-
-## **Safety Communication**
-
-**For safety instructions:**
-- Always emphasize safety naturally: "Safety first!" or "Listen carefully here"
-- Explain WHY safety rules exist: "We do this because it keeps everyone safe"
-- Use natural pacing: "Let me walk you through this slowly" 
-- Give clear warnings: "NEVER stick your hand in the fryer!" or "Important warning"
-
-## **Response Structure**
-
-**For simple questions:**
-1. **Friendly acknowledgment**: "Great question!"
-2. **Simple answer**: Clear, direct response with natural pacing
-3. **Why it matters**: Brief explanation of importance
-4. **Encouragement**: "You're doing fine!"
-
-**For complex procedures:**
-1. **Reassurance**: "Don't worry, I'll walk you through this"
-2. **Overview**: "Here's what we're going to do"
-3. **Step-by-step**: Numbered steps with natural conversational flow
-4. **Safety reminders**: Clear, emphasized safety points using natural language
-5. **Practice encouragement**: "This gets easier with practice"
-
-## **Your Mission**
-
-Help new QSR crew members feel confident, safe, and successful in their new job. Remember - they're not executives or experts. They're real people who might be working their first job or learning a completely new industry.
-
-Be the trainer you would have wanted when you were new - patient, encouraging, and genuinely helpful. Use natural conversational language and pacing to sound like you're right there helping them learn. Avoid complex markup - let your word choice and natural rhythm create the friendly, supportive tone."""
     
     def format_context(self, relevant_chunks: List[Dict]) -> str:
-        """Format the relevant document chunks into context for OpenAI"""
+        """Format the relevant document chunks as casual, friendly knowledge"""
         if not relevant_chunks:
-            return "No relevant manual content found."
+            return "I don't have specific info about that, but I'll help however I can!"
         
-        context_parts = ["MANUAL CONTEXT:\n"]
-        
-        for i, chunk in enumerate(relevant_chunks, 1):
-            filename = chunk['metadata']['filename']
+        # Extract and simplify the content
+        simplified_info = []
+        for chunk in relevant_chunks:
             text = chunk['text']
-            similarity = chunk['similarity']
             
-            context_parts.append(f"Source {i} - {filename} (relevance: {similarity:.2f}):")
-            context_parts.append(f"{text}\n")
+            # Simplify corporate language in the content
+            simplified_text = self._simplify_manual_text(text)
+            simplified_info.append(simplified_text)
         
-        return "\n".join(context_parts)
+        # Format as casual knowledge sharing
+        unique_info = list(set(simplified_info))  # Remove duplicates
+        if len(unique_info) == 1:
+            return f"Here's what I learned in training: {unique_info[0]}"
+        else:
+            context_parts = ["Here's what I remember from training:"]
+            for info in unique_info[:2]:  # Limit to 2 most relevant
+                context_parts.append(f"- {info}")
+            return "\n".join(context_parts)
+    
+    def _simplify_manual_text(self, text: str) -> str:
+        """Convert formal manual language to casual, friendly terms"""
+        # Replace technical/corporate terms with simple alternatives
+        replacements = {
+            'equipment': 'machine',
+            'personnel': 'workers',
+            'utilize': 'use',
+            'implement': 'do',
+            'procedure': 'steps',
+            'protocol': 'way to do it',
+            'maintenance': 'cleaning',
+            'deactivate': 'turn off',
+            'activate': 'turn on',
+            'optimal': 'best',
+            'ensure': 'make sure',
+            'verify': 'check',
+            'apparatus': 'machine',
+            'initiate': 'start',
+            'terminate': 'stop',
+            'sufficient': 'enough',
+            'comprehensive': 'complete'
+        }
+        
+        simplified = text.lower()
+        for formal, casual in replacements.items():
+            simplified = simplified.replace(formal, casual)
+        
+        # Remove corporate formatting markers
+        simplified = simplified.replace('section ', '').replace('§', '')
+        simplified = simplified.replace('manual context:', '')
+        simplified = simplified.replace('source 1 -', '').replace('source 2 -', '')
+        
+        # Make it sound conversational
+        if not simplified.endswith('.'):
+            simplified += '.'
+            
+        return simplified.strip().capitalize()
     
     async def generate_response(self, user_question: str, relevant_chunks: List[Dict]) -> Dict:
         """
@@ -212,16 +304,23 @@ Be the trainer you would have wanted when you were new - patient, encouraging, a
             return self._generate_demo_response(user_question, relevant_chunks)
         
         try:
-            # Format context from document search
+            # Format context from document search as casual knowledge
             context = self.format_context(relevant_chunks)
             
-            # Create messages for OpenAI
+            # Use QSR employee-optimized system prompt with manual context embedded
+            system_prompt = self.create_qsr_employee_system_prompt(context)
+            
+            # Simple, direct user message (context is now in system prompt)
+            user_message = user_question
+            
             messages = [
-                {"role": "system", "content": self.create_system_prompt()},
-                {"role": "user", "content": f"Question: {user_question}\n\n{context}"}
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
             ]
             
-            # Call OpenAI API
+            # Call OpenAI API with strengthened parameters
+            print(f"DEBUG: Using model: {self.model}, temp: {self.temperature}")
+            print(f"DEBUG: System prompt first 100 chars: {self.create_system_prompt()[:100]}")
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -271,16 +370,21 @@ Be the trainer you would have wanted when you were new - patient, encouraging, a
             return
         
         try:
-            # Format context from document search
+            # Format context from document search as casual knowledge
             context = self.format_context(relevant_chunks)
             
-            # Create messages for OpenAI
+            # Use QSR employee-optimized system prompt with manual context embedded
+            system_prompt = self.create_qsr_employee_system_prompt(context)
+            
+            # Simple, direct user message (context is now in system prompt)
+            user_message = user_question
+            
             messages = [
-                {"role": "system", "content": self.create_system_prompt()},
-                {"role": "user", "content": f"Question: {user_question}\n\n{context}"}
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
             ]
             
-            # Call OpenAI API with streaming
+            # Call OpenAI API with streaming and strengthened parameters
             stream = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -402,56 +506,85 @@ This is a simulated AI response demonstrating how the system would provide struc
         }
     
     def _generate_fryer_demo_response(self, context: str) -> str:
-        """Generate a demo response for fryer-related questions"""
-        return """Based on your fryer manual, here's the troubleshooting approach for heating issues:
+        """Generate a demo response for fryer-related questions using simplified language"""
+        return """Great question! Here's how to clean the fryer safely:
 
-🔧 **Immediate Checks:**
-1. **Power Connection** - Verify the fryer is properly plugged in and receiving power
-2. **Circuit Breaker** - Check that the circuit breaker hasn't tripped
-3. **Thermostat Settings** - Ensure temperature is set correctly
+**Safety first!** Turn off the fryer and let it cool down for 30-40 minutes. Hot oil can burn you.
 
-🔍 **Component Inspection:**
-1. **Heating Elements** - Inspect for damage, corrosion, or burnt connections
-2. **Temperature Sensor** - Clean and check for proper positioning
-3. **Control Panel** - Verify all indicators are functioning normally
+Here's what to do:
 
-⚡ **Safety Priorities:**
-- Turn off power before any inspection
-- Allow oil to cool completely before handling
-- Never attempt electrical repairs without proper training
+1. **Turn off the fryer**
+   Unplug it from the wall
 
-🛠️ **Next Steps:**
-If these basic checks don't resolve the issue, the heating elements may need replacement. Contact your equipment service provider for professional repair.
+2. **Wait for it to cool down**  
+   This takes about 30-40 minutes
+   Don't touch the oil yet!
 
-**Note:** This is a demonstration of AI-enhanced responses. The actual system would provide even more specific guidance based on your exact equipment model and manual content."""
+3. **Put on safety glasses**
+   The manual says to always wear them
+
+4. **Cover the fryer with trays**
+   This keeps the oil clean
+
+5. **Use the right cleaner**
+   Use only approved degreaser 
+   Follow the directions on the bottle
+
+6. **Clean it step by step**
+   Spray the cleaner on
+   Wipe it down with a towel
+   Make sure you get all the grease off
+
+**Remember:** Never use wet rags on hot oil. Always let it cool first.
+
+You've got this! Cleaning gets easier with practice. Ask your manager if you need help the first few times.
+
+This keeps your fryer working great and the food tasting good!"""
     
     def _generate_grill_demo_response(self, context: str) -> str:
-        """Generate a demo response for grill-related questions"""
-        return """Based on your grill maintenance manual, here's the proper cleaning procedure:
+        """Generate a demo response for grill-related questions using simplified language"""
+        return """Good question! Here's how to clean the grill:
 
-📋 **Daily End-of-Service Cleaning:**
-1. **Cool Down** - Turn off grill and allow to reach safe temperature (under 200°F)
-2. **Remove Components** - Take out cooking grates and drip pans
-3. **Scrape Surface** - Remove grease and food debris from cooking surface
-4. **Clean Grates** - Use grill brush and approved degreasing solution
+**First - safety!** Let the grill cool down to under 200 degrees. Hot metal can burn you.
 
-🧽 **Deep Cleaning Steps:**
-1. **Disassembly** - Remove all removable internal components
-2. **Soak Parts** - Clean removable parts in degreasing solution
-3. **Wipe Surfaces** - Clean interior walls with approved cleaning agents
-4. **Sanitize** - Apply sanitizing solution to all surfaces
+**Daily cleaning steps:**
 
-✅ **Quality Check:**
-- Ensure all cleaning solution is completely removed
-- Check that all components are properly reassembled
-- Verify gas connections are secure (if applicable)
+1. **Turn off the grill**
+   Make sure it's cooling down
 
-⚠️ **Safety Reminders:**
-- Never use water on hot surfaces
-- Always use approved cleaning chemicals only
-- Wear protective equipment when handling degreasers
+2. **Take out the parts**
+   Remove the cooking grates
+   Take out the drip pans
 
-**Note:** This AI-powered response demonstrates how the system interprets your manual content to provide structured, actionable guidance."""
+3. **Scrape off the food bits**
+   Use the grill scraper
+   Get all the leftover food off
+
+4. **Clean the grates**
+   Use the grill brush
+   Spray them with degreaser
+   Scrub until they're clean
+
+**For deep cleaning:**
+
+1. **Take everything apart** 
+   Remove all the parts you can
+
+2. **Soak the parts**
+   Put them in soapy water
+   Let them sit for a few minutes
+
+3. **Wipe down the inside**
+   Use approved cleaner only
+   Get all the grease off the walls
+
+4. **Put it back together**
+   Make sure everything fits right
+   Check that gas connections are tight
+
+**Remember:** Never spray water on a hot grill! Always let it cool first.
+
+Don't worry if this seems like a lot. You'll get faster at it. Ask for help if you need it!"""
     
     def _generate_maintenance_demo_response(self, context: str) -> str:
         """Generate a demo response for maintenance-related questions"""
