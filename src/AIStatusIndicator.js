@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './AIStatusIndicator.css';
-import { apiUtils } from './apiUtils';
+import { apiService } from './services/api';
 
 function AIStatusIndicator() {
   const [aiStatus, setAiStatus] = useState(null);
@@ -15,7 +15,7 @@ function AIStatusIndicator() {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiUtils.getAIStatus();
+      const data = await apiService.get('/ai-status');
       setAiStatus(data);
     } catch (error) {
       console.error('Error fetching AI status:', error);
