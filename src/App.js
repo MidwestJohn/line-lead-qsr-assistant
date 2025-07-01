@@ -127,41 +127,61 @@ function App() {
   const elevenlabsApiKey = process.env.REACT_APP_ELEVENLABS_API_KEY;
   const currentElevenLabsAudioRef = useRef(null);
   
-  // TTS Queue system with audio pre-loading to eliminate gaps
+  // TTS Queue system with rate-limited audio pre-loading
   const ttsQueueRef = useRef([]);
   const ttsPlayingRef = useRef(false);
   const audioBufferRef = useRef(new Map()); // Pre-generated audio blobs
+  const apiCallsInProgressRef = useRef(0);
+  const maxConcurrentCalls = 2; // Limit concurrent ElevenLabs API calls
   
-  // ElevenLabs API function
-  const generateElevenLabsAudio = async (text) => {
+  // ElevenLabs API function with retry logic for rate limits
+  const generateElevenLabsAudio = async (text, retryCount = 0) => {
     if (!elevenlabsApiKey) {
       throw new Error('ElevenLabs API key not available');
     }
 
-    const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
-      method: 'POST',
-      headers: {
-        'Accept': 'audio/mpeg',
-        'Content-Type': 'application/json',
-        'xi-api-key': elevenlabsApiKey
-      },
-      body: JSON.stringify({
-        text: text,
-        model_id: "eleven_multilingual_v2",
-        voice_settings: {
-          stability: 0.8,        // High for reliability and no hallucinations
-          similarity_boost: 0.9, // High for voice consistency
-          style: 0.4,           // TEST: Upper limit of safe range for maximum personality
-          use_speaker_boost: true
-        }
-      })
-    });
+    try {
+      const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': elevenlabsApiKey
+        },
+        body: JSON.stringify({
+          text: text,
+          model_id: "eleven_multilingual_v2",
+          voice_settings: {
+            stability: 0.8,        // High for reliability and no hallucinations
+            similarity_boost: 0.9, // High for voice consistency
+            style: 0.4,           // TEST: Upper limit of safe range for maximum personality
+            use_speaker_boost: true
+          }
+        })
+      });
 
-    if (!response.ok) {
-      throw new Error(`ElevenLabs API error: ${response.status} ${response.statusText}`);
+      if (response.status === 429 && retryCount < 3) {
+        // Rate limited - wait and retry with exponential backoff
+        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+        console.log(`🔄 Rate limited, retrying in ${delay}ms (attempt ${retryCount + 1}/3)`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return generateElevenLabsAudio(text, retryCount + 1);
+      }
+
+      if (!response.ok) {
+        throw new Error(`ElevenLabs API error: ${response.status} ${response.statusText}`);
+      }
+
+      return response.blob();
+    } catch (error) {
+      if (retryCount < 3 && (error.message.includes('429') || error.message.includes('rate'))) {
+        const delay = Math.pow(2, retryCount) * 1000;
+        console.log(`🔄 API error, retrying in ${delay}ms (attempt ${retryCount + 1}/3):`, error.message);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return generateElevenLabsAudio(text, retryCount + 1);
+      }
+      throw error;
     }
-
-    return response.blob();
   };
 
   const playElevenLabsAudio = (audioBlob) => {
@@ -187,16 +207,25 @@ function App() {
     });
   };
 
-  // Pre-generate audio for queue items to eliminate gaps
+  // Rate-limited pre-generation to avoid 429 errors
   const preGenerateAudio = async (queueId, text) => {
+    // Wait if too many concurrent API calls
+    while (apiCallsInProgressRef.current >= maxConcurrentCalls) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    apiCallsInProgressRef.current++;
+    
     try {
-      console.log(`🎵 Pre-generating audio for queue item ${queueId}:`, text.substring(0, 30) + '...');
+      console.log(`🎵 Pre-generating audio for queue item ${queueId} (concurrent: ${apiCallsInProgressRef.current}):`, text.substring(0, 30) + '...');
       const audioBlob = await generateElevenLabsAudio(text);
       audioBufferRef.current.set(queueId, audioBlob);
       console.log(`🎵 Pre-generation complete for queue item ${queueId}`);
     } catch (error) {
       console.error(`🔊 Pre-generation failed for queue item ${queueId}:`, error.message);
       audioBufferRef.current.set(queueId, null); // Mark as failed
+    } finally {
+      apiCallsInProgressRef.current--;
     }
   };
 
@@ -209,9 +238,9 @@ function App() {
     ttsPlayingRef.current = true;
     console.log('🎵 Processing TTS queue, items:', ttsQueueRef.current.length);
 
-    // Start pre-generating all items in parallel
+    // Start pre-generating items with rate limiting (max 2 concurrent)
     const queueItems = [...ttsQueueRef.current];
-    queueItems.forEach((item, index) => {
+    queueItems.slice(0, maxConcurrentCalls).forEach((item, index) => {
       if (!audioBufferRef.current.has(item.queueId)) {
         preGenerateAudio(item.queueId, item.text);
       }
@@ -245,12 +274,14 @@ function App() {
         }
         
         if (audioBlob === null) {
-          throw new Error('Pre-generation failed');
+          // Pre-generation failed (likely rate limited) - generate now
+          console.log(`🔄 Pre-generation failed, generating now for queue item ${queueId}`);
+          audioBlob = await generateElevenLabsAudio(text);
         }
         
         if (audioBlob === undefined) {
-          // Fallback: generate now
-          console.log(`🎵 Fallback generation for queue item ${queueId}`);
+          // Still generating or timeout - fallback generation
+          console.log(`⏰ Pre-generation timeout, fallback generation for queue item ${queueId}`);
           audioBlob = await generateElevenLabsAudio(text);
         }
 
@@ -1501,10 +1532,11 @@ function App() {
       currentElevenLabsAudioRef.current = null;
     }
     
-    // Clear TTS queue and audio buffer to stop all pending audio
+    // Clear TTS queue, audio buffer, and reset API call counter
     ttsQueueRef.current = [];
     ttsPlayingRef.current = false;
     audioBufferRef.current.clear();
+    apiCallsInProgressRef.current = 0;
     
     setIsSpeaking(false);
     currentTTSMessageIdRef.current = null;
