@@ -73,6 +73,8 @@ function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [voiceAvailable, setVoiceAvailable] = useState(false);
   const speechRecognitionRunningRef = useRef(false);
+  const messageBeingSentRef = useRef(false);
+  const lastSentTranscriptRef = useRef('');
   
   // Text-to-Speech state
   const [ttsAvailable, setTtsAvailable] = useState(false);
@@ -259,15 +261,15 @@ function App() {
           setHandsFreeStatus('speaking');
         }
 
-        // Wait for pre-generated audio or generate now if not ready
+        // Optimized audio retrieval with reduced wait time
         let audioBlob = audioBufferRef.current.get(queueId);
         
         if (audioBlob === undefined) {
-          // Still generating - wait for it
+          // Still generating - wait with shorter intervals for faster response
           console.log(`🎵 Waiting for pre-generation of queue item ${queueId}...`);
           let attempts = 0;
-          while (audioBlob === undefined && attempts < 50) { // Max 5 seconds wait
-            await new Promise(resolve => setTimeout(resolve, 100));
+          while (audioBlob === undefined && attempts < 30) { // Reduced from 50 to 30 (3s max)
+            await new Promise(resolve => setTimeout(resolve, 50)); // Reduced from 100ms to 50ms
             audioBlob = audioBufferRef.current.get(queueId);
             attempts++;
           }
@@ -308,7 +310,8 @@ function App() {
     if (handsFreeStateRef.current) {
       console.log('🎵 All TTS completed, restarting voice input');
       setHandsFreeStatus('ready');
-      setTimeout(() => startAutoVoiceInput(), 1000);
+      // Reduced delay for faster conversation flow
+      setTimeout(() => startAutoVoiceInput(), 500); // Reduced from 1000ms to 500ms
     }
   };
 
@@ -491,7 +494,7 @@ function App() {
                 }
                 
                 // SMART DELAY: 2-second countdown on final result (allows thinking time)
-                if (transcriptWordCountRef.current >= 2 && !messageSentRef.current) {
+                if (transcriptWordCountRef.current >= 2 && !messageSentRef.current && !messageBeingSentRef.current) {
                   const finalResultTime = performance.now();
                   console.log('⏱️ Final result received at:', finalResultTime);
                   console.log('⏱️ Starting 2-second smart delay for FULL transcript:', currentTranscriptRef.current);
@@ -512,7 +515,7 @@ function App() {
                       silenceTimerRef.current = setTimeout(smartDelayTimer, 1000);
                     } else {
                       // 2 seconds elapsed - now send the FULL accumulated message
-                      if (!messageSentRef.current && handsFreeStateRef.current) {
+                      if (!messageSentRef.current && !messageBeingSentRef.current && handsFreeStateRef.current) {
                         const fullTranscript = currentTranscriptRef.current.trim();
                         console.log('⚡ Smart delay complete - sending FULL message:', fullTranscript);
                         
@@ -564,9 +567,9 @@ function App() {
             speechRecognitionRunningRef.current = false;
             setIsRecording(false);
             
-            // Check if message already sent via final result trigger
-            if (messageSentRef.current) {
-              console.log('📤 Message already sent via final result trigger, skipping onend send');
+            // Enhanced deduplication check
+            if (messageSentRef.current || messageBeingSentRef.current) {
+              console.log('📤 Message already sent/being sent, skipping onend send');
               return;
             }
             
@@ -578,10 +581,11 @@ function App() {
               stopTranscriptTimer();
               
               const transcriptToSend = currentTranscriptRef.current.trim();
-              if (transcriptToSend) {
+              if (transcriptToSend && !messageBeingSentRef.current) {
                 const sendStartTime = performance.now();
                 console.log('📤 Message send start at:', sendStartTime, 'Delay from speech end:', sendStartTime - speechEndTime, 'ms');
                 
+                messageSentRef.current = true; // Mark as sent to prevent further duplicates
                 setHandsFreeStatus('processing');
                 // Send immediately without any delays
                 sendMessageWithText(transcriptToSend);
@@ -781,9 +785,30 @@ function App() {
     const functionStartTime = performance.now();
     console.log('📤 sendMessageWithText start at:', functionStartTime);
     
-    if (!messageText || messageText.trim() === '' || messageStatus.isLoading) {
+    // Enhanced deduplication: Check multiple conditions
+    if (messageBeingSentRef.current) {
+      console.log('⏸️ Message already being sent, skipping:', messageText);
       return;
     }
+    
+    if (messageText === lastSentTranscriptRef.current) {
+      console.log('⏸️ Duplicate transcript detected, skipping:', messageText);
+      return;
+    }
+    
+    if (!messageText || messageText.trim() === '' || messageStatus.isLoading) {
+      console.log('⏸️ Invalid message or loading state, skipping');
+      return;
+    }
+    
+    // Mark as being sent and store transcript
+    messageBeingSentRef.current = true;
+    lastSentTranscriptRef.current = messageText;
+    
+    // Additional safety: Set timeout to reset deduplication flag
+    setTimeout(() => {
+      messageBeingSentRef.current = false;
+    }, 2000); // Reset after 2 seconds if something goes wrong
 
     // Check if services are ready (more lenient for auto-send when online)
     if (!serviceStatus.isHealthy && !serviceStatus.isReady && !isOnline) {
@@ -831,6 +856,9 @@ function App() {
     }
 
     await sendMessageWithRetry(currentMessage, messageId);
+    
+    // Reset deduplication flag after successful send
+    messageBeingSentRef.current = false;
   };
 
   // Enhanced message sending with retry logic
@@ -885,6 +913,9 @@ function App() {
     }
 
     await sendMessageWithRetry(currentMessage, messageId);
+    
+    // Reset deduplication flag after successful send
+    messageBeingSentRef.current = false;
   };
 
   const sendMessageWithRetry = async (messageText, messageId) => {
@@ -1068,6 +1099,10 @@ function App() {
     setIsWaitingForResponse(false);
     setStreamingMessage(null);
     
+    // Reset deduplication flags on error
+    messageBeingSentRef.current = false;
+    messageSentRef.current = false;
+    
     // Replace streaming message with error and retry option
     setMessages(prev => prev.map(msg => 
       msg.id === streamingMsgId 
@@ -1093,6 +1128,10 @@ function App() {
   const completeStreaming = (streamingMsgId, metadata) => {
     const completionTime = performance.now();
     console.log('🎯 Stream completion at:', completionTime, 'for message:', streamingMsgId);
+    
+    // Reset all deduplication flags
+    messageBeingSentRef.current = false;
+    messageSentRef.current = false;
     
     setIsStreaming(false);
     setIsThinking(false);
@@ -1391,9 +1430,15 @@ function App() {
       // Start recording
       console.log('Starting voice recording... handsFreeMode:', handsFreeStateRef.current);
       
-      // Check if already running to prevent "recognition has already started" error
-      if (speechRecognitionRunningRef.current) {
-        console.log('🎤 Speech recognition already running, skipping start');
+      // Enhanced check: Prevent overlapping voice sessions
+      if (speechRecognitionRunningRef.current || isRecording) {
+        console.log('🎤 Speech recognition already active, preventing overlap');
+        return;
+      }
+      
+      // Check if message is being processed to avoid conflicts
+      if (messageBeingSentRef.current || messageStatus.isLoading) {
+        console.log('🎤 Message being processed, delaying voice input');
         return;
       }
       
@@ -1403,6 +1448,8 @@ function App() {
         currentTranscriptRef.current = '';
         transcriptWordCountRef.current = 0;
         lastTranscriptUpdateRef.current = null;
+        lastSentTranscriptRef.current = ''; // Clear last sent transcript
+        messageSentRef.current = false; // Reset message sent flag
         stopTranscriptTimer();
         
         console.log('🚀 About to start speech recognition - handsFreeMode:', handsFreeStateRef.current);
@@ -1410,19 +1457,25 @@ function App() {
         speechRecognitionRef.current.start();
       } catch (error) {
         console.error('Failed to start speech recognition:', error);
+        speechRecognitionRunningRef.current = false;
         setIsRecording(false);
         
         if (error.name === 'InvalidStateError') {
-          // Recognition is already running, stop it first
+          // Recognition is already running, stop it first and retry
+          console.log('🔄 Stopping existing recognition and retrying...');
           speechRecognitionRef.current.stop();
           setTimeout(() => {
-            try {
-              setInputText('');
-              speechRecognitionRef.current.start();
-            } catch (retryError) {
-              console.error('Retry failed:', retryError);
+            if (!speechRecognitionRunningRef.current) {
+              try {
+                setInputText('');
+                speechRecognitionRunningRef.current = true;
+                speechRecognitionRef.current.start();
+              } catch (retryError) {
+                console.error('Retry failed:', retryError);
+                speechRecognitionRunningRef.current = false;
+              }
             }
-          }, 100);
+          }, 250); // Longer delay for proper cleanup
         }
       }
     }
@@ -1548,6 +1601,12 @@ function App() {
       return;
     }
     
+    // Prevent multiple restarts - enhanced safety
+    if (autoVoiceTimerRef.current || speechRecognitionRunningRef.current || isRecording || messageBeingSentRef.current) {
+      console.log('🎤 Auto voice input already in progress or blocked, skipping restart');
+      return;
+    }
+    
     // Clear any existing timer
     if (autoVoiceTimerRef.current) {
       clearTimeout(autoVoiceTimerRef.current);
@@ -1559,10 +1618,14 @@ function App() {
     
     // Brief delay to allow TTS to fully complete, then start voice recognition
     autoVoiceTimerRef.current = setTimeout(() => {
-      if (handsFreeStateRef.current && !isRecording && !isSpeaking) {
+      if (handsFreeStateRef.current && !isRecording && !isSpeaking && !messageBeingSentRef.current) {
+        autoVoiceTimerRef.current = null; // Clear timer reference
         handleVoiceInput(); // Start voice recognition
+      } else {
+        autoVoiceTimerRef.current = null; // Clear timer reference even if conditions not met
+        console.log('🎤 Auto voice input conditions not met - isRecording:', isRecording, 'isSpeaking:', isSpeaking, 'messageBeingSent:', messageBeingSentRef.current);
       }
-    }, 500); // Shorter delay - just enough for TTS cleanup
+    }, 750); // Slightly longer delay for proper TTS cleanup
   };
 
   const exitHandsFreeMode = () => {
