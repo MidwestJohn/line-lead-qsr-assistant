@@ -220,21 +220,66 @@ REMEMBER:
 - Be encouraging and patient"""
     
     def format_context(self, relevant_chunks: List[Dict]) -> str:
-        """Format the relevant document chunks into context for OpenAI"""
+        """Format the relevant document chunks as casual, friendly knowledge"""
         if not relevant_chunks:
-            return "No relevant manual content found."
+            return "I don't have specific info about that, but I'll help however I can!"
         
-        context_parts = ["MANUAL CONTEXT:\n"]
-        
-        for i, chunk in enumerate(relevant_chunks, 1):
-            filename = chunk['metadata']['filename']
+        # Extract and simplify the content
+        simplified_info = []
+        for chunk in relevant_chunks:
             text = chunk['text']
-            similarity = chunk['similarity']
             
-            context_parts.append(f"Source {i} - {filename} (relevance: {similarity:.2f}):")
-            context_parts.append(f"{text}\n")
+            # Simplify corporate language in the content
+            simplified_text = self._simplify_manual_text(text)
+            simplified_info.append(simplified_text)
         
-        return "\n".join(context_parts)
+        # Format as casual knowledge sharing
+        unique_info = list(set(simplified_info))  # Remove duplicates
+        if len(unique_info) == 1:
+            return f"Here's what I learned in training: {unique_info[0]}"
+        else:
+            context_parts = ["Here's what I remember from training:"]
+            for info in unique_info[:2]:  # Limit to 2 most relevant
+                context_parts.append(f"- {info}")
+            return "\n".join(context_parts)
+    
+    def _simplify_manual_text(self, text: str) -> str:
+        """Convert formal manual language to casual, friendly terms"""
+        # Replace technical/corporate terms with simple alternatives
+        replacements = {
+            'equipment': 'machine',
+            'personnel': 'workers',
+            'utilize': 'use',
+            'implement': 'do',
+            'procedure': 'steps',
+            'protocol': 'way to do it',
+            'maintenance': 'cleaning',
+            'deactivate': 'turn off',
+            'activate': 'turn on',
+            'optimal': 'best',
+            'ensure': 'make sure',
+            'verify': 'check',
+            'apparatus': 'machine',
+            'initiate': 'start',
+            'terminate': 'stop',
+            'sufficient': 'enough',
+            'comprehensive': 'complete'
+        }
+        
+        simplified = text.lower()
+        for formal, casual in replacements.items():
+            simplified = simplified.replace(formal, casual)
+        
+        # Remove corporate formatting markers
+        simplified = simplified.replace('section ', '').replace('§', '')
+        simplified = simplified.replace('manual context:', '')
+        simplified = simplified.replace('source 1 -', '').replace('source 2 -', '')
+        
+        # Make it sound conversational
+        if not simplified.endswith('.'):
+            simplified += '.'
+            
+        return simplified.strip().capitalize()
     
     async def generate_response(self, user_question: str, relevant_chunks: List[Dict]) -> Dict:
         """
@@ -255,17 +300,25 @@ REMEMBER:
             return self._generate_demo_response(user_question, relevant_chunks)
         
         try:
-            # Format context from document search
+            # Format context from document search as casual knowledge
             context = self.format_context(relevant_chunks)
             
-            # Double system message approach - both beginning and end for maximum adherence
-            user_message = f"Please help me with simple, easy words that a 16-year-old would understand: {user_question}\n\n{context}"
+            # Conversational context injection to prevent corporate language contamination
             system_prompt = self.create_system_prompt()
             
+            # Separate style from content - frame context as casual knowledge
+            if context and "No relevant" not in context and "don't have specific info" not in context:
+                user_message = f"""I have a question about restaurant work: {user_question}
+
+{context}
+
+Can you help explain this in simple terms? Remember, I'm new and want to learn the right way to do things safely."""
+            else:
+                user_message = f"I have a question about restaurant work: {user_question}\n\nCan you help explain this simply? I'm new and want to learn the safe way to do things."
+            
             messages = [
-                {"role": "system", "content": system_prompt},  # System at beginning
-                {"role": "user", "content": user_message},
-                {"role": "system", "content": system_prompt}   # System at end for reinforcement
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
             ]
             
             # Call OpenAI API with strengthened parameters
@@ -320,17 +373,25 @@ REMEMBER:
             return
         
         try:
-            # Format context from document search
+            # Format context from document search as casual knowledge
             context = self.format_context(relevant_chunks)
             
-            # Double system message approach - both beginning and end for maximum adherence
-            user_message = f"Please help me with simple, easy words that a 16-year-old would understand: {user_question}\n\n{context}"
+            # Conversational context injection to prevent corporate language contamination
             system_prompt = self.create_system_prompt()
             
+            # Separate style from content - frame context as casual knowledge
+            if context and "No relevant" not in context and "don't have specific info" not in context:
+                user_message = f"""I have a question about restaurant work: {user_question}
+
+{context}
+
+Can you help explain this in simple terms? Remember, I'm new and want to learn the right way to do things safely."""
+            else:
+                user_message = f"I have a question about restaurant work: {user_question}\n\nCan you help explain this simply? I'm new and want to learn the safe way to do things."
+            
             messages = [
-                {"role": "system", "content": system_prompt},  # System at beginning
-                {"role": "user", "content": user_message},
-                {"role": "system", "content": system_prompt}   # System at end for reinforcement
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
             ]
             
             # Call OpenAI API with streaming and strengthened parameters
