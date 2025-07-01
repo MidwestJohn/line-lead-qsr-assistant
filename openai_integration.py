@@ -258,12 +258,14 @@ REMEMBER:
             # Format context from document search
             context = self.format_context(relevant_chunks)
             
-            # Create messages for OpenAI with reinforced simple language request
-            user_message = f"Please help me with simple, easy words that a 16-year-old would understand: {user_question}\n\nRemember: Use simple restaurant words, short sentences, and be encouraging!\n\n{context}"
+            # Double system message approach - both beginning and end for maximum adherence
+            user_message = f"Please help me with simple, easy words that a 16-year-old would understand: {user_question}\n\n{context}"
+            system_prompt = self.create_system_prompt()
             
             messages = [
-                {"role": "system", "content": self.create_system_prompt()},
-                {"role": "user", "content": user_message}
+                {"role": "system", "content": system_prompt},  # System at beginning
+                {"role": "user", "content": user_message},
+                {"role": "system", "content": system_prompt}   # System at end for reinforcement
             ]
             
             # Call OpenAI API with strengthened parameters
@@ -321,12 +323,14 @@ REMEMBER:
             # Format context from document search
             context = self.format_context(relevant_chunks)
             
-            # Create messages for OpenAI with reinforced simple language request
-            user_message = f"Please help me with simple, easy words that a 16-year-old would understand: {user_question}\n\nRemember: Use simple restaurant words, short sentences, and be encouraging!\n\n{context}"
+            # Double system message approach - both beginning and end for maximum adherence
+            user_message = f"Please help me with simple, easy words that a 16-year-old would understand: {user_question}\n\n{context}"
+            system_prompt = self.create_system_prompt()
             
             messages = [
-                {"role": "system", "content": self.create_system_prompt()},
-                {"role": "user", "content": user_message}
+                {"role": "system", "content": system_prompt},  # System at beginning
+                {"role": "user", "content": user_message},
+                {"role": "system", "content": system_prompt}   # System at end for reinforcement
             ]
             
             # Call OpenAI API with streaming and strengthened parameters
