@@ -281,6 +281,7 @@ async def startup_event():
 # Pydantic models
 class ChatMessage(BaseModel):
     message: str
+    conversation_id: Optional[str] = "default"
 
 class ChatResponse(BaseModel):
     response: str
@@ -661,32 +662,34 @@ async def chat_endpoint(chat_message: ChatMessage):
         # Search for relevant document chunks
         relevant_chunks = search_engine.search(user_message, top_k=3)
         
-        # Generate AI-powered response
-        ai_result = await qsr_assistant.generate_response(user_message, relevant_chunks)
+        # CRITICAL FIX: Use PydanticAI voice orchestrator for intelligent conversation management
+        orchestrated_response = await voice_orchestrator.process_voice_message(
+            message=user_message,
+            relevant_docs=relevant_chunks,
+            session_id=chat_message.conversation_id
+        )
         
-        response_text = ai_result['response']
+        response_text = orchestrated_response.text_response
         
-        # CRITICAL FIX: Apply natural speech conversion for ElevenLabs pronunciation
-        response_text = fix_numbered_lists_for_speech(response_text)
+        # Natural speech conversion is already applied in the orchestrator
+        # No need to apply fix_numbered_lists_for_speech again
         
         # Add source information if available
-        if ai_result.get('sources'):
+        if relevant_chunks:
             source_info = "\n\n📚 Sources consulted: " + ", ".join([
-                f"{src['filename']} ({src['similarity']:.2f})" 
-                for src in ai_result['sources']
+                f"{chunk.get('source', 'unknown')} ({chunk.get('similarity', 0.0):.2f})" 
+                for chunk in relevant_chunks
             ])
             response_text += source_info
         
-        # Add AI model info if available
-        if ai_result.get('model_used'):
-            logger.info(f"AI response generated using {ai_result['model_used']} with {ai_result.get('chunks_used', 0)} document chunks")
+        # Log orchestration info
+        logger.info(f"Sending orchestrated response with intent: {orchestrated_response.detected_intent}, confidence: {orchestrated_response.confidence_score}")
         
         response = ChatResponse(
             response=response_text,
             timestamp=datetime.datetime.now().isoformat()
         )
         
-        logger.info(f"Sending {ai_result['type']} response with {len(relevant_chunks)} relevant chunks")
         return response
         
     except HTTPException:
@@ -712,49 +715,42 @@ async def chat_stream_endpoint(chat_message: ChatMessage):
         
         async def generate_stream():
             try:
-                # Collect the complete response first to apply natural speech conversion
-                complete_response = ""
-                async for chunk_data in qsr_assistant.generate_response_stream(user_message, relevant_chunks):
-                    if chunk_data.get("chunk"):
-                        complete_response += chunk_data["chunk"]
-                    
-                    # If this is the final chunk, apply natural speech conversion
-                    if chunk_data.get("done", False):
-                        # CRITICAL FIX: Apply natural speech conversion for ElevenLabs pronunciation
-                        complete_response = fix_numbered_lists_for_speech(complete_response)
+                # CRITICAL FIX: Use PydanticAI voice orchestrator for intelligent conversation management
+                orchestrated_response = await voice_orchestrator.process_voice_message(
+                    message=user_message,
+                    relevant_docs=relevant_chunks,
+                    session_id=chat_message.conversation_id
+                )
+                
+                complete_response = orchestrated_response.text_response
+                # Natural speech conversion is already applied in the orchestrator
                         
-                        # Re-stream the converted response preserving spacing and formatting
-                        # Split by sentences but maintain original spacing and line breaks
+                # Re-stream the orchestrated response preserving spacing and formatting
+                # Split into paragraphs first to preserve structure
+                paragraphs = complete_response.split('\n\n')
+                
+                for paragraph in paragraphs:
+                    if paragraph.strip():
+                        # For each paragraph, split into sentences while preserving spacing
+                        sentences = paragraph.split('. ')
                         
-                        # Split into paragraphs first to preserve structure
-                        paragraphs = complete_response.split('\n\n')
-                        
-                        for paragraph in paragraphs:
-                            if paragraph.strip():
-                                # For each paragraph, split into sentences while preserving spacing
-                                sentences = paragraph.split('. ')
+                        for i, sentence in enumerate(sentences):
+                            if sentence.strip():
+                                # Add period back if it's not the last sentence in paragraph
+                                if i < len(sentences) - 1 and not sentence.endswith('.'):
+                                    sentence += '.'
                                 
-                                for i, sentence in enumerate(sentences):
-                                    if sentence.strip():
-                                        # Add period back if it's not the last sentence in paragraph
-                                        if i < len(sentences) - 1 and not sentence.endswith('.'):
-                                            sentence += '.'
-                                        
-                                        # Add space after sentence (will be trimmed by frontend)
-                                        chunk_text = sentence + ' ' if not sentence.endswith('\n') else sentence
-                                        yield f"data: {json.dumps({'chunk': chunk_text, 'done': False})}\n\n"
-                                        await asyncio.sleep(0.01)
-                                
-                                # Add paragraph break after each paragraph
-                                if paragraph != paragraphs[-1]:  # Not the last paragraph
-                                    yield f"data: {json.dumps({'chunk': ' ', 'done': False})}\n\n"
+                                # Add space after sentence (will be trimmed by frontend)
+                                chunk_text = sentence + ' ' if not sentence.endswith('\n') else sentence
+                                yield f"data: {json.dumps({'chunk': chunk_text, 'done': False})}\n\n"
+                                await asyncio.sleep(0.01)
                         
-                        # Send final completion signal
-                        yield f"data: {json.dumps({'chunk': '', 'done': True})}\n\n"
-                        return
-                    else:
-                        # For non-final chunks during collection, just continue collecting
-                        continue
+                        # Add paragraph break after each paragraph
+                        if paragraph != paragraphs[-1]:  # Not the last paragraph
+                            yield f"data: {json.dumps({'chunk': ' ', 'done': False})}\n\n"
+                
+                # Send final completion signal
+                yield f"data: {json.dumps({'chunk': '', 'done': True})}\n\n"
                     
             except Exception as e:
                 logger.error(f"Error in streaming response: {e}")
