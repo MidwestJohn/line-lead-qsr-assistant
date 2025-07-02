@@ -9,6 +9,8 @@ services:
     envVars:
       - key: OPENAI_API_KEY
         sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
       - key: CORS_ORIGINS
         value: "https://linelead.io,http://localhost:3000"
       - key: PYTHON_VERSION
