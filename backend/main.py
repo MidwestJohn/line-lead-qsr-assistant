@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import logging
 import datetime
 import json
@@ -24,6 +24,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from document_search import search_engine, load_documents_into_search_engine
 from openai_integration import qsr_assistant
 from voice_service import voice_service
+from voice_agent import voice_orchestrator, VoiceState, ConversationIntent
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -322,6 +323,18 @@ class VoiceStatusResponse(BaseModel):
 
 class ChatVoiceRequest(BaseModel):
     message: str
+    session_id: Optional[str] = None  # Add session support
+
+class ConversationSummaryRequest(BaseModel):
+    session_id: Optional[str] = None
+
+class ConversationSummaryResponse(BaseModel):
+    duration: float
+    message_count: int
+    topics_covered: List[str] = []
+    last_intent: Optional[str] = None
+    completion_status: bool
+    conversation_flow_analysis: Dict[str, Any] = {}
 
 class ChatVoiceResponse(BaseModel):
     response: str
@@ -334,6 +347,13 @@ class ChatVoiceWithAudioResponse(BaseModel):
     audio_available: bool
     sources: List[str] = []
     timestamp: str
+    # PydanticAI orchestration fields
+    detected_intent: Optional[str] = None
+    should_continue_listening: bool = True
+    next_voice_state: Optional[str] = None
+    confidence_score: Optional[float] = None
+    conversation_complete: bool = False
+    suggested_follow_ups: List[str] = []
 
 # Enhanced Health Check with Connection Management
 @app.get("/health", response_model=HealthResponse)
@@ -1284,9 +1304,14 @@ async def chat_with_voice_and_audio(request: ChatVoiceRequest):
         # Get relevant document chunks
         relevant_chunks = search_engine.search(request.message, top_k=3)
         
-        # Get AI response with voice-optimized settings
-        response_data = await qsr_assistant.generate_voice_response(request.message, relevant_chunks)
-        ai_response = response_data.get("response", "I'm sorry, I couldn't process your request.")
+        # Use PydanticAI voice orchestrator for intelligent conversation management
+        orchestrated_response = await voice_orchestrator.process_voice_message(
+            message=request.message,
+            relevant_docs=relevant_chunks,
+            session_id=request.session_id
+        )
+        
+        ai_response = orchestrated_response.text_response
         
         # CRITICAL: Ensure response is short enough for smooth voice generation
         if len(ai_response) > 300:
@@ -1326,7 +1351,14 @@ async def chat_with_voice_and_audio(request: ChatVoiceRequest):
             audio_data=audio_data,
             audio_available=audio_available,
             sources=sources,
-            timestamp=datetime.datetime.now().isoformat()
+            timestamp=datetime.datetime.now().isoformat(),
+            # PydanticAI orchestration data
+            detected_intent=orchestrated_response.detected_intent.value,
+            should_continue_listening=orchestrated_response.should_continue_listening,
+            next_voice_state=orchestrated_response.next_voice_state.value,
+            confidence_score=orchestrated_response.confidence_score,
+            conversation_complete=orchestrated_response.conversation_complete,
+            suggested_follow_ups=orchestrated_response.suggested_follow_ups
         )
         
     except Exception as e:
@@ -1337,7 +1369,13 @@ async def chat_with_voice_and_audio(request: ChatVoiceRequest):
             audio_data=None,
             audio_available=False,
             sources=[],
-            timestamp=datetime.datetime.now().isoformat()
+            timestamp=datetime.datetime.now().isoformat(),
+            detected_intent=ConversationIntent.ERROR_RECOVERY.value,
+            should_continue_listening=True,
+            next_voice_state=VoiceState.ERROR_RECOVERY.value,
+            confidence_score=0.3,
+            conversation_complete=False,
+            suggested_follow_ups=["Could you try asking again?"]
         )
 
 @app.post("/chat-voice-direct")
@@ -1384,6 +1422,70 @@ async def chat_voice_direct(request: ChatVoiceRequest):
     except Exception as e:
         logger.error(f"🧪 DIAGNOSTIC: Direct voice endpoint error: {str(e)}")
         return {"error": str(e)}
+
+# PydanticAI Conversation Management Endpoints
+@app.get("/conversation-summary", response_model=ConversationSummaryResponse)
+async def get_conversation_summary(session_id: Optional[str] = None):
+    """Get intelligent conversation summary and analytics"""
+    try:
+        from voice_agent import analyze_conversation_flow
+        
+        summary = voice_orchestrator.get_conversation_summary(session_id)
+        context = voice_orchestrator.get_context(session_id)
+        flow_analysis = analyze_conversation_flow(context)
+        
+        return ConversationSummaryResponse(
+            duration=summary["duration"],
+            message_count=summary["message_count"],
+            topics_covered=summary["topics_covered"],
+            last_intent=summary["last_intent"],
+            completion_status=summary["completion_status"],
+            conversation_flow_analysis=flow_analysis
+        )
+    except Exception as e:
+        logger.error(f"Error getting conversation summary: {str(e)}")
+        return ConversationSummaryResponse(
+            duration=0.0,
+            message_count=0,
+            topics_covered=[],
+            last_intent=None,
+            completion_status=False,
+            conversation_flow_analysis={}
+        )
+
+@app.post("/conversation-end")
+async def end_conversation(request: ConversationSummaryRequest):
+    """End a conversation and clean up context"""
+    try:
+        voice_orchestrator.end_conversation(request.session_id)
+        return {"status": "success", "message": "Conversation ended successfully"}
+    except Exception as e:
+        logger.error(f"Error ending conversation: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+@app.get("/voice-orchestration-status")
+async def get_voice_orchestration_status():
+    """Get PydanticAI voice orchestration status"""
+    try:
+        active_sessions = len(voice_orchestrator.active_contexts)
+        return {
+            "pydantic_ai_active": True,
+            "active_conversations": active_sessions,
+            "orchestration_version": "1.0.0",
+            "features": [
+                "intent_detection",
+                "context_awareness", 
+                "conversation_flow_analysis",
+                "smart_continuation_prediction",
+                "error_recovery"
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Error getting orchestration status: {str(e)}")
+        return {
+            "pydantic_ai_active": False,
+            "error": str(e)
+        }
 
 # Root endpoint
 @app.get("/")
