@@ -676,6 +676,9 @@ async def chat_endpoint(chat_message: ChatMessage):
         
         response_text = ai_result['response']
         
+        # CRITICAL FIX: Apply natural speech conversion for ElevenLabs pronunciation
+        response_text = fix_numbered_lists_for_speech(response_text)
+        
         # Add source information if available
         if ai_result.get('sources'):
             source_info = "\n\n📚 Sources consulted: " + ", ".join([
@@ -719,13 +722,39 @@ async def chat_stream_endpoint(chat_message: ChatMessage):
         
         async def generate_stream():
             try:
+                # Collect the complete response first to apply natural speech conversion
+                complete_response = ""
                 async for chunk_data in qsr_assistant.generate_response_stream(user_message, relevant_chunks):
-                    # Format as Server-Sent Events
-                    data = json.dumps(chunk_data)
-                    yield f"data: {data}\n\n"
+                    if chunk_data.get("chunk"):
+                        complete_response += chunk_data["chunk"]
                     
-                    # Small delay to ensure proper streaming
-                    await asyncio.sleep(0.01)
+                    # If this is the final chunk, apply natural speech conversion
+                    if chunk_data.get("done", False):
+                        # CRITICAL FIX: Apply natural speech conversion for ElevenLabs pronunciation
+                        complete_response = fix_numbered_lists_for_speech(complete_response)
+                        
+                        # Now re-stream the converted response in small chunks for TTS
+                        words = complete_response.split()
+                        current_chunk = ""
+                        
+                        for word in words:
+                            current_chunk += word + " "
+                            # Send chunks of ~10-15 words for smooth TTS streaming
+                            if len(current_chunk.split()) >= 12:
+                                yield f"data: {json.dumps({'chunk': current_chunk.strip(), 'done': False})}\n\n"
+                                current_chunk = ""
+                                await asyncio.sleep(0.01)
+                        
+                        # Send any remaining content
+                        if current_chunk.strip():
+                            yield f"data: {json.dumps({'chunk': current_chunk.strip(), 'done': False})}\n\n"
+                        
+                        # Send final completion signal
+                        yield f"data: {json.dumps({'chunk': '', 'done': True})}\n\n"
+                        return
+                    else:
+                        # For non-final chunks during collection, just continue collecting
+                        continue
                     
             except Exception as e:
                 logger.error(f"Error in streaming response: {e}")
