@@ -1,6 +1,0 @@
-node_modules
-build
-.git
-*.md
-package-lock.json
-public/index.html
