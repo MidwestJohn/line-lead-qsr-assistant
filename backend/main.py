@@ -100,41 +100,83 @@ def get_file_url(filename):
         return None
     return f"/files/{filename}"
 
+def fix_numbered_lists_for_speech(text: str) -> str:
+    """
+    Convert numbered markdown lists to natural speech for better ElevenLabs pronunciation.
+    
+    PROBLEM: ElevenLabs pronounces "1. Turn off fryer" as "One dot turn off fryer"
+    SOLUTION: Convert to "First, turn off fryer" which sounds natural and professional
+    
+    This transforms QSR instructions into natural speech patterns that sound like
+    an experienced coworker giving step-by-step guidance.
+    """
+    import re
+    
+    # Number-to-word mapping for natural speech
+    number_words = {
+        1: "First", 2: "Second", 3: "Third", 4: "Fourth", 5: "Fifth",
+        6: "Sixth", 7: "Seventh", 8: "Eighth", 9: "Ninth", 10: "Tenth",
+        11: "Eleventh", 12: "Twelfth", 13: "Thirteenth", 14: "Fourteenth", 15: "Fifteenth"
+    }
+    
+    def replace_numbered_item(match):
+        """Replace numbered list items with natural speech"""
+        indent = match.group(1) or ""
+        number = int(match.group(2))
+        rest_of_line = match.group(3)
+        
+        if number in number_words:
+            # Use natural number words for 1-15, preserve original capitalization
+            return f"{indent}{number_words[number]}, {rest_of_line.lower()}"
+        else:
+            # For higher numbers, use "Step X,"
+            return f"{indent}Step {number}, {rest_of_line.lower()}"
+    
+    # Pattern to match numbered list items: "1. Text" or "2) Text" 
+    # Handles both line-start and inline patterns
+    # Captures: (optional whitespace)(number)(. or ))(rest of text)
+    numbered_pattern = r'(\s*)(\d+)[\.\)]\s+([^.\n]+[.\n]?)'
+    
+    # Process the entire text, handling both line-start and inline patterns
+    result = re.sub(numbered_pattern, replace_numbered_item, text, flags=re.MULTILINE)
+    
+    # Handle patterns like "Do steps 1-3" or "See step 2" - keep these as numbers for clarity
+    # Only convert if it makes sense (step references should stay as numbers)
+    
+    return result
+
 def smart_sentence_split(text: str) -> List[str]:
     """
-    Smart sentence splitting that preserves numbered lists and structured content.
+    Smart sentence splitting with natural speech pre-processing.
     
-    FIXES: Current chunker breaks numbered lists like "1. Check fryer" into ["1", ". Check fryer"]
-    SOLUTION: Recognize numbered list patterns and keep them intact
+    ENHANCEMENTS:
+    1. Converts numbered lists to natural speech ("1. Check" → "First, check") 
+    2. Preserves structured content and list formatting
+    3. Optimized for ElevenLabs TTS pronunciation
     
-    NUMBERED LIST PATTERNS PRESERVED:
-    - "1. Text here."
-    - "2) Text here."  
-    - "• Text here."
-    - "- Text here."
-    - "Step 1: Text here."
-    - "a. Text here."
-    - "i. Text here."
+    RESULT: Natural sounding QSR instructions like an experienced coworker
     """
     import re
     
     if not text or len(text.strip()) < 15:
         return [text] if text.strip() else []
     
-    # First, identify and protect numbered list patterns
-    numbered_list_patterns = [
-        r'\b\d+\.\s[^.]*?\.',  # "1. Text here."
-        r'\b\d+\)\s[^.]*?\.',  # "2) Text here."
+    # FIRST: Convert numbered lists to natural speech for better TTS
+    text = fix_numbered_lists_for_speech(text)
+    
+    # Identify and protect natural speech patterns (after number-to-word conversion)
+    natural_speech_patterns = [
+        r'\b(?:First|Second|Third|Fourth|Fifth|Sixth|Seventh|Eighth|Ninth|Tenth|Eleventh|Twelfth|Thirteenth|Fourteenth|Fifteenth),\s[^.]*?\.',  # "First, text here."
+        r'\bStep\s+(?:\d+|First|Second|Third|Fourth|Fifth|Sixth|Seventh|Eighth|Ninth|Tenth),\s[^.]*?\.',  # "Step 1, text here." or "Step First, text here."
         r'[•·▪▫-]\s[^.]*?\.',  # "• Text here." or "- Text here."
-        r'\b[Ss]tep\s+\d+:\s[^.]*?\.',  # "Step 1: Text here."
         r'\b[a-z]\.\s[^.]*?\.',  # "a. Text here."
         r'\b[ivx]+\.\s[^.]*?\.',  # "i. Text here."
     ]
     
     # Combine all patterns
-    combined_pattern = '|'.join(f'({pattern})' for pattern in numbered_list_patterns)
+    combined_pattern = '|'.join(f'({pattern})' for pattern in natural_speech_patterns)
     
-    # Find all numbered list items
+    # Find all natural speech list items
     list_matches = []
     for match in re.finditer(combined_pattern, text, re.IGNORECASE):
         list_matches.append({
@@ -143,18 +185,18 @@ def smart_sentence_split(text: str) -> List[str]:
             'text': match.group()
         })
     
-    # If no numbered lists found, use standard sentence splitting
+    # If no natural speech lists found, use standard sentence splitting
     if not list_matches:
         # Standard sentence splitting with better regex
         sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', text.strip())
         return [s.strip() for s in sentences if s.strip() and len(s.strip()) >= 3]
     
-    # Process text preserving numbered lists
+    # Process text preserving natural speech list items
     sentences = []
     last_end = 0
     
     for list_item in list_matches:
-        # Add any text before this numbered list item
+        # Add any text before this natural speech list item
         if list_item['start'] > last_end:
             before_text = text[last_end:list_item['start']].strip()
             if before_text:
@@ -162,11 +204,11 @@ def smart_sentence_split(text: str) -> List[str]:
                 before_sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', before_text)
                 sentences.extend([s.strip() for s in before_sentences if s.strip() and len(s.strip()) >= 3])
         
-        # Add the complete numbered list item
+        # Add the complete natural speech list item
         sentences.append(list_item['text'].strip())
         last_end = list_item['end']
     
-    # Add any remaining text after the last numbered list
+    # Add any remaining text after the last natural speech list
     if last_end < len(text):
         remaining_text = text[last_end:].strip()
         if remaining_text:
