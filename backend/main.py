@@ -118,9 +118,9 @@ def fix_numbered_lists_for_speech(text: str) -> str:
         number = int(match.group(2))
         rest_of_line = match.group(3)
         
-        # Always use "Step X," format - simple, clear, and professional
-        # Preserves original capitalization of the rest of the line
-        return f"{indent}Step {number}, {rest_of_line}"
+        # Always use "Step X," format with proper line breaks for readability
+        # Each step starts on a new line for clean formatting
+        return f"\n\nStep {number}, {rest_of_line}"
     
     # Pattern to match numbered list items: "1. Text" or "2) Text" 
     # Handles both line-start and inline patterns
@@ -723,15 +723,31 @@ async def chat_stream_endpoint(chat_message: ChatMessage):
                         # CRITICAL FIX: Apply natural speech conversion for ElevenLabs pronunciation
                         complete_response = fix_numbered_lists_for_speech(complete_response)
                         
-                        # Now re-stream the converted response preserving original spacing
-                        # Split into smaller chunks while preserving sentence boundaries
-                        sentences = smart_sentence_split(complete_response)
+                        # Re-stream the converted response preserving spacing and formatting
+                        # Split by sentences but maintain original spacing and line breaks
                         
-                        for sentence in sentences:
-                            # Send each sentence as a chunk to preserve natural boundaries
-                            if sentence.strip():
-                                yield f"data: {json.dumps({'chunk': sentence.strip(), 'done': False})}\n\n"
-                                await asyncio.sleep(0.01)
+                        # Split into paragraphs first to preserve structure
+                        paragraphs = complete_response.split('\n\n')
+                        
+                        for paragraph in paragraphs:
+                            if paragraph.strip():
+                                # For each paragraph, split into sentences while preserving spacing
+                                sentences = paragraph.split('. ')
+                                
+                                for i, sentence in enumerate(sentences):
+                                    if sentence.strip():
+                                        # Add period back if it's not the last sentence in paragraph
+                                        if i < len(sentences) - 1 and not sentence.endswith('.'):
+                                            sentence += '.'
+                                        
+                                        # Add space after sentence (will be trimmed by frontend)
+                                        chunk_text = sentence + ' ' if not sentence.endswith('\n') else sentence
+                                        yield f"data: {json.dumps({'chunk': chunk_text, 'done': False})}\n\n"
+                                        await asyncio.sleep(0.01)
+                                
+                                # Add paragraph break after each paragraph
+                                if paragraph != paragraphs[-1]:  # Not the last paragraph
+                                    yield f"data: {json.dumps({'chunk': ' ', 'done': False})}\n\n"
                         
                         # Send final completion signal
                         yield f"data: {json.dumps({'chunk': '', 'done': True})}\n\n"
