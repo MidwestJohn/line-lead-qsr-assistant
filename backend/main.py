@@ -695,8 +695,13 @@ async def chat_endpoint(chat_message: ChatMessage):
     except HTTPException:
         raise
     except Exception as e:
+        import traceback
+        tb_lines = traceback.format_exc().split('\n')
         logger.error(f"Error processing chat message: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        for i, line in enumerate(tb_lines):
+            if line.strip():
+                logger.error(f"TB[{i}]: {line}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 # Streaming chat endpoint
 @app.post("/chat/stream")

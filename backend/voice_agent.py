@@ -37,8 +37,19 @@ class ConversationIntent(str, Enum):
 class ConversationContext(BaseModel):
     """Maintains intelligent conversation state across voice interactions"""
     current_topic: Optional[str] = None
-    current_equipment: Optional[str] = None  # NEW: Track current equipment being discussed
-    equipment_history: List[str] = Field(default_factory=list)  # NEW: Equipment mentioned in conversation
+    current_entity: Optional[str] = None  # Current topic/entity being discussed (equipment, procedure, etc.)
+    entity_history: List[str] = Field(default_factory=list)  # All topics/entities mentioned in conversation
+    
+    # Temporary compatibility properties for migration
+    @property
+    def equipment_history(self) -> List[str]:
+        """Backward compatibility property - maps to entity_history"""
+        return self.entity_history
+        
+    @property 
+    def current_equipment(self) -> Optional[str]:
+        """Backward compatibility property - maps to current_entity"""
+        return self.current_entity
     last_document_referenced: Optional[str] = None
     conversation_history: List[Dict[str, str]] = Field(default_factory=list)
     voice_state: VoiceState = VoiceState.LISTENING
@@ -90,13 +101,13 @@ class VoiceResponse(BaseModel):
 
 # Create the intelligent voice orchestration agent
 try:
-    # Get API key from environment (loaded by main.py)
+    # Check if API key is available in environment (loaded by main.py)
     openai_api_key = os.getenv('OPENAI_API_KEY')
     if not openai_api_key:
         raise ValueError("OPENAI_API_KEY not found in environment")
     
     voice_agent = Agent(
-        model=OpenAIModel("gpt-4o-mini", api_key=openai_api_key),
+        model=OpenAIModel("gpt-4o-mini"),
         result_type=VoiceResponse,
         system_prompt="""You are Line Lead's advanced voice orchestration system for QSR workers. Execute these four core capabilities in every interaction:
 
@@ -106,7 +117,7 @@ try:
 - ALWAYS extract equipment names (fryer, grill, ice machine, etc.) and set equipment_mentioned
 - Reference stored equipment in ALL follow-ups: "For the [equipment]..." or "The [equipment] cleaning process..."
 - When new equipment mentioned, set equipment_switch_detected=True and acknowledge: "Got it, switching from [old] to [new equipment]..."
-- Track equipment_history for context references
+- Track entity_history for context references
 
 **Conversation Memory:**
 - Reference previous exchanges: "Like I mentioned earlier..." or "Building on your last question..."
@@ -133,7 +144,7 @@ try:
 
 **Topic Management:**
 - Handle interruptions gracefully: "Got it, switching to [new topic]. What do you need help with?"
-- Update context_updates with current_topic and current_equipment changes
+- Update context_updates with current_topic and current_entity changes
 - Provide natural transitions between topics
 
 ## 3. ADVANCED VOICE ORCHESTRATION
@@ -191,7 +202,7 @@ try:
 - hands_free_recommendation: True for procedural guidance, False for simple answers
 
 **Context Updates Format:**
-- current_equipment: Equipment name if mentioned
+- current_entity: Entity/topic name if mentioned
 - current_procedure_step: Step number if in procedure
 - total_procedure_steps: Total steps if known
 - procedure_type: "cleaning", "maintenance", "troubleshooting"
@@ -227,6 +238,11 @@ class VoiceOrchestrator:
     def __init__(self):
         self.active_contexts: Dict[str, ConversationContext] = {}
         self.default_session = "default"
+    
+    def clear_all_contexts(self):
+        """Clear all conversation contexts (useful for model updates)"""
+        self.active_contexts.clear()
+        logger.info("🧹 Cleared all conversation contexts")
         
     def get_context(self, session_id: str = None) -> ConversationContext:
         """Get or create conversation context for session"""
@@ -252,17 +268,24 @@ class VoiceOrchestrator:
         
         context = self.get_context(session_id)
         
-        # Pre-process for equipment detection and context
-        detected_equipment = self._extract_equipment(message)
-        is_equipment_switch = self._detect_equipment_switch(detected_equipment, context)
+        # Add user message to conversation history
+        context.conversation_history.append({
+            "user": message,
+            "assistant": "",  # Will be filled after AI response
+            "timestamp": time.time()
+        })
+        
+        # Pre-process for topic/entity detection and context
+        detected_entity = self._extract_topic_entities(message, relevant_docs)
+        is_entity_switch = self._detect_entity_switch(detected_entity, context)
         
         # Prepare enhanced context for the agent
         context_data = {
             "current_message": message,
             "conversation_history": context.conversation_history[-5:],  # Last 5 exchanges
             "current_topic": context.current_topic,
-            "current_equipment": context.current_equipment,
-            "equipment_history": context.equipment_history,
+            "current_entity": context.current_entity,
+            "entity_history": context.entity_history,
             "last_document": context.last_document_referenced,
             "topics_covered": context.topics_covered,
             "hands_free_active": context.hands_free_active,
@@ -281,8 +304,8 @@ class VoiceOrchestrator:
             "unclear_responses_count": context.unclear_responses_count,
             "topic_switches": context.topic_switches,
             "response_length_preference": context.response_length_preference,
-            "detected_equipment": detected_equipment,
-            "is_equipment_switch": is_equipment_switch,
+            "detected_entity": detected_entity,
+            "is_entity_switch": is_entity_switch,
             
             # Context references for memory
             "context_references": self._build_context_references(context),
@@ -291,19 +314,19 @@ class VoiceOrchestrator:
         
         try:
             logger.info(f"🤖 PydanticAI processing voice message: '{message[:50]}...'")
-            logger.info(f"🎯 Equipment detected: {detected_equipment}, Switch: {is_equipment_switch}")
+            logger.info(f"🎯 Entity detected: {detected_entity}, Switch: {is_entity_switch}")
             
             # Check if voice agent is available
             if voice_agent is None:
                 logger.warning("PydanticAI voice agent not available, using fallback")
                 return self._fallback_response(message, context)
             
-            # Enhanced prompt with all context
+            # Enhanced prompt with context (avoiding complex conversation history that causes issues)
             enhanced_prompt = f"""
 VOICE MESSAGE: "{message}"
 
 CURRENT CONTEXT:
-- Equipment: {context.current_equipment or 'None'} 
+- Current Entity/Topic: {context.current_entity or 'None'} 
 - Procedure: {context.procedure_type} (Step {context.current_procedure_step}/{context.total_procedure_steps})
 - Phase: {context.workflow_phase or 'Main conversation'}
 - Last intent: {context.last_intent}
@@ -311,11 +334,13 @@ CURRENT CONTEXT:
 - Error count: {context.error_count}
 
 DETECTED:
-- New equipment: {detected_equipment}
-- Equipment switch: {is_equipment_switch}
+- New entity/topic: {detected_entity}
+- Topic switch: {is_entity_switch}
 
-CONVERSATION HISTORY (last 3):
-{json.dumps(context.conversation_history[-3:], indent=2)}
+CONVERSATION CONTEXT:
+- Messages exchanged: {len(context.conversation_history)}
+- Entity history: {', '.join(context.entity_history) if context.entity_history else 'None'}
+- Topics covered: {', '.join(context.topics_covered) if context.topics_covered else 'None'}
 
 RELEVANT DOCUMENTS:
 {json.dumps(relevant_docs or [], indent=2)}
@@ -333,10 +358,10 @@ RESPOND WITH ALL REQUIRED FIELDS INCLUDING:
 - safety_priority, hands_free_recommendation
 """
             
-            # Run the enhanced voice agent
+            # Run the enhanced voice agent (without message_history to avoid format issues)
             result = await voice_agent.run(
-                user_prompt=enhanced_prompt,
-                message_history=context.conversation_history[-3:]  # Recent context
+                user_prompt=enhanced_prompt
+                # Note: Conversation history is included in the enhanced_prompt instead
             )
             
             # Enhanced context updates
@@ -350,8 +375,13 @@ RESPOND WITH ALL REQUIRED FIELDS INCLUDING:
         except Exception as e:
             logger.error(f"🚨 Voice orchestration error: {str(e)}")
             
-            # Enhanced error recovery with context preservation
-            return self._enhanced_error_recovery(message, context)
+            # Use intelligent fallback instead of error recovery when entity is detected
+            if detected_entity:
+                logger.info(f"🔄 Using intelligent fallback for entity: {detected_entity}")
+                return self._intelligent_entity_fallback(message, detected_entity, context, relevant_docs)
+            else:
+                # Enhanced error recovery with context preservation
+                return self._enhanced_error_recovery(message, context)
     
     def _fallback_response(self, message: str, context: ConversationContext) -> VoiceResponse:
         """Fallback response when PydanticAI agent isn't available"""
@@ -399,7 +429,7 @@ RESPOND WITH ALL REQUIRED FIELDS INCLUDING:
             "duration": time.time() - context.conversation_start_time,
             "message_count": len(context.conversation_history),
             "topics_covered": context.topics_covered,
-            "equipment_discussed": context.equipment_history,
+            "entities_discussed": context.entity_history,
             "last_intent": context.last_intent,
             "completion_status": context.voice_state == VoiceState.CONVERSATION_COMPLETE,
             "procedure_progress": {
@@ -409,40 +439,73 @@ RESPOND WITH ALL REQUIRED FIELDS INCLUDING:
             }
         }
     
-    def _extract_equipment(self, message: str) -> Optional[str]:
-        """Extract equipment names from user message"""
-        equipment_keywords = {
+    def _extract_topic_entities(self, message: str, relevant_docs: List[Dict] = None) -> Optional[str]:
+        """Extract key topics/entities from user message and relevant documents"""
+        message_lower = message.lower()
+        
+        # First check for common QSR entities/topics from documents
+        qsr_entities = {
+            # Equipment
             "fryer": ["fryer", "deep fryer", "fry station"],
             "grill": ["grill", "griddle", "flat top", "char grill"],
-            "ice machine": ["ice machine", "ice maker", "ice dispenser"],
+            "ice machine": ["ice machine", "ice maker", "ice dispenser", "ice cream machine"],
             "freezer": ["freezer", "walk-in freezer", "freezer unit"],
             "refrigerator": ["refrigerator", "fridge", "cooler", "walk-in cooler"],
             "oven": ["oven", "convection oven", "pizza oven"],
             "dishwasher": ["dishwasher", "dish machine", "warewasher"],
             "coffee machine": ["coffee machine", "coffee maker", "espresso machine"],
-            "milkshake machine": ["milkshake machine", "shake machine", "blender"],
-            "pos system": ["pos", "point of sale", "register", "cash register"]
+            "pos system": ["pos", "point of sale", "register", "cash register"],
+            
+            # Food safety & procedures
+            "cleaning": ["cleaning", "sanitizing", "disinfecting", "hygiene"],
+            "food safety": ["food safety", "temperature", "haccp", "contamination"],
+            "oil change": ["oil change", "oil replacement", "filter change"],
+            "maintenance": ["maintenance", "repair", "service", "inspection"],
+            "training": ["training", "orientation", "procedures", "protocol"],
+            
+            # Ingredients & food items
+            "oil": ["oil", "cooking oil", "frying oil"],
+            "ingredients": ["ingredients", "recipe", "preparation"],
+            "temperature": ["temperature", "temp", "heating", "cooling"],
+            
+            # Operations
+            "opening": ["opening", "start up", "morning routine"],
+            "closing": ["closing", "shut down", "end of day"],
+            "shift change": ["shift change", "handover", "transition"]
         }
         
-        message_lower = message.lower()
-        for equipment, keywords in equipment_keywords.items():
+        # Check message for entity keywords
+        for entity, keywords in qsr_entities.items():
             if any(keyword in message_lower for keyword in keywords):
-                return equipment
+                return entity
+        
+        # If no direct match, try to extract from document content
+        if relevant_docs:
+            for doc in relevant_docs[:2]:  # Check top 2 relevant docs
+                content = doc.get('content', '').lower()
+                # Look for key nouns/topics in document content
+                for entity, keywords in qsr_entities.items():
+                    if any(keyword in content for keyword in keywords):
+                        return entity
+        
         return None
     
-    def _detect_equipment_switch(self, new_equipment: Optional[str], context: ConversationContext) -> bool:
-        """Detect if user is switching to different equipment"""
-        if not new_equipment or not context.current_equipment:
+    def _detect_entity_switch(self, new_entity: Optional[str], context: ConversationContext) -> bool:
+        """Detect if user is switching to different topic/entity"""
+        if not new_entity or not context.current_entity:
             return False
-        return new_equipment != context.current_equipment
+        return new_entity != context.current_entity
     
     def _build_context_references(self, context: ConversationContext) -> List[str]:
         """Build references to previous conversation parts"""
         references = []
         
         # Reference to equipment discussions
-        if context.equipment_history:
-            references.append(f"Equipment discussed: {', '.join(context.equipment_history)}")
+        if context.entity_history:
+            # Filter out None values to prevent join errors
+            valid_entities = [entity for entity in context.entity_history if entity is not None]
+            if valid_entities:
+                references.append(f"Topics discussed: {', '.join(valid_entities)}")
         
         # Reference to procedure progress
         if context.procedure_type and context.current_procedure_step:
@@ -457,32 +520,38 @@ RESPOND WITH ALL REQUIRED FIELDS INCLUDING:
     def _apply_advanced_context_updates(self, response: VoiceResponse, context: ConversationContext, session_id: str):
         """Apply sophisticated context updates from AI response"""
         
-        # Update conversation history with enhanced data
-        context.conversation_history.append({
-            "user": context.conversation_history[-1].get("user", "") if context.conversation_history else "",
-            "assistant": response.text_response,
-            "timestamp": time.time(),
-            "intent": response.detected_intent,
-            "state": response.next_voice_state,
-            "equipment": response.equipment_mentioned,
-            "response_type": response.response_type,
-            "safety_priority": response.safety_priority,
-            "procedure_step": response.procedure_step_info
-        })
+        # Update the last conversation entry with assistant response
+        if context.conversation_history:
+            context.conversation_history[-1].update({
+                "assistant": response.text_response,
+                "intent": response.detected_intent,
+                "state": response.next_voice_state,
+                "equipment": response.equipment_mentioned,
+                "response_type": response.response_type,
+                "safety_priority": response.safety_priority,
+                "procedure_step": response.procedure_step_info
+            })
         
-        # Equipment tracking
+        # Entity/Topic tracking (includes equipment and other topics)
         if response.equipment_mentioned:
             if response.equipment_switch_detected:
-                # Track equipment switch
+                # Track topic switch
                 context.topic_switches += 1
                 context.last_equipment_switch_time = time.time()
                 
-            # Update current equipment
-            context.current_equipment = response.equipment_mentioned
+            # Update current entity (for equipment types)
+            context.current_entity = response.equipment_mentioned
             
-            # Add to equipment history if not already there
-            if response.equipment_mentioned not in context.equipment_history:
-                context.equipment_history.append(response.equipment_mentioned)
+            # Add to entity history if not already there (and not None)
+            if response.equipment_mentioned and response.equipment_mentioned not in context.entity_history:
+                context.entity_history.append(response.equipment_mentioned)
+        
+        # Handle non-equipment entities from context_updates
+        if response.context_updates and "current_entity" in response.context_updates:
+            entity = response.context_updates["current_entity"]
+            context.current_entity = entity
+            if entity and entity not in context.entity_history:
+                context.entity_history.append(entity)
         
         # Procedure tracking
         if response.procedure_step_info:
@@ -514,21 +583,75 @@ RESPOND WITH ALL REQUIRED FIELDS INCLUDING:
         else:
             context.unclear_responses_count = 0  # Reset on clear response
     
+    def _intelligent_entity_fallback(
+        self, 
+        message: str, 
+        entity: str, 
+        context: ConversationContext,
+        relevant_docs: List[Dict] = None
+    ) -> VoiceResponse:
+        """Intelligent fallback for topic/entity-related queries when PydanticAI fails"""
+        
+        # Generate helpful response based on entity and documents
+        if relevant_docs and len(relevant_docs) > 0:
+            # Use document information for more informed response
+            doc_info = relevant_docs[0].get('content', '')
+            if len(doc_info) > 300:
+                # Extract first meaningful sentence(s)
+                sentences = doc_info.split('. ')
+                doc_info = '. '.join(sentences[:2]) + "."
+            
+            response_text = f"Based on the documentation, here's what I found about {entity}: {doc_info} Would you like me to go into more detail on any specific aspect?"
+        else:
+            # Generic helpful response based on entity type
+            entity_responses = {
+                "ice machine": "I can help with your ice machine. What specific issue are you having - not making ice, water leaking, or cleaning maintenance?",
+                "fryer": "I can help with your fryer. Are you looking for cleaning steps, oil change procedure, or troubleshooting an issue?",
+                "grill": "I can help with your grill. Do you need cleaning instructions, temperature adjustments, or troubleshooting help?",
+                "cleaning": "I can help with cleaning procedures. Are you looking for equipment cleaning, food safety protocols, or sanitizing steps?",
+                "food safety": "I can help with food safety guidelines. Are you asking about temperatures, storage, or contamination prevention?",
+                "oil change": "I can help with oil change procedures. Would you like step-by-step instructions or maintenance schedules?",
+                "training": "I can help with training materials. Are you looking for new employee orientation or specific procedure training?",
+                "maintenance": "I can help with maintenance procedures. What equipment or system needs attention?"
+            }
+            
+            response_text = entity_responses.get(entity, f"I can help you with {entity}. What specifically would you like to know?")
+        
+        # Update context
+        context.current_entity = entity
+        if entity and entity not in context.entity_history:
+            context.entity_history.append(entity)
+        
+        return VoiceResponse(
+            text_response=response_text,
+            detected_intent=ConversationIntent.EQUIPMENT_QUESTION if entity in ["fryer", "grill", "ice machine"] else ConversationIntent.NEW_TOPIC,
+            should_continue_listening=True,
+            next_voice_state=VoiceState.LISTENING,
+            confidence_score=0.7,
+            equipment_mentioned=entity if entity in ["fryer", "grill", "ice machine"] else None,
+            response_type="factual",
+            hands_free_recommendation=True,
+            context_updates={
+                "current_entity": entity,
+                "current_topic": f"{entity} assistance"
+            }
+        )
+
     def _enhanced_error_recovery(self, message: str, context: ConversationContext) -> VoiceResponse:
         """Enhanced error recovery with context preservation"""
         context.error_count += 1
         
         # Preserve context while recovering
-        equipment_context = f" about {context.current_equipment}" if context.current_equipment else ""
+        entity_context = f" about {context.current_entity}" if context.current_entity else ""
         procedure_context = f" in the {context.procedure_type} process" if context.procedure_type else ""
         
         if context.error_count > 2:
             # Suggest alternative interaction mode
-            recovery_text = f"I'm having trouble understanding. Should we switch to typing instead? I heard something{equipment_context}{procedure_context}."
+            recovery_text = f"I'm having trouble understanding. Should we switch to typing instead? I heard something{entity_context}{procedure_context}."
             should_continue = False
         else:
             # Try to recover with context
-            recovery_text = f"I heard something{equipment_context}{procedure_context}. What specifically did you need help with?"
+            recovery_text = f"I heard something{entity_context}{procedure_context}. What specifically did you need help with?"
             should_continue = True
         
         return VoiceResponse(
@@ -537,13 +660,14 @@ RESPOND WITH ALL REQUIRED FIELDS INCLUDING:
             should_continue_listening=should_continue,
             next_voice_state=VoiceState.ERROR_RECOVERY,
             confidence_score=0.3,
-            equipment_mentioned=context.current_equipment,
+            equipment_mentioned=context.current_entity if context.current_entity in ["fryer", "grill", "ice machine"] else None,
             response_type="clarification",
             hands_free_recommendation=should_continue
         )
 
 # Global orchestrator instance
 voice_orchestrator = VoiceOrchestrator()
+voice_orchestrator.clear_all_contexts()  # Clear any existing contexts on startup
 
 # Enhanced voice utility functions
 def analyze_conversation_flow(context: ConversationContext) -> Dict[str, Any]:

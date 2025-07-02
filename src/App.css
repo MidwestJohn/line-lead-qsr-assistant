@@ -1312,6 +1312,24 @@ body, .app {
   .input-container {
     padding: 8px 12px;
   }
+  
+  /* HANDS-FREE BUTTON MOBILE FIXES */
+  .hands-free-toggle {
+    width: 40px; /* Slightly smaller on mobile */
+    height: 36px; /* Slightly smaller on mobile */
+    padding: 6px 10px; /* Tighter padding */
+    margin-right: 6px; /* Reduce margin */
+  }
+  
+  .input-wrapper {
+    gap: 6px; /* Tighter gap on mobile */
+  }
+  
+  /* Ensure button stays inline with other controls */
+  .input-wrapper .hands-free-toggle {
+    flex-shrink: 0;
+    align-self: flex-end; /* Align with send button */
+  }
 }
 
 /* Handle keyboard appearing on mobile */
@@ -1332,6 +1350,47 @@ body, .app {
   
   .message {
     margin-bottom: 8px;
+  }
+  
+  /* Additional hands-free mobile optimization for very small screens */
+  .hands-free-toggle {
+    width: 36px; /* Even more compact */
+    height: 32px;
+    padding: 4px 8px;
+  }
+  
+  .hands-free-icon {
+    width: 14px; /* Smaller icon */
+    height: 14px;
+  }
+}
+
+/* Ultra-mobile (iPhone SE and smaller) optimizations */
+@media (max-width: 375px) {
+  .input-container {
+    padding: 6px 8px; /* Even tighter padding */
+  }
+  
+  .hands-free-toggle {
+    width: 34px; /* Ultra-compact */
+    height: 30px;
+    padding: 3px 6px;
+    margin-right: 4px;
+  }
+  
+  .input-wrapper {
+    gap: 4px; /* Minimal gap */
+  }
+  
+  .upload-toggle-btn {
+    width: 34px; /* Match hands-free button */
+    height: 30px;
+    padding: 3px 6px;
+  }
+  
+  /* Ensure buttons don't overlap or shift */
+  .input-wrapper > button {
+    flex-shrink: 0;
   }
 }
 
