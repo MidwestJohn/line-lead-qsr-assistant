@@ -13,6 +13,7 @@ import remarkGfm from 'remark-gfm';
 import { API_BASE_URL } from './config';
 import { apiService } from './services/api';
 
+
 function App() {
   
   // Assistant UI Runtime - memoized to prevent infinite re-renders
@@ -126,9 +127,8 @@ function App() {
   const currentTranscriptRef = useRef('');
   const transcriptWordCountRef = useRef(0);
 
-  // ElevenLabs API configuration (disabled - using backend TTS instead)
-  const elevenlabsApiKey = null; // Temporarily disabled to route through backend
-  // const elevenlabsApiKey = process.env.REACT_APP_ELEVENLABS_API_KEY;
+  // ElevenLabs API configuration
+  const elevenlabsApiKey = process.env.REACT_APP_ELEVENLABS_API_KEY;
   const currentElevenLabsAudioRef = useRef(null);
   
   // TTS Queue system with rate-limited audio pre-loading
