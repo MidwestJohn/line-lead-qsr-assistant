@@ -11,7 +11,6 @@ from dotenv import load_dotenv
 # Import keyring optionally (for local development)
 try:
     import keyring
-
     KEYRING_AVAILABLE = True
 except ImportError:
     KEYRING_AVAILABLE = False
@@ -20,7 +19,6 @@ except ImportError:
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-
 
 class QSRAssistant:
     def __init__(self):
@@ -31,19 +29,19 @@ class QSRAssistant:
         self.max_tokens = 500  # Shorter responses = simpler language
         self.temperature = 0.2  # Lower temperature for more consistent instruction following
         self.demo_mode = False
-
+        
         self._initialize_openai()
-
+    
     def _initialize_openai(self):
         """Initialize OpenAI client with API key from environment or keyring"""
         try:
             # Get API key from environment variable first (production)
             api_key = os.getenv("OPENAI_API_KEY")
-
+            
             # Fallback to keyring if available (local development)
             if not api_key and KEYRING_AVAILABLE:
                 api_key = keyring.get_password("memex", "OPENAI_API_KEY")
-
+            
             if api_key:
                 if api_key.startswith("demo-") or api_key == "demo":
                     # Demo mode - simulate AI responses
@@ -57,184 +55,188 @@ class QSRAssistant:
                     logger.info("OpenAI client initialized successfully")
             else:
                 logger.warning("No OpenAI API key found. AI responses will be disabled.")
-
+                
         except Exception as e:
             logger.error(f"Failed to initialize OpenAI client: {e}")
-
+    
     def is_available(self) -> bool:
         """Check if OpenAI integration is available"""
         return self.client is not None or self.demo_mode
+    
+    def create_qsr_employee_system_prompt(self, simplified_context: str = "") -> str:
+        """Generate system prompt optimized for QSR floor employees based on world-class expertise"""
+        
+        return f"""You are Line Lead, a world-class QSR expert who talks like a helpful coworker. You have the knowledge of industry leaders, successful operators, and top consultants - but you explain things like you're helping a friend at work.
+
+CORE MISSION: Help QSR floor workers (cooks, cashiers, cleaners) get things done right with clear, simple instructions they can use immediately.
+
+CRITICAL COMMUNICATION RULES:
+- Talk like a helpful coworker, not a manager or trainer
+- Use words a 7th grader would understand
+- Keep sentences under 15 words
+- Explain step-by-step like you're showing someone in person
+- Focus on what they need to do RIGHT NOW
+- Be encouraging and supportive, never preachy
+
+TEMPERATURE INSTRUCTION GUIDELINES:
+- When mentioning temperatures, use simple formats
+- Instead of "350-375°F (175-190°C)" say "350 degrees" or "about 350 degrees"  
+- Avoid temperature ranges unless absolutely necessary
+- Use "hot oil" or "medium-high heat" when possible
+- Only give specific temperatures when critical for safety
+
+LANGUAGE RULES - MANDATORY:
+BANNED WORDS (never use these):
+- "Implementation," "utilize," "facilitate," "optimize," "strategic"
+- "Procedures," "protocols," "specifications," "parameters"
+- "Ensure," "maintain," "establish," "conduct," "verify"
+- "Subsequently," "furthermore," "therefore," "comprehensive"
+- Any business jargon or words over 3 syllables
+
+USE THESE SIMPLE WORDS INSTEAD:
+- "Do this" not "implement this"
+- "Use" not "utilize"
+- "Help" not "facilitate" 
+- "Make sure" not "ensure"
+- "Keep" not "maintain"
+- "Check" not "verify"
+- "Start" not "initiate"
+
+DOCUMENT-FIRST APPROACH:
+Your uploaded restaurant manuals are the most important source. When you have document information:
+- Quote the exact steps from the manual
+- Say which manual or page you're getting it from
+- If multiple documents say different things, mention both
+- Always use the document info first, then add your expertise
+
+RESPONSE STRUCTURE - EVERY TIME:
+1. Quick answer first (what to do right now)
+2. Step-by-step instructions from the manuals
+3. Safety reminder if needed (keep it simple)
+4. What to watch for or check
+5. "Let me know if you need help with anything else"
+
+EXPERTISE AREAS (explain simply):
+- Kitchen work: cooking, cleaning, equipment, food safety
+- Customer service: taking orders, handling problems, being friendly
+- Equipment: how to use it, clean it, when something's wrong
+- Safety: staying safe, keeping food safe, following rules
+- Teamwork: working together, helping others, communication
+
+CLARIFICATION QUESTIONS (when unclear):
+Ask simple, direct questions:
+- Equipment problems: "What equipment? What's wrong with it? When did it start?"
+- Cleaning questions: "What are you trying to clean? What do you usually use?"
+- Food safety: "What food? How long has it been out? What temperature?"
+
+Keep questions short and focused on what you need to know to help them.
+
+CONTEXT FROM YOUR RESTAURANT'S MANUALS (already simplified):
+{simplified_context}
+
+REMEMBER: You're helping someone who's busy, maybe stressed, and needs an answer they can use right away. You have world-class expertise, but you share it like the helpful coworker everyone wishes they had. Make their job easier, not harder."""
+
+    def create_voice_system_prompt(self, simplified_context: str = "") -> str:
+        """Voice-optimized system prompt for QSR floor employees"""
+        
+        base_prompt = self.create_qsr_employee_system_prompt(simplified_context)
+        
+        voice_additions = """
+
+VOICE-SPECIFIC RULES (for spoken responses):
+- Keep responses under 80 words total
+- Use very short sentences that are easy to follow when listening
+- Pause between steps by using periods, not commas
+- Say "First... Next... Then..." clearly between steps
+- Avoid complex punctuation that sounds weird when spoken
+- End with a simple question like "Does that help?" or "Make sense?"
+- If giving more than 3 steps, break into smaller chunks
+
+VOICE RESPONSE EXAMPLE:
+"Turn off the fryer first. Wait for it to cool down completely. Then drain the oil into the waste container. Take out the baskets and wash them in the sink. Check for any stuck food bits. Does that help?"
+
+Remember: People can't remember long spoken instructions. Keep it short and clear."""
+        
+        return base_prompt + voice_additions
 
     def create_system_prompt(self) -> str:
-        """Create a purely positive system prompt with simple language requirements"""
-        return """You are Lina, a friendly 20-year-old restaurant worker helping a nervous new employee on their first day.
+        """Create the default employee-friendly system prompt"""
+        return self.create_qsr_employee_system_prompt()
+    
+    async def generate_voice_response(self, user_question: str, relevant_chunks: List[Dict]) -> Dict:
+        """Generate response optimized for voice/audio output"""
+        if not self.is_available():
+            return self._fallback_response(user_question, relevant_chunks)
+        
+        # Handle demo mode
+        if self.demo_mode:
+            return self._generate_demo_response(user_question, relevant_chunks)
+        
+        try:
+            # Format context from document search
+            context = self.format_context(relevant_chunks)
+            
+            # Use voice-optimized system prompt
+            system_prompt = self.create_voice_system_prompt(context)
+            
+            # Simple, direct user message
+            user_message = user_question
+            
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message}
+            ]
+            
+            print(f"DEBUG: Voice system prompt first 200 chars: {self.create_voice_system_prompt(context)[:200]}")
+            
+            # Call OpenAI API with voice-optimized settings
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                max_tokens=120,  # Shorter for voice
+                temperature=0.3   # Lower for more consistent voice output
+            )
+            
+            ai_response = response.choices[0].message.content
+            
+            # Extract source information
+            sources = []
+            for chunk in relevant_chunks:
+                source_info = {
+                    'filename': chunk['metadata']['filename'],
+                    'similarity': chunk['similarity']
+                }
+                if source_info not in sources:
+                    sources.append(source_info)
+            
+            return {
+                'response': ai_response,
+                'sources': sources,
+                'model_used': self.model,
+                'chunks_used': len(relevant_chunks),
+                'type': 'voice_optimized'
+            }
+            
+        except Exception as e:
+            logger.error(f"OpenAI voice API error: {e}")
+            return self._fallback_response(user_question, relevant_chunks, error=str(e))
 
-RESPONSE FORMAT - Always respond exactly like this:
 
-Start with: "Good question!" or "Don't worry!" or "You've got this!"
-
-Then explain in simple steps:
-1. First step (use simple words)
-2. Next step (keep it short)
-3. Last step (be encouraging)
-
-Example response style:
-"Good question! Here's how to clean the fryer.
-
-First, turn off the fryer. Unplug it from the wall.
-Next, wait 30 minutes for it to cool down. Hot oil burns!
-Then, put on your safety glasses. Spray cleaner on it.
-Last, wipe it clean with a towel. You're doing great!
-
-Safety tip: Always let equipment cool first. This keeps you safe."
-
-LANGUAGE RULES:
-- Use words a 16-year-old knows
-- Keep sentences under 15 words
-- Be encouraging and patient
-- Give safety tips
-- Explain why steps matter
-
-Remember: You're helping someone who might be scared and new. Be the coworker you'd want on your first day. Use simple restaurant words they already know.
-
-**Use words like this:**
-- "do" not "implement" 
-- "use" not "utilize"
-- "steps" not "procedure"
-- "broken" not "malfunction"
-- "right temperature" not "optimal temperature"
-- "turn off" not "deactivate"
-- "check" not "verify"
-- "fix" not "troubleshoot"
-
-**Talk like this:**
-- "You can do this!"
-- "Don't worry, this is easy"
-- "Take your time"
-- "Good question!"
-- "You've got this"
-- "Let me help you"
-
-## Keep It Simple
-
-**Short sentences only.** Max 15 words each.
-
-Bad: "You need to make sure that you check the temperature before you start cooking because if it's not hot enough the food won't cook right."
-
-Good: "Check the temperature first. Make sure it's hot enough. This helps the food cook right."
-
-**One idea per sentence.**
-
-Bad: "Turn off the fryer and unplug it and then clean it with soap."
-
-Good: "Turn off the fryer. Unplug it. Then clean it with soap."
-
-## Restaurant Words
-
-Use words they already know:
-- "Grill" not "cooking surface"  
-- "Fries" not "potato products"
-- "Cash register" not "point of sale"
-- "Drive-thru" not "service window"
-- "Rush hour" not "peak period"
-- "Hot oil" not "elevated temperature medium"
-
-## Safety First
-
-Always talk about safety. But keep it simple.
-
-**Say this:** "Safety first! Turn off the machine before you clean it. Hot oil can burn you."
-
-**Not this:** "Prior to initiating maintenance protocols, ensure all thermal regulation systems are deactivated to prevent injury."
-
-## When They Ask Questions
-
-**Start with:** "Great question!" or "Good thinking!"
-
-**Then explain simply:**
-1. Tell them what to do
-2. Show them how 
-3. Say why it matters
-4. Ask if they understand
-
-**Example:**
-"Great question! Here's how to clean the grill:
-
-1. Turn it off first
-2. Let it cool down
-3. Scrape off the food bits  
-4. Wipe it clean
-
-We do this so the next food tastes good. Make sense?"
-
-## Step by Step Help
-
-Break everything into small steps. Number them.
-
-**For cleaning a fryer:**
-1. Turn off the fryer
-2. Unplug it from the wall
-3. Let the oil cool down
-4. Put on gloves
-5. Drain the oil into the bucket
-6. Wipe down the inside
-7. Wash it with soap
-8. Dry it off
-
-Say: "Don't worry if this seems like a lot. You'll get faster with practice!"
-
-## If You Don't Know
-
-Be honest. Say: "I don't have the manual for that machine. Ask your manager. They'll show you the right way."
-
-## What NOT to Say
-
-Don't use big words:
-- Don't say "implement" - say "do"
-- Don't say "facilitate" - say "help"  
-- Don't say "apparatus" - say "machine"
-- Don't say "subsequently" - say "then"
-- Don't say "ensure" - say "make sure"
-
-## Be Encouraging
-
-Remember: They might be scared. This might be their first job ever.
-
-Say things like:
-- "It's okay to ask questions"
-- "Everyone makes mistakes when they're learning"
-- "You're doing great"
-- "This is hard at first, but you'll get it"
-- "I'm here to help"
-
-## Your Job
-
-Help them feel good about their new job. Keep them safe. Use words they understand. Be patient and kind.
-
-Think about this: You're talking to someone who might be 16 and nervous about their first day at McDonald's. Use words they know. Keep it simple. Be the helpful person you'd want on your first day.
-
-REMEMBER: 
-- NO business language (no "strategic", "implementation", "analysis", etc.)
-- NO numbered sections like "1. Current State Analysis"
-- NO corporate formatting
-- Talk like a friendly coworker, not a business consultant
-- Use the manual information but explain it simply
-- Be encouraging and patient"""
-
+    
     def format_context(self, relevant_chunks: List[Dict]) -> str:
         """Format the relevant document chunks as casual, friendly knowledge"""
         if not relevant_chunks:
             return "I don't have specific info about that, but I'll help however I can!"
-
+        
         # Extract and simplify the content
         simplified_info = []
         for chunk in relevant_chunks:
-            text = chunk["text"]
-
+            text = chunk['text']
+            
             # Simplify corporate language in the content
             simplified_text = self._simplify_manual_text(text)
             simplified_info.append(simplified_text)
-
+        
         # Format as casual knowledge sharing
         unique_info = list(set(simplified_info))  # Remove duplicates
         if len(unique_info) == 1:
@@ -244,89 +246,78 @@ REMEMBER:
             for info in unique_info[:2]:  # Limit to 2 most relevant
                 context_parts.append(f"- {info}")
             return "\n".join(context_parts)
-
+    
     def _simplify_manual_text(self, text: str) -> str:
         """Convert formal manual language to casual, friendly terms"""
         # Replace technical/corporate terms with simple alternatives
         replacements = {
-            "equipment": "machine",
-            "personnel": "workers",
-            "utilize": "use",
-            "implement": "do",
-            "procedure": "steps",
-            "protocol": "way to do it",
-            "maintenance": "cleaning",
-            "deactivate": "turn off",
-            "activate": "turn on",
-            "optimal": "best",
-            "ensure": "make sure",
-            "verify": "check",
-            "apparatus": "machine",
-            "initiate": "start",
-            "terminate": "stop",
-            "sufficient": "enough",
-            "comprehensive": "complete",
+            'equipment': 'machine',
+            'personnel': 'workers',
+            'utilize': 'use',
+            'implement': 'do',
+            'procedure': 'steps',
+            'protocol': 'way to do it',
+            'maintenance': 'cleaning',
+            'deactivate': 'turn off',
+            'activate': 'turn on',
+            'optimal': 'best',
+            'ensure': 'make sure',
+            'verify': 'check',
+            'apparatus': 'machine',
+            'initiate': 'start',
+            'terminate': 'stop',
+            'sufficient': 'enough',
+            'comprehensive': 'complete'
         }
-
+        
         simplified = text.lower()
         for formal, casual in replacements.items():
             simplified = simplified.replace(formal, casual)
-
+        
         # Remove corporate formatting markers
-        simplified = simplified.replace("section ", "").replace("§", "")
-        simplified = simplified.replace("manual context:", "")
-        simplified = simplified.replace("source 1 -", "").replace("source 2 -", "")
-
+        simplified = simplified.replace('section ', '').replace('§', '')
+        simplified = simplified.replace('manual context:', '')
+        simplified = simplified.replace('source 1 -', '').replace('source 2 -', '')
+        
         # Make it sound conversational
-        if not simplified.endswith("."):
-            simplified += "."
-
+        if not simplified.endswith('.'):
+            simplified += '.'
+            
         return simplified.strip().capitalize()
-
+    
     async def generate_response(self, user_question: str, relevant_chunks: List[Dict]) -> Dict:
         """
         Generate an AI response based on user question and relevant document context
-
+        
         Args:
             user_question: The user's question
             relevant_chunks: List of relevant document chunks from search
-
+            
         Returns:
             Dict with response, source info, and metadata
         """
         if not self.is_available():
             return self._fallback_response(user_question, relevant_chunks)
-
+        
         # Handle demo mode
         if self.demo_mode:
             return self._generate_demo_response(user_question, relevant_chunks)
-
+        
         try:
             # Format context from document search as casual knowledge
             context = self.format_context(relevant_chunks)
-
-            # Conversational context injection to prevent corporate language contamination
-            system_prompt = self.create_system_prompt()
-
-            # Separate style from content - frame context as casual knowledge
-            if (
-                context
-                and "No relevant" not in context
-                and "don't have specific info" not in context
-            ):
-                user_message = f"""I have a question about restaurant work: {user_question}
-
-{context}
-
-Can you help explain this in simple terms? Remember, I'm new and want to learn the right way to do things safely."""
-            else:
-                user_message = f"I have a question about restaurant work: {user_question}\n\nCan you help explain this simply? I'm new and want to learn the safe way to do things."
-
+            
+            # Use QSR employee-optimized system prompt with manual context embedded
+            system_prompt = self.create_qsr_employee_system_prompt(context)
+            
+            # Simple, direct user message (context is now in system prompt)
+            user_message = user_question
+            
             messages = [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message},
+                {"role": "user", "content": user_message}
             ]
-
+            
             # Call OpenAI API with strengthened parameters
             print(f"DEBUG: Using model: {self.model}, temp: {self.temperature}")
             print(f"DEBUG: System prompt first 100 chars: {self.create_system_prompt()[:100]}")
@@ -334,178 +325,150 @@ Can you help explain this in simple terms? Remember, I'm new and want to learn t
                 model=self.model,
                 messages=messages,
                 max_tokens=self.max_tokens,
-                temperature=self.temperature,
+                temperature=self.temperature
             )
-
+            
             ai_response = response.choices[0].message.content
-
+            
             # Add source attribution
             sources = []
             for chunk in relevant_chunks:
                 source_info = {
-                    "filename": chunk["metadata"]["filename"],
-                    "similarity": chunk["similarity"],
+                    'filename': chunk['metadata']['filename'],
+                    'similarity': chunk['similarity']
                 }
                 if source_info not in sources:
                     sources.append(source_info)
-
+            
             return {
-                "response": ai_response,
-                "type": "ai_powered",
-                "sources": sources,
-                "model_used": self.model,
-                "chunks_used": len(relevant_chunks),
+                'response': ai_response,
+                'type': 'ai_powered',
+                'sources': sources,
+                'model_used': self.model,
+                'chunks_used': len(relevant_chunks)
             }
-
+            
         except Exception as e:
             logger.error(f"OpenAI API error: {e}")
             return self._fallback_response(user_question, relevant_chunks, error=str(e))
-
+    
     async def generate_response_stream(self, user_question: str, relevant_chunks: List[Dict]):
         """
         Generate a streaming AI response based on user question and relevant document context
-
+        
         Args:
             user_question: The user's question
             relevant_chunks: List of relevant document chunks from search
-
+            
         Yields:
             Dict with streaming content chunks
         """
         if not self.is_available() or self.demo_mode:
             # For non-streaming cases, yield the full response at once
             full_response = await self.generate_response(user_question, relevant_chunks)
-            yield {"chunk": full_response["response"], "done": True, "metadata": full_response}
+            yield {"chunk": full_response['response'], "done": True, "metadata": full_response}
             return
-
+        
         try:
             # Format context from document search as casual knowledge
             context = self.format_context(relevant_chunks)
-
-            # Conversational context injection to prevent corporate language contamination
-            system_prompt = self.create_system_prompt()
-
-            # Separate style from content - frame context as casual knowledge
-            if (
-                context
-                and "No relevant" not in context
-                and "don't have specific info" not in context
-            ):
-                user_message = f"""I have a question about restaurant work: {user_question}
-
-{context}
-
-Can you help explain this in simple terms? Remember, I'm new and want to learn the right way to do things safely."""
-            else:
-                user_message = f"I have a question about restaurant work: {user_question}\n\nCan you help explain this simply? I'm new and want to learn the safe way to do things."
-
+            
+            # Use QSR employee-optimized system prompt with manual context embedded
+            system_prompt = self.create_qsr_employee_system_prompt(context)
+            
+            # Simple, direct user message (context is now in system prompt)
+            user_message = user_question
+            
             messages = [
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message},
+                {"role": "user", "content": user_message}
             ]
-
+            
             # Call OpenAI API with streaming and strengthened parameters
             stream = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
                 max_tokens=self.max_tokens,
                 temperature=self.temperature,
-                stream=True,
+                stream=True
             )
-
+            
             # Stream response chunks
             for chunk in stream:
                 if chunk.choices[0].delta.content is not None:
                     content = chunk.choices[0].delta.content
                     yield {"chunk": content, "done": False}
-
+            
             # Send completion signal with metadata
             sources = []
             for chunk in relevant_chunks:
                 source_info = {
-                    "filename": chunk["metadata"]["filename"],
-                    "similarity": chunk["similarity"],
+                    'filename': chunk['metadata']['filename'],
+                    'similarity': chunk['similarity']
                 }
                 if source_info not in sources:
                     sources.append(source_info)
-
+            
             yield {
                 "chunk": "",
                 "done": True,
                 "metadata": {
-                    "type": "ai_powered",
-                    "sources": sources,
-                    "model_used": self.model,
-                    "chunks_used": len(relevant_chunks),
-                },
+                    'type': 'ai_powered',
+                    'sources': sources,
+                    'model_used': self.model,
+                    'chunks_used': len(relevant_chunks)
+                }
             }
-
+            
         except Exception as e:
             logger.error(f"OpenAI streaming API error: {e}")
             # Fallback to regular response
-            fallback_response = self._fallback_response(
-                user_question, relevant_chunks, error=str(e)
-            )
-            yield {
-                "chunk": fallback_response["response"],
-                "done": True,
-                "metadata": fallback_response,
-            }
-
-    def _fallback_response(
-        self, user_question: str, relevant_chunks: List[Dict], error: Optional[str] = None
-    ) -> Dict:
+            fallback_response = self._fallback_response(user_question, relevant_chunks, error=str(e))
+            yield {"chunk": fallback_response['response'], "done": True, "metadata": fallback_response}
+    
+    def _fallback_response(self, user_question: str, relevant_chunks: List[Dict], error: Optional[str] = None) -> Dict:
         """Generate fallback response when OpenAI is not available"""
         if relevant_chunks:
             # Format manual content without AI processing
             response_parts = ["Based on your uploaded manuals:\n"]
-
+            
             for i, chunk in enumerate(relevant_chunks, 1):
-                filename = chunk["metadata"]["filename"]
-                text = chunk["text"]
-                similarity = chunk["similarity"]
-
+                filename = chunk['metadata']['filename']
+                text = chunk['text']
+                similarity = chunk['similarity']
+                
                 response_parts.append(f"📖 From {filename} (relevance: {similarity:.2f}):")
                 response_parts.append(f"{text}\n")
-
-            response_parts.append(
-                "\nNote: For more detailed AI-powered assistance, please configure an OpenAI API key."
-            )
+            
+            response_parts.append("\nNote: For more detailed AI-powered assistance, please configure an OpenAI API key.")
             response_text = "\n".join(response_parts)
-
+            
         else:
             response_text = f"I searched through your manuals but couldn't find specific information about '{user_question}'. Try asking about equipment maintenance, cleaning procedures, or troubleshooting steps."
             if error:
-                response_text += (
-                    f"\n\nNote: AI enhancement temporarily unavailable ({error[:50]}...)."
-                )
-
+                response_text += f"\n\nNote: AI enhancement temporarily unavailable ({error[:50]}...)."
+        
         return {
-            "response": response_text,
-            "type": "document_search_only",
-            "sources": [
-                {"filename": chunk["metadata"]["filename"], "similarity": chunk["similarity"]}
-                for chunk in relevant_chunks
-            ],
-            "chunks_used": len(relevant_chunks),
+            'response': response_text,
+            'type': 'document_search_only',
+            'sources': [{'filename': chunk['metadata']['filename'], 'similarity': chunk['similarity']} for chunk in relevant_chunks],
+            'chunks_used': len(relevant_chunks)
         }
-
+    
     def _generate_demo_response(self, user_question: str, relevant_chunks: List[Dict]) -> Dict:
         """Generate a demo AI response to showcase the functionality"""
         if not relevant_chunks:
             return self._fallback_response(user_question, relevant_chunks)
-
+        
         # Create a simulated AI-style response based on the context
-        context_text = " ".join([chunk["text"] for chunk in relevant_chunks])
-
+        context_text = " ".join([chunk['text'] for chunk in relevant_chunks])
+        
         # Generate response based on question type
-        if any(word in user_question.lower() for word in ["fryer", "heat", "oil", "temperature"]):
+        if any(word in user_question.lower() for word in ['fryer', 'heat', 'oil', 'temperature']):
             demo_response = self._generate_fryer_demo_response(context_text)
-        elif any(word in user_question.lower() for word in ["grill", "clean", "cleaning"]):
+        elif any(word in user_question.lower() for word in ['grill', 'clean', 'cleaning']):
             demo_response = self._generate_grill_demo_response(context_text)
-        elif any(
-            word in user_question.lower() for word in ["maintenance", "schedule", "daily", "weekly"]
-        ):
+        elif any(word in user_question.lower() for word in ['maintenance', 'schedule', 'daily', 'weekly']):
             demo_response = self._generate_maintenance_demo_response(context_text)
         else:
             # Generic response
@@ -528,20 +491,20 @@ This is a simulated AI response demonstrating how the system would provide struc
         sources = []
         for chunk in relevant_chunks:
             source_info = {
-                "filename": chunk["metadata"]["filename"],
-                "similarity": chunk["similarity"],
+                'filename': chunk['metadata']['filename'],
+                'similarity': chunk['similarity']
             }
             if source_info not in sources:
                 sources.append(source_info)
 
         return {
-            "response": demo_response,
-            "type": "ai_powered_demo",
-            "sources": sources,
-            "model_used": "demo-gpt-3.5-turbo",
-            "chunks_used": len(relevant_chunks),
+            'response': demo_response,
+            'type': 'ai_powered_demo',
+            'sources': sources,
+            'model_used': 'demo-gpt-3.5-turbo',
+            'chunks_used': len(relevant_chunks)
         }
-
+    
     def _generate_fryer_demo_response(self, context: str) -> str:
         """Generate a demo response for fryer-related questions using simplified language"""
         return """Great question! Here's how to clean the fryer safely:
@@ -577,7 +540,7 @@ Here's what to do:
 You've got this! Cleaning gets easier with practice. Ask your manager if you need help the first few times.
 
 This keeps your fryer working great and the food tasting good!"""
-
+    
     def _generate_grill_demo_response(self, context: str) -> str:
         """Generate a demo response for grill-related questions using simplified language"""
         return """Good question! Here's how to clean the grill:
@@ -622,7 +585,7 @@ This keeps your fryer working great and the food tasting good!"""
 **Remember:** Never spray water on a hot grill! Always let it cool first.
 
 Don't worry if this seems like a lot. You'll get faster at it. Ask for help if you need it!"""
-
+    
     def _generate_maintenance_demo_response(self, context: str) -> str:
         """Generate a demo response for maintenance-related questions"""
         return """Based on your equipment manuals, here's the maintenance schedule breakdown:
@@ -659,7 +622,6 @@ Keep detailed records of:
 - Ensures optimal performance
 
 **Note:** This demonstrates how AI processes your maintenance manuals to create structured, easy-to-follow guidance tailored to your specific equipment."""
-
 
 # Global assistant instance
 qsr_assistant = QSRAssistant()

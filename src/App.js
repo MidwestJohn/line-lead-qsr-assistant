@@ -64,6 +64,7 @@ function App() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const [isCurrentlyStreaming, setIsCurrentlyStreaming] = useState(false); // NEW: Track streaming state to prevent status overlay
   
   // Message actions state
   const [hoveredMessage, setHoveredMessage] = useState(null);
@@ -758,6 +759,7 @@ function App() {
     setIsThinking(false);
     setIsWaitingForResponse(false);
     setStreamingMessage(null);
+    setIsCurrentlyStreaming(false); // Reset streaming state when stopped
     
     // Clear streaming timeout
     if (streamingTimeoutRef.current) {
@@ -991,6 +993,15 @@ function App() {
           if (!messageCreated) {
             const firstChunkTime = performance.now();
             console.log('📨 First chunk received at:', firstChunkTime);
+            
+            // CRITICAL FIX: Clear inline loading state IMMEDIATELY when first chunk arrives
+            setIsCurrentlyStreaming(true);
+            setIsWaitingForResponse(false); // Clear waiting state - this hides the inline "Assistant is responding..." overlay
+            
+            // Update hands-free status to show proper streaming state in chip
+            if (handsFreeStateRef.current) {
+              setHandsFreeStatus('speaking'); // Show that assistant is now speaking/responding
+            }
           }
           
           accumulatedText += chunk;
@@ -1084,6 +1095,7 @@ function App() {
       setIsThinking(false);
       setIsWaitingForResponse(false);
       setStreamingMessage(null);
+      setIsCurrentlyStreaming(false); // Reset streaming state on error
       setMessageStatus({
         isLoading: false,
         isRetrying: false,
@@ -1098,6 +1110,7 @@ function App() {
     setIsThinking(false);
     setIsWaitingForResponse(false);
     setStreamingMessage(null);
+    setIsCurrentlyStreaming(false); // Reset streaming state on error
     
     // Reset deduplication flags on error
     messageBeingSentRef.current = false;
@@ -1137,6 +1150,7 @@ function App() {
     setIsThinking(false);
     setIsWaitingForResponse(false);
     setStreamingMessage(null);
+    setIsCurrentlyStreaming(false); // Reset streaming state
     
     // Mark message as complete
     setMessages(prev => prev.map(msg => 
@@ -1299,6 +1313,7 @@ function App() {
     setIsThinking(false);
     setIsWaitingForResponse(false);
     setStreamingMessage(null);
+    setIsCurrentlyStreaming(false); // Reset streaming state in fallback
     setMessageStatus({
       isLoading: false,
       isRetrying: false,
