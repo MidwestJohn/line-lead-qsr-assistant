@@ -105,32 +105,22 @@ def fix_numbered_lists_for_speech(text: str) -> str:
     Convert numbered markdown lists to natural speech for better ElevenLabs pronunciation.
     
     PROBLEM: ElevenLabs pronounces "1. Turn off fryer" as "One dot turn off fryer"
-    SOLUTION: Convert to "First, turn off fryer" which sounds natural and professional
+    SOLUTION: Convert to "Step 1, turn off fryer" which sounds natural and professional
     
     This transforms QSR instructions into natural speech patterns that sound like
-    an experienced coworker giving step-by-step guidance.
+    an experienced coworker giving step-by-step procedural guidance.
     """
     import re
     
-    # Number-to-word mapping for natural speech
-    number_words = {
-        1: "First", 2: "Second", 3: "Third", 4: "Fourth", 5: "Fifth",
-        6: "Sixth", 7: "Seventh", 8: "Eighth", 9: "Ninth", 10: "Tenth",
-        11: "Eleventh", 12: "Twelfth", 13: "Thirteenth", 14: "Fourteenth", 15: "Fifteenth"
-    }
-    
     def replace_numbered_item(match):
-        """Replace numbered list items with natural speech"""
+        """Replace numbered list items with step-based speech"""
         indent = match.group(1) or ""
         number = int(match.group(2))
         rest_of_line = match.group(3)
         
-        if number in number_words:
-            # Use natural number words for 1-15, preserve original capitalization
-            return f"{indent}{number_words[number]}, {rest_of_line.lower()}"
-        else:
-            # For higher numbers, use "Step X,"
-            return f"{indent}Step {number}, {rest_of_line.lower()}"
+        # Always use "Step X," format - simple, clear, and professional
+        # Preserves original capitalization of the rest of the line
+        return f"{indent}Step {number}, {rest_of_line}"
     
     # Pattern to match numbered list items: "1. Text" or "2) Text" 
     # Handles both line-start and inline patterns
@@ -733,21 +723,15 @@ async def chat_stream_endpoint(chat_message: ChatMessage):
                         # CRITICAL FIX: Apply natural speech conversion for ElevenLabs pronunciation
                         complete_response = fix_numbered_lists_for_speech(complete_response)
                         
-                        # Now re-stream the converted response in small chunks for TTS
-                        words = complete_response.split()
-                        current_chunk = ""
+                        # Now re-stream the converted response preserving original spacing
+                        # Split into smaller chunks while preserving sentence boundaries
+                        sentences = smart_sentence_split(complete_response)
                         
-                        for word in words:
-                            current_chunk += word + " "
-                            # Send chunks of ~10-15 words for smooth TTS streaming
-                            if len(current_chunk.split()) >= 12:
-                                yield f"data: {json.dumps({'chunk': current_chunk.strip(), 'done': False})}\n\n"
-                                current_chunk = ""
+                        for sentence in sentences:
+                            # Send each sentence as a chunk to preserve natural boundaries
+                            if sentence.strip():
+                                yield f"data: {json.dumps({'chunk': sentence.strip(), 'done': False})}\n\n"
                                 await asyncio.sleep(0.01)
-                        
-                        # Send any remaining content
-                        if current_chunk.strip():
-                            yield f"data: {json.dumps({'chunk': current_chunk.strip(), 'done': False})}\n\n"
                         
                         # Send final completion signal
                         yield f"data: {json.dumps({'chunk': '', 'done': True})}\n\n"
