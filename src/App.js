@@ -126,8 +126,9 @@ function App() {
   const currentTranscriptRef = useRef('');
   const transcriptWordCountRef = useRef(0);
 
-  // ElevenLabs API configuration
-  const elevenlabsApiKey = process.env.REACT_APP_ELEVENLABS_API_KEY;
+  // ElevenLabs API configuration (disabled - using backend TTS instead)
+  const elevenlabsApiKey = null; // Temporarily disabled to route through backend
+  // const elevenlabsApiKey = process.env.REACT_APP_ELEVENLABS_API_KEY;
   const currentElevenLabsAudioRef = useRef(null);
   
   // TTS Queue system with rate-limited audio pre-loading
@@ -1551,11 +1552,22 @@ function App() {
       .trim();
   };
 
-  // Speak a chunk of text using queue system - ElevenLabs ONLY
+  // Speak a chunk of text using queue system - ElevenLabs or Web Speech API fallback
   const speakTextChunk = async (text) => {
     if (!ttsAvailableRef.current || !text.trim()) return;
+    
     if (!elevenlabsApiKey) {
-      console.warn('🔊 ElevenLabs API key not available, skipping TTS chunk');
+      // Fallback to Web Speech API
+      console.log('🔊 Using Web Speech API fallback for TTS chunk');
+      try {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.9;
+        utterance.pitch = 1.0;
+        utterance.volume = 0.8;
+        window.speechSynthesis.speak(utterance);
+      } catch (error) {
+        console.error('🔊 Web Speech API failed:', error.message);
+      }
       return;
     }
 
@@ -1566,15 +1578,9 @@ function App() {
     }
   };
 
-  // Main TTS function using queue system - ElevenLabs ONLY
+  // Main TTS function using queue system - ElevenLabs or Web Speech API fallback
   const speakText = async (text, messageId = null) => {
     if (!ttsAvailableRef.current || !text.trim()) {
-      if (messageId) currentTTSMessageIdRef.current = null;
-      return;
-    }
-
-    if (!elevenlabsApiKey) {
-      console.warn('🔊 ElevenLabs API key not available, TTS disabled');
       if (messageId) currentTTSMessageIdRef.current = null;
       return;
     }
@@ -1582,6 +1588,26 @@ function App() {
     // Clean text for speech
     const cleanText = cleanTextForSpeech(text);
     if (!cleanText) return;
+
+    if (!elevenlabsApiKey) {
+      // Fallback to Web Speech API
+      console.log('🔊 Using Web Speech API fallback for full message');
+      try {
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.rate = 0.9;
+        utterance.pitch = 1.0;
+        utterance.volume = 0.8;
+        utterance.onend = () => {
+          console.log('🔊 Web Speech API TTS completed');
+          if (messageId) currentTTSMessageIdRef.current = null;
+        };
+        window.speechSynthesis.speak(utterance);
+      } catch (error) {
+        console.error('🔊 Web Speech API failed:', error.message);
+        if (messageId) currentTTSMessageIdRef.current = null;
+      }
+      return;
+    }
 
     try {
       await queueTTS(cleanText, 'full-message');
@@ -1592,12 +1618,17 @@ function App() {
     }
   };
 
-  // Stop TTS if currently speaking - ElevenLabs ONLY
+  // Stop TTS if currently speaking - ElevenLabs and Web Speech API
   const stopSpeaking = () => {
-    // Stop current audio
+    // Stop current ElevenLabs audio
     if (currentElevenLabsAudioRef.current) {
       currentElevenLabsAudioRef.current.pause();
       currentElevenLabsAudioRef.current = null;
+    }
+    
+    // Stop Web Speech API
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
     }
     
     // Clear TTS queue, audio buffer, and reset API call counter
