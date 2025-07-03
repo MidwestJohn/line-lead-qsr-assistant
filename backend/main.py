@@ -9,6 +9,7 @@ import datetime
 import json
 import asyncio
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -29,6 +30,7 @@ from voice_agent import voice_orchestrator, VoiceState, ConversationIntent
 # Add these imports for RAG-Anything integration
 from services.rag_service import rag_service
 from services.search_strategy import ExistingSearchStrategy, RAGAnythingStrategy, HybridSearchStrategy
+from services.document_processor import document_processor, ProcessedContent
 from dotenv import load_dotenv
 
 # Load RAG environment
@@ -1674,6 +1676,119 @@ async def upload_rag(file: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"Upload processing failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# Multi-Modal Document Processing Endpoints - NEW ENDPOINTS ONLY
+@app.post("/upload-multimodal")
+async def upload_multimodal(file: UploadFile = File(...)):
+    """Upload and process document with multi-modal capabilities."""
+    # Same validation as existing upload
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+    
+    if file.size > 10 * 1024 * 1024:  # 10MB limit
+        raise HTTPException(status_code=400, detail="File size exceeds 10MB limit")
+    
+    try:
+        # Save file (same process as existing)
+        file_path = os.path.join("uploaded_docs", file.filename)
+        os.makedirs("uploaded_docs", exist_ok=True)
+        
+        with open(file_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        # Process through both methods for comparison
+        basic_result = await document_processor.process_pdf_basic(file_path)
+        
+        if document_processor.use_rag_anything:
+            advanced_result = await document_processor.process_pdf_advanced(file_path)
+            
+            # Save advanced processing results
+            processed_file = document_processor.save_processed_content(advanced_result)
+            
+            return {
+                "filename": file.filename,
+                "file_path": file_path,
+                "basic_processing": {
+                    "text_chunks": len(basic_result.text_chunks),
+                    "method": basic_result.processing_method
+                },
+                "advanced_processing": {
+                    "text_chunks": len(advanced_result.text_chunks),
+                    "images": len(advanced_result.images),
+                    "tables": len(advanced_result.tables),
+                    "method": advanced_result.processing_method,
+                    "processed_file": processed_file
+                },
+                "comparison": {
+                    "basic_chunks": len(basic_result.text_chunks),
+                    "advanced_chunks": len(advanced_result.text_chunks),
+                    "additional_content": {
+                        "images": len(advanced_result.images),
+                        "tables": len(advanced_result.tables)
+                    }
+                }
+            }
+        else:
+            return {
+                "filename": file.filename,
+                "file_path": file_path,
+                "basic_processing": {
+                    "text_chunks": len(basic_result.text_chunks),
+                    "method": basic_result.processing_method
+                },
+                "advanced_processing": "disabled",
+                "note": "Enable USE_RAG_ANYTHING=true for multi-modal processing"
+            }
+            
+    except Exception as e:
+        logger.error(f"Multi-modal upload failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/document-analysis/{filename}")
+async def get_document_analysis(filename: str):
+    """Get detailed analysis of processed document."""
+    processed_file = f"processed_docs/{Path(filename).stem}_processed.json"
+    
+    if not os.path.exists(processed_file):
+        raise HTTPException(status_code=404, detail="Processed document not found")
+    
+    try:
+        with open(processed_file, 'r') as f:
+            data = json.load(f)
+        
+        return {
+            "filename": filename,
+            "processing_method": data.get("processing_method"),
+            "content_summary": {
+                "text_chunks": len(data.get("text_chunks", [])),
+                "images": len(data.get("images", [])),
+                "tables": len(data.get("tables", [])),
+                "metadata": data.get("metadata", {})
+            },
+            "detailed_analysis": data
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to load document analysis: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/processing-capabilities")
+async def get_processing_capabilities():
+    """Get current document processing capabilities."""
+    return {
+        "basic_processing": True,
+        "advanced_processing": document_processor.use_rag_anything,
+        "mineru_available": document_processor.mineru_available,
+        "supported_formats": ["PDF"],
+        "max_file_size": "10MB",
+        "features": {
+            "text_extraction": True,
+            "image_extraction": document_processor.mineru_available,
+            "table_extraction": document_processor.mineru_available,
+            "semantic_chunking": document_processor.use_rag_anything
+        }
+    }
 
 # Root endpoint
 @app.get("/")
