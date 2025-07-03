@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse, Response
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Dict, List, Optional, Any
 import logging
 import datetime
@@ -286,6 +286,11 @@ class ChatMessage(BaseModel):
 class ChatResponse(BaseModel):
     response: str
     timestamp: str
+    parsed_steps: Optional[Dict] = Field(default=None, description="Structured step data for future Playbooks UX")
+    
+    class Config:
+        """Include null fields in JSON output"""
+        exclude_none = False
 
 class HealthResponse(BaseModel):
     status: str
@@ -685,9 +690,18 @@ async def chat_endpoint(chat_message: ChatMessage):
         # Log orchestration info
         logger.info(f"Sending orchestrated response with intent: {orchestrated_response.detected_intent}, confidence: {orchestrated_response.confidence_score}")
         
+        # Include parsed steps for future Playbooks UX (always include field)
+        parsed_steps_dict = None
+        if orchestrated_response.parsed_steps:
+            parsed_steps_dict = orchestrated_response.parsed_steps.model_dump()
+            logger.info(f"📋 Including parsed steps: {orchestrated_response.parsed_steps.total_steps} steps found")
+        else:
+            logger.info("📋 No parsed steps found in response")
+        
         response = ChatResponse(
             response=response_text,
-            timestamp=datetime.datetime.now().isoformat()
+            timestamp=datetime.datetime.now().isoformat(),
+            parsed_steps=parsed_steps_dict
         )
         
         return response

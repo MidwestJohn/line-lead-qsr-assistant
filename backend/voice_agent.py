@@ -12,6 +12,7 @@ import time
 import logging
 import json
 import os
+from step_parser import parse_ai_response_steps, ParsedStepsResponse
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +99,9 @@ class VoiceResponse(BaseModel):
     response_type: Literal["procedural", "factual", "clarification", "safety", "completion"] = "factual"
     context_references: List[str] = Field(default_factory=list)  # References to previous exchanges
     hands_free_recommendation: bool = True  # Should hands-free stay active?
+    
+    # NEW: Step parsing for future Playbooks UX
+    parsed_steps: Optional[ParsedStepsResponse] = None
 
 # Create the intelligent voice orchestration agent
 try:
@@ -367,6 +371,11 @@ RESPOND WITH ALL REQUIRED FIELDS INCLUDING:
             # Enhanced context updates
             self._apply_advanced_context_updates(result.data, context, session_id)
             
+            # NEW: Parse steps for future Playbooks UX
+            result.data.parsed_steps = self._parse_response_steps(result.data.text_response)
+            if result.data.parsed_steps.has_steps:
+                logger.info(f"📋 Parsed {result.data.parsed_steps.total_steps} steps: {result.data.parsed_steps.procedure_title}")
+            
             logger.info(f"🎯 Intent: {result.data.detected_intent}, Equipment: {result.data.equipment_mentioned}")
             logger.info(f"🔄 Continue listening: {result.data.should_continue_listening}, Hands-free: {result.data.hands_free_recommendation}")
             
@@ -445,10 +454,11 @@ RESPOND WITH ALL REQUIRED FIELDS INCLUDING:
         
         # First check for common QSR entities/topics from documents
         qsr_entities = {
-            # Equipment
+            # Equipment (order matters - most specific first)
+            "ice cream machine": ["ice cream machine", "soft serve machine", "frozen yogurt machine"],
             "fryer": ["fryer", "deep fryer", "fry station"],
             "grill": ["grill", "griddle", "flat top", "char grill"],
-            "ice machine": ["ice machine", "ice maker", "ice dispenser", "ice cream machine"],
+            "ice machine": ["ice machine", "ice maker", "ice dispenser"],  # Removed ice cream machine
             "freezer": ["freezer", "walk-in freezer", "freezer unit"],
             "refrigerator": ["refrigerator", "fridge", "cooler", "walk-in cooler"],
             "oven": ["oven", "convection oven", "pizza oven"],
@@ -622,6 +632,9 @@ RESPOND WITH ALL REQUIRED FIELDS INCLUDING:
         if entity and entity not in context.entity_history:
             context.entity_history.append(entity)
         
+        # Parse steps from the response
+        parsed_steps = self._parse_response_steps(response_text)
+        
         return VoiceResponse(
             text_response=response_text,
             detected_intent=ConversationIntent.EQUIPMENT_QUESTION if entity in ["fryer", "grill", "ice machine"] else ConversationIntent.NEW_TOPIC,
@@ -634,8 +647,22 @@ RESPOND WITH ALL REQUIRED FIELDS INCLUDING:
             context_updates={
                 "current_entity": entity,
                 "current_topic": f"{entity} assistance"
-            }
+            },
+            parsed_steps=parsed_steps
         )
+
+    def _parse_response_steps(self, response_text: str) -> ParsedStepsResponse:
+        """Parse steps from AI response for future Playbooks UX integration"""
+        try:
+            return parse_ai_response_steps(response_text)
+        except Exception as e:
+            logger.warning(f"Step parsing failed: {str(e)}")
+            # Return empty result on parsing failure
+            return ParsedStepsResponse(
+                original_text=response_text,
+                has_steps=False,
+                total_steps=0
+            )
 
     def _enhanced_error_recovery(self, message: str, context: ConversationContext) -> VoiceResponse:
         """Enhanced error recovery with context preservation"""
