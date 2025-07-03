@@ -26,6 +26,14 @@ from openai_integration import qsr_assistant
 from voice_service import voice_service
 from voice_agent import voice_orchestrator, VoiceState, ConversationIntent
 
+# Add these imports for RAG-Anything integration
+from services.rag_service import rag_service
+from services.search_strategy import ExistingSearchStrategy, RAGAnythingStrategy, HybridSearchStrategy
+from dotenv import load_dotenv
+
+# Load RAG environment
+load_dotenv('.env.rag')
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -263,6 +271,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add RAG-Anything startup event
+@app.on_event("startup")
+async def startup_event():
+    """Initialize RAG service on startup."""
+    await rag_service.initialize()
 
 # File serving will be handled by dedicated endpoint below
 
@@ -1572,6 +1586,94 @@ async def get_voice_orchestration_status():
             "pydantic_ai_active": False,
             "error": str(e)
         }
+
+# RAG-Anything Integration Endpoints - NEW ENDPOINTS ONLY
+@app.get("/rag-health")
+async def rag_health():
+    """Health check for RAG-Anything service."""
+    return rag_service.health_check()
+
+@app.post("/chat-comparison")
+async def chat_comparison(request: dict):
+    """Compare responses from both systems."""
+    message = request.get("message")
+    if not message:
+        raise HTTPException(status_code=400, detail="Message is required")
+    
+    # Create strategies
+    existing_strategy = ExistingSearchStrategy(search_engine)  # Use existing search engine
+    
+    if rag_service.initialized:
+        rag_strategy = RAGAnythingStrategy(rag_service)
+        hybrid_strategy = HybridSearchStrategy(existing_strategy, rag_strategy)
+        
+        try:
+            result = await hybrid_strategy.search(message, [])  # Empty docs, RAG handles internally
+            return result
+        except Exception as e:
+            logger.error(f"Hybrid search failed: {e}")
+            # Fallback to existing
+            existing_result = await existing_strategy.search(message, [])
+            return {
+                "fallback_used": True,
+                "result": existing_result,
+                "error": str(e)
+            }
+    else:
+        # RAG not available, use existing only
+        existing_result = await existing_strategy.search(message, [])
+        return {
+            "rag_unavailable": True,
+            "result": existing_result
+        }
+
+@app.post("/upload-rag")
+async def upload_rag(file: UploadFile = File(...)):
+    """Upload document to both systems for comparison."""
+    # Validate file (same as existing upload)
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+    
+    if file.size > 10 * 1024 * 1024:  # 10MB limit
+        raise HTTPException(status_code=400, detail="File size exceeds 10MB limit")
+    
+    try:
+        # Save file (same as existing)
+        file_path = os.path.join("uploaded_docs", file.filename)
+        os.makedirs("uploaded_docs", exist_ok=True)
+        
+        with open(file_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        # Extract text (same as existing)
+        text_content = extract_text_from_pdf(file_path)
+        
+        # Process through existing system (same as existing)
+        existing_result = {
+            "filename": file.filename,
+            "text_length": len(text_content),
+            "processed_by": "existing_system"
+        }
+        
+        # Try processing through RAG-Anything
+        rag_result = None
+        if rag_service.initialized:
+            try:
+                rag_result = await rag_service.process_document(file_path, text_content)
+            except Exception as e:
+                logger.error(f"RAG processing failed: {e}")
+                rag_result = {"error": str(e)}
+        
+        return {
+            "existing_system": existing_result,
+            "rag_anything": rag_result,
+            "file_path": file_path
+        }
+        
+    except Exception as e:
+        logger.error(f"Upload processing failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Root endpoint
 @app.get("/")
