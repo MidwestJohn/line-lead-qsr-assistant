@@ -1,0 +1,37 @@
+# Commercial Fryer Maintenance Guide
+
+## Equipment: Frymaster Pro Series Fryer
+Model: FMP35G
+Location: Kitchen Station 3
+
+## Daily Maintenance Tasks
+- Check oil temperature: Should maintain 325°F for french fries
+- Inspect oil quality: Look for dark color or strange odor
+- Clean oil filter: Replace if clogged
+- Wipe down exterior: Use damp cloth with mild detergent
+- Check gas connections: Ensure no leaks detected
+
+## Weekly Deep Cleaning
+- Drain fryer oil completely
+- Remove heating elements for cleaning
+- Clean with commercial degreaser
+- Inspect temperature sensor for accuracy
+- Replace oil filter cartridge
+- Refill with fresh cooking oil
+
+## Safety Requirements
+- Always wear heat-resistant gloves when handling hot oil
+- Ensure fryer is completely cool before maintenance
+- Never mix old oil with new oil
+- Keep fire extinguisher nearby during maintenance
+
+## Common Issues
+- Uneven heating: Usually indicates dirty heating elements
+- Oil temperature fluctuations: Check temperature sensor calibration
+- Strange noises: Inspect fan motor and lubricate moving parts
+- Oil not heating: Verify gas supply and ignition system
+
+## Related Equipment
+- Works with: Oil filtration system, exhaust hood
+- Connects to: Natural gas line, electrical panel
+- Uses: Frymaster oil, disposable filters

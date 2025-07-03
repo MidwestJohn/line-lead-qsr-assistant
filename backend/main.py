@@ -1938,6 +1938,93 @@ async def neo4j_custom_query(request: dict):
     result = neo4j_service.execute_query(query, parameters)
     return result
 
+# Database Management Endpoints - SAFETY FIRST
+@app.get("/neo4j-backup")
+async def neo4j_backup():
+    """Backup current graph before wiping (safety measure)."""
+    # Ensure connection
+    if not neo4j_service.connected:
+        neo4j_service.connect()
+    
+    if not neo4j_service.connected:
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+    
+    try:
+        with neo4j_service.driver.session() as session:
+            # Get all nodes and relationships
+            result = session.run("""
+                MATCH (n)
+                OPTIONAL MATCH (n)-[r]->(m)
+                RETURN {
+                    nodes: collect(DISTINCT {id: id(n), labels: labels(n), properties: properties(n)}),
+                    relationships: collect(DISTINCT {id: id(r), type: type(r), properties: properties(r), start: id(startNode(r)), end: id(endNode(r))})
+                } as backup
+            """)
+            
+            backup_data = result.single()["backup"]
+            
+            # Save to file with timestamp
+            import json
+            from datetime import datetime
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_file = f"./data/neo4j_backup_{timestamp}.json"
+            
+            os.makedirs("./data", exist_ok=True)
+            with open(backup_file, 'w') as f:
+                json.dump(backup_data, f, indent=2, default=str)
+            
+            return {
+                "backup_created": True,
+                "backup_file": backup_file,
+                "nodes_backed_up": len(backup_data.get("nodes", [])),
+                "relationships_backed_up": len(backup_data.get("relationships", [])),
+                "timestamp": timestamp
+            }
+            
+    except Exception as e:
+        logger.error(f"Backup failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Backup failed: {e}")
+
+@app.delete("/neo4j-wipe-demo-data")
+async def neo4j_wipe_demo_data():
+    """DANGER: Completely wipe all data from Neo4j database."""
+    # Ensure connection
+    if not neo4j_service.connected:
+        neo4j_service.connect()
+    
+    if not neo4j_service.connected:
+        raise HTTPException(status_code=503, detail="Neo4j not connected")
+    
+    try:
+        with neo4j_service.driver.session() as session:
+            # Get current counts
+            count_result = session.run("MATCH (n) RETURN count(n) as nodes, count{(n)-[]-()} as relationships")
+            counts = count_result.single()
+            
+            # Delete all relationships first
+            session.run("MATCH ()-[r]-() DELETE r")
+            
+            # Delete all nodes
+            session.run("MATCH (n) DELETE n")
+            
+            # Verify deletion
+            verify_result = session.run("MATCH (n) RETURN count(n) as remaining_nodes")
+            remaining = verify_result.single()["remaining_nodes"]
+            
+            return {
+                "wipe_completed": True,
+                "nodes_deleted": counts["nodes"],
+                "relationships_deleted": counts["relationships"],
+                "remaining_nodes": remaining,
+                "database_clean": remaining == 0,
+                "ready_for_fresh_data": True
+            }
+            
+    except Exception as e:
+        logger.error(f"Wipe failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Database wipe failed: {e}")
+
 # Root endpoint
 @app.get("/")
 async def root():

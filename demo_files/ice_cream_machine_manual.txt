@@ -1,0 +1,45 @@
+# Taylor Ice Cream Machine Manual
+
+## Equipment: Taylor Soft Serve Machine
+Model: C602-27
+Manufacturer: Taylor Company
+Location: Front Counter Station
+
+## Daily Operations
+- Pre-heat cycle: 30 minutes before service
+- Check refrigeration system: Maintain 38°F storage temperature
+- Inspect dispensing nozzles: Clean after each shift
+- Monitor mix levels: Refill when low indicator shows
+- Test consistency: Soft serve should hold shape for 10 seconds
+
+## Weekly Sanitization Process
+- Disassemble dispensing head components
+- Soak parts in Taylor sanitizer solution for 30 minutes
+- Clean refrigeration coils with brush
+- Replace air filter in compressor unit
+- Calibrate temperature sensors
+- Run sanitization cycle: Takes 4 hours to complete
+
+## Troubleshooting Guide
+- Machine won't start: Check electrical connections and breaker
+- Soft serve too runny: Increase freezing temperature setting
+- No product dispensing: Clear blocked nozzles or check mix supply
+- Unusual noises: Inspect compressor and fan motors
+- Temperature alarms: Verify refrigeration system operation
+
+## Safety Protocols
+- Lock out power before maintenance
+- Use only Taylor-approved cleaning chemicals
+- Wear safety glasses when handling sanitizer
+- Never operate with missing safety guards
+
+## Related Equipment
+- Connected to: Water line, drain system, electrical panel
+- Uses: Taylor mix, sanitizer chemicals, replacement parts
+- Works with: POS system for sales tracking
+
+## Maintenance Schedule
+- Daily: Basic cleaning and checks
+- Weekly: Deep sanitization
+- Monthly: Professional service inspection
+- Quarterly: Refrigeration system service
