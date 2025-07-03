@@ -32,6 +32,7 @@ from services.rag_service import rag_service
 from services.search_strategy import ExistingSearchStrategy, RAGAnythingStrategy, HybridSearchStrategy
 from services.document_processor import document_processor, ProcessedContent
 from services.voice_graph_service import voice_graph_service
+from services.neo4j_service import neo4j_service
 import uuid
 from dotenv import load_dotenv
 
@@ -1901,6 +1902,41 @@ async def chat_voice_comparison(request: dict):
     except Exception as e:
         logger.error(f"Voice comparison failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# Neo4j Aura Integration Endpoints - NEW ENDPOINTS ONLY
+@app.get("/neo4j-aura-validation")
+async def neo4j_aura_validation():
+    """Validate Aura-specific connection configuration."""
+    return neo4j_service.validate_aura_connection()
+
+@app.get("/neo4j-health")
+async def neo4j_health():
+    """Get Neo4j Aura health status and connection test."""
+    return neo4j_service.get_health_status()
+
+@app.get("/neo4j-test-query")
+async def neo4j_test_query():
+    """Test Neo4j Aura with a simple query."""
+    result = neo4j_service.execute_query(
+        "RETURN 'Aura Connection Test' as message, datetime() as timestamp"
+    )
+    return result
+
+@app.post("/neo4j-custom-query")
+async def neo4j_custom_query(request: dict):
+    """Execute a custom query on Neo4j Aura (for testing)."""
+    query = request.get("query")
+    parameters = request.get("parameters", {})
+    
+    if not query:
+        raise HTTPException(status_code=400, detail="Query is required")
+    
+    # Security: Only allow read queries for safety
+    if any(keyword in query.upper() for keyword in ["DELETE", "CREATE", "MERGE", "SET", "REMOVE", "DROP"]):
+        raise HTTPException(status_code=403, detail="Only read queries allowed")
+    
+    result = neo4j_service.execute_query(query, parameters)
+    return result
 
 # Root endpoint
 @app.get("/")

@@ -50,7 +50,7 @@ class RAGService:
             return False
     
     def _neo4j_available(self) -> bool:
-        """Check if Neo4j connection is available."""
+        """Check if Neo4j connection is available (Aura-compatible)."""
         try:
             from neo4j import GraphDatabase
             uri = os.getenv('NEO4J_URI')
@@ -60,11 +60,18 @@ class RAGService:
             if not all([uri, username, password]):
                 return False
                 
-            driver = GraphDatabase.driver(uri, auth=(username, password))
+            # Aura-compatible driver configuration
+            driver = GraphDatabase.driver(
+                uri, 
+                auth=(username, password),
+                max_connection_lifetime=30 * 60,
+                connection_acquisition_timeout=60
+            )
             driver.verify_connectivity()
             driver.close()
             return True
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Neo4j connection test failed: {e}")
             return False
     
     async def process_document(self, file_path: str, content: str) -> Dict[str, Any]:
