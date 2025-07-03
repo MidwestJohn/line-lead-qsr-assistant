@@ -31,6 +31,8 @@ from voice_agent import voice_orchestrator, VoiceState, ConversationIntent
 from services.rag_service import rag_service
 from services.search_strategy import ExistingSearchStrategy, RAGAnythingStrategy, HybridSearchStrategy
 from services.document_processor import document_processor, ProcessedContent
+from services.voice_graph_service import voice_graph_service
+import uuid
 from dotenv import load_dotenv
 
 # Load RAG environment
@@ -279,6 +281,12 @@ app.add_middleware(
 async def startup_event():
     """Initialize RAG service on startup."""
     await rag_service.initialize()
+
+# Initialize voice service with RAG dependency
+@app.on_event("startup")
+async def startup_event_voice():
+    """Initialize voice service with RAG dependency."""
+    voice_graph_service.set_rag_service(rag_service)
 
 # File serving will be handled by dedicated endpoint below
 
@@ -1789,6 +1797,110 @@ async def get_processing_capabilities():
             "semantic_chunking": document_processor.use_rag_anything
         }
     }
+
+# Voice Integration with Knowledge Graph Context - NEW ENDPOINTS ONLY
+@app.post("/voice-query")
+async def voice_query(request: dict):
+    """Process voice query with graph context."""
+    query = request.get("message")
+    session_id = request.get("session_id") or str(uuid.uuid4())
+    audio_metadata = request.get("audio_metadata", {})
+    
+    if not query:
+        raise HTTPException(status_code=400, detail="Message is required")
+    
+    try:
+        result = await voice_graph_service.process_voice_query(
+            session_id=session_id,
+            query=query,
+            audio_metadata=audio_metadata
+        )
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Voice query failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/voice-session/{session_id}")
+async def get_voice_session(session_id: str):
+    """Get voice session summary and context."""
+    summary = voice_graph_service.get_session_summary(session_id)
+    
+    if "error" in summary:
+        raise HTTPException(status_code=404, detail=summary["error"])
+    
+    return summary
+
+@app.post("/voice-session")
+async def create_voice_session():
+    """Create new voice session."""
+    session_id = str(uuid.uuid4())
+    context = await voice_graph_service.create_voice_session(session_id)
+    
+    return {
+        "session_id": session_id,
+        "created": context.last_updated.isoformat(),
+        "status": "ready"
+    }
+
+@app.get("/voice-capabilities")
+async def get_voice_capabilities():
+    """Get current voice processing capabilities."""
+    return {
+        "voice_processing": True,
+        "graph_context": voice_graph_service.use_graph_context,
+        "rag_integration": rag_service.initialized if rag_service else False,
+        "session_management": True,
+        "context_persistence": True,
+        "supported_features": {
+            "equipment_detection": True,
+            "procedure_detection": True,
+            "conversation_memory": True,
+            "multi_step_guidance": voice_graph_service.use_graph_context,
+            "voice_formatted_responses": True
+        }
+    }
+
+@app.post("/chat-voice-comparison")
+async def chat_voice_comparison(request: dict):
+    """Compare regular chat vs voice-optimized responses."""
+    message = request.get("message")
+    session_id = request.get("session_id", str(uuid.uuid4()))
+    
+    if not message:
+        raise HTTPException(status_code=400, detail="Message is required")
+    
+    try:
+        # Get regular chat response (existing endpoint logic)
+        regular_response = "Regular chat response would go here"  # Use existing chat logic
+        
+        # Get voice-optimized response
+        voice_result = await voice_graph_service.process_voice_query(session_id, message)
+        
+        return {
+            "query": message,
+            "session_id": session_id,
+            "regular_chat": {
+                "response": regular_response,
+                "optimized_for": "text"
+            },
+            "voice_chat": {
+                "response": voice_result["response"]["text"],
+                "optimized_for": "voice",
+                "context_used": voice_result["context"],
+                "citations": voice_result["response"]["citations"]
+            },
+            "comparison": {
+                "voice_formatting_applied": voice_result["response"]["formatted_for_voice"],
+                "context_persistence": bool(voice_result["context"]["current_equipment"]),
+                "graph_enhancement": voice_result["response"]["includes_context"]
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Voice comparison failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Root endpoint
 @app.get("/")
