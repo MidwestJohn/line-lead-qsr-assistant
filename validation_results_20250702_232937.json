@@ -1,0 +1,31 @@
+{
+  "timestamp": "2025-07-02T23:29:37.368360",
+  "checks": {
+    "test_pdfs_removed": {
+      "passed": true,
+      "details": "Found 0 PDFs: None"
+    },
+    "documents_json_empty": {
+      "passed": true,
+      "details": "Documents count: 0"
+    },
+    "uploads_empty": {
+      "passed": true,
+      "details": "Upload files count: 0"
+    },
+    "rag_configured": {
+      "passed": true,
+      "details": "RAG-Anything enabled: True"
+    },
+    "graph_store_clean": {
+      "passed": true,
+      "details": "Graph store files: 0"
+    },
+    "backups_preserved": {
+      "passed": true,
+      "details": "Backup directories found: ['backup_documents_20250702_232230']"
+    }
+  },
+  "status": "READY",
+  "ready_for_testing": true
+}

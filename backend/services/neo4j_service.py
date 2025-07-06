@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 logger = logging.getLogger(__name__)
 
 # Load RAG environment
-load_dotenv('backend/.env.rag')
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env.rag'))
 
 class Neo4jService:
     """Neo4j service optimized for Aura cloud connections"""

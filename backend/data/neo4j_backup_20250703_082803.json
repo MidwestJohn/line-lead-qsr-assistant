@@ -1,0 +1,8289 @@
+{
+  "nodes": [
+    {
+      "id": 0,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Model c602",
+        "original_name": "Model c602"
+      }
+    },
+    {
+      "id": 3,
+      "labels": [
+        "Entity",
+        "Brand"
+      ],
+      "properties": {
+        "name": "Taylor company",
+        "original_name": "Taylor company"
+      }
+    },
+    {
+      "id": 11,
+      "labels": [
+        "Procedure",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Manual",
+        "original_name": "Manual"
+      }
+    },
+    {
+      "id": 12,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Appliances",
+        "original_name": "Appliances"
+      }
+    },
+    {
+      "id": 13,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Disconnecting device",
+        "original_name": "Disconnecting device"
+      }
+    },
+    {
+      "id": 14,
+      "labels": [
+        "Safety",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Safety features",
+        "original_name": "Safety features"
+      }
+    },
+    {
+      "id": 15,
+      "labels": [
+        "Entity",
+        "Brand"
+      ],
+      "properties": {
+        "name": "Taylor",
+        "original_name": "Taylor"
+      }
+    },
+    {
+      "id": 16,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Machine",
+        "original_name": "Machine"
+      }
+    },
+    {
+      "id": 17,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Noise level",
+        "original_name": "Noise level"
+      }
+    },
+    {
+      "id": 18,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "R404a refrigerant",
+        "original_name": "R404a refrigerant"
+      }
+    },
+    {
+      "id": 19,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Refrigerant cylinder",
+        "original_name": "Refrigerant cylinder"
+      }
+    },
+    {
+      "id": 20,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Unauthorized use",
+        "original_name": "Unauthorized use"
+      }
+    },
+    {
+      "id": 21,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "New alternate",
+        "original_name": "New alternate"
+      }
+    },
+    {
+      "id": 22,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Current status",
+        "original_name": "Current status"
+      }
+    },
+    {
+      "id": 23,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Shake side",
+        "original_name": "Shake side"
+      }
+    },
+    {
+      "id": 24,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Soft serve",
+        "original_name": "Soft serve"
+      }
+    },
+    {
+      "id": 25,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Refrigerant",
+        "original_name": "Refrigerant"
+      }
+    },
+    {
+      "id": 26,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Air cooled units",
+        "original_name": "Air cooled units"
+      }
+    },
+    {
+      "id": 27,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Taylor c602",
+        "original_name": "Taylor c602"
+      }
+    },
+    {
+      "id": 28,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Drive shaft",
+        "original_name": "Drive shaft"
+      }
+    },
+    {
+      "id": 29,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Gear unit",
+        "original_name": "Gear unit"
+      }
+    },
+    {
+      "id": 30,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Locking tab",
+        "original_name": "Locking tab"
+      }
+    },
+    {
+      "id": 31,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Beater rotation",
+        "original_name": "Beater rotation"
+      }
+    },
+    {
+      "id": 32,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Interlock circuit",
+        "original_name": "Interlock circuit"
+      }
+    },
+    {
+      "id": 33,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pump motor",
+        "original_name": "Pump motor"
+      }
+    },
+    {
+      "id": 34,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pump ball crank",
+        "original_name": "Pump ball crank"
+      }
+    },
+    {
+      "id": 35,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Freezer",
+        "original_name": "Freezer"
+      }
+    },
+    {
+      "id": 36,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Installation",
+        "original_name": "Installation"
+      }
+    },
+    {
+      "id": 37,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Taylor model c602",
+        "original_name": "Taylor model c602"
+      }
+    },
+    {
+      "id": 38,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Expansion valve",
+        "original_name": "Expansion valve"
+      }
+    },
+    {
+      "id": 39,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Air cooled",
+        "original_name": "Air cooled"
+      }
+    },
+    {
+      "id": 40,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Water cooled",
+        "original_name": "Water cooled"
+      }
+    },
+    {
+      "id": 41,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Shake",
+        "original_name": "Shake"
+      }
+    },
+    {
+      "id": 42,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Water valve",
+        "original_name": "Water valve"
+      }
+    },
+    {
+      "id": 43,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Keypad-shake",
+        "original_name": "Keypad-shake"
+      }
+    },
+    {
+      "id": 44,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Display-vfd",
+        "original_name": "Display-vfd"
+      }
+    },
+    {
+      "id": 45,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Keypad-soft serve",
+        "original_name": "Keypad-soft serve"
+      }
+    },
+    {
+      "id": 46,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Indicator light-mix low",
+        "original_name": "Indicator light-mix low"
+      }
+    },
+    {
+      "id": 47,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Calibrate menu",
+        "original_name": "Calibrate menu"
+      }
+    },
+    {
+      "id": 48,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Indicator light-mix out",
+        "original_name": "Indicator light-mix out"
+      }
+    },
+    {
+      "id": 49,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Taylor equipment",
+        "original_name": "Taylor equipment"
+      }
+    },
+    {
+      "id": 50,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Power switch",
+        "original_name": "Power switch"
+      }
+    },
+    {
+      "id": 51,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Vacuum fluorescent display",
+        "original_name": "Vacuum fluorescent display"
+      }
+    },
+    {
+      "id": 52,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mix low symbol",
+        "original_name": "Mix low symbol"
+      }
+    },
+    {
+      "id": 53,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mix out symbol",
+        "original_name": "Mix out symbol"
+      }
+    },
+    {
+      "id": 54,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Heat mode symbol",
+        "original_name": "Heat mode symbol"
+      }
+    },
+    {
+      "id": 55,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Control panel",
+        "original_name": "Control panel"
+      }
+    },
+    {
+      "id": 56,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Temperature",
+        "original_name": "Temperature"
+      }
+    },
+    {
+      "id": 57,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Heat symbols",
+        "original_name": "Heat symbols"
+      }
+    },
+    {
+      "id": 58,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mix temperature",
+        "original_name": "Mix temperature"
+      }
+    },
+    {
+      "id": 59,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Heat treatment system freezers",
+        "original_name": "Heat treatment system freezers"
+      }
+    },
+    {
+      "id": 60,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Hard lock",
+        "original_name": "Hard lock"
+      }
+    },
+    {
+      "id": 61,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Soft lock",
+        "original_name": "Soft lock"
+      }
+    },
+    {
+      "id": 62,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Thermistor failure",
+        "original_name": "Thermistor failure"
+      }
+    },
+    {
+      "id": 63,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Freezer locked message",
+        "original_name": "Freezer locked message"
+      }
+    },
+    {
+      "id": 64,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Product over temperature",
+        "original_name": "Product over temperature"
+      }
+    },
+    {
+      "id": 65,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Timer",
+        "original_name": "Timer"
+      }
+    },
+    {
+      "id": 66,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Fault description",
+        "original_name": "Fault description"
+      }
+    },
+    {
+      "id": 67,
+      "labels": [
+        "Procedure",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Service menu",
+        "original_name": "Service menu"
+      }
+    },
+    {
+      "id": 68,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Cone symbol",
+        "original_name": "Cone symbol"
+      }
+    },
+    {
+      "id": 69,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Access code screen",
+        "original_name": "Access code screen"
+      }
+    },
+    {
+      "id": 70,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Correct access code",
+        "original_name": "Correct access code"
+      }
+    },
+    {
+      "id": 71,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Auto symbol",
+        "original_name": "Auto symbol"
+      }
+    },
+    {
+      "id": 72,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup calibration",
+        "original_name": "Syrup calibration"
+      }
+    },
+    {
+      "id": 73,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Verify calibration",
+        "original_name": "Verify calibration"
+      }
+    },
+    {
+      "id": 74,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Serving counter",
+        "original_name": "Serving counter"
+      }
+    },
+    {
+      "id": 75,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Set clock",
+        "original_name": "Set clock"
+      }
+    },
+    {
+      "id": 76,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Unflavored draw option",
+        "original_name": "Unflavored draw option"
+      }
+    },
+    {
+      "id": 77,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Calibration menu",
+        "original_name": "Calibration menu"
+      }
+    },
+    {
+      "id": 78,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Calibration symbol",
+        "original_name": "Calibration symbol"
+      }
+    },
+    {
+      "id": 79,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Daylight saving time feature",
+        "original_name": "Daylight saving time feature"
+      }
+    },
+    {
+      "id": 80,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Auto heat time screen",
+        "original_name": "Auto heat time screen"
+      }
+    },
+    {
+      "id": 81,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Auto heat time",
+        "original_name": "Auto heat time"
+      }
+    },
+    {
+      "id": 82,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Auto start time option",
+        "original_name": "Auto start time option"
+      }
+    },
+    {
+      "id": 83,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Auto start time",
+        "original_name": "Auto start time"
+      }
+    },
+    {
+      "id": 84,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Standby mode",
+        "original_name": "Standby mode"
+      }
+    },
+    {
+      "id": 85,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Standby option",
+        "original_name": "Standby option"
+      }
+    },
+    {
+      "id": 86,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Brush clean cycle",
+        "original_name": "Brush clean cycle"
+      }
+    },
+    {
+      "id": 87,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mix level audible",
+        "original_name": "Mix level audible"
+      }
+    },
+    {
+      "id": 88,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "No fault found",
+        "original_name": "No fault found"
+      }
+    },
+    {
+      "id": 89,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Beater overload",
+        "original_name": "Beater overload"
+      }
+    },
+    {
+      "id": 90,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Hopper thermistor bad",
+        "original_name": "Hopper thermistor bad"
+      }
+    },
+    {
+      "id": 91,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Barrel thermistor bad",
+        "original_name": "Barrel thermistor bad"
+      }
+    },
+    {
+      "id": 92,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Hopper thermistor",
+        "original_name": "Hopper thermistor"
+      }
+    },
+    {
+      "id": 93,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Barrel thermistor",
+        "original_name": "Barrel thermistor"
+      }
+    },
+    {
+      "id": 94,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Glycol thermistor",
+        "original_name": "Glycol thermistor"
+      }
+    },
+    {
+      "id": 95,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Lockout history",
+        "original_name": "Lockout history"
+      }
+    },
+    {
+      "id": 96,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Page 1",
+        "original_name": "Page 1"
+      }
+    },
+    {
+      "id": 97,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mix out condition",
+        "original_name": "Mix out condition"
+      }
+    },
+    {
+      "id": 98,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Heat mode failure",
+        "original_name": "Heat mode failure"
+      }
+    },
+    {
+      "id": 99,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Heat cycle summary",
+        "original_name": "Heat cycle summary"
+      }
+    },
+    {
+      "id": 100,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Heat cycle data",
+        "original_name": "Heat cycle data"
+      }
+    },
+    {
+      "id": 101,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "First screen",
+        "original_name": "First screen"
+      }
+    },
+    {
+      "id": 102,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Glycol temperature",
+        "original_name": "Glycol temperature"
+      }
+    },
+    {
+      "id": 103,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Heat cycle failure codes",
+        "original_name": "Heat cycle failure codes"
+      }
+    },
+    {
+      "id": 104,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Ht",
+        "original_name": "Ht"
+      }
+    },
+    {
+      "id": 105,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Cl",
+        "original_name": "Cl"
+      }
+    },
+    {
+      "id": 106,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pf",
+        "original_name": "Pf"
+      }
+    },
+    {
+      "id": 107,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mo",
+        "original_name": "Mo"
+      }
+    },
+    {
+      "id": 108,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Power failure",
+        "original_name": "Power failure"
+      }
+    },
+    {
+      "id": 109,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Asterisk",
+        "original_name": "Asterisk"
+      }
+    },
+    {
+      "id": 110,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Thermistor probe",
+        "original_name": "Thermistor probe"
+      }
+    },
+    {
+      "id": 111,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Data",
+        "original_name": "Data"
+      }
+    },
+    {
+      "id": 112,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Heat cycle",
+        "original_name": "Heat cycle"
+      }
+    },
+    {
+      "id": 113,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Product door",
+        "original_name": "Product door"
+      }
+    },
+    {
+      "id": 114,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "System information",
+        "original_name": "System information"
+      }
+    },
+    {
+      "id": 115,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Current conditions",
+        "original_name": "Current conditions"
+      }
+    },
+    {
+      "id": 116,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Temperature scale",
+        "original_name": "Temperature scale"
+      }
+    },
+    {
+      "id": 117,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Temperature setting",
+        "original_name": "Temperature setting"
+      }
+    },
+    {
+      "id": 118,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Hopper temperature",
+        "original_name": "Hopper temperature"
+      }
+    },
+    {
+      "id": 119,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Hopper cooling",
+        "original_name": "Hopper cooling"
+      }
+    },
+    {
+      "id": 120,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Glycol heater",
+        "original_name": "Glycol heater"
+      }
+    },
+    {
+      "id": 121,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Glycol holding temperature",
+        "original_name": "Glycol holding temperature"
+      }
+    },
+    {
+      "id": 122,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Viscosity setting",
+        "original_name": "Viscosity setting"
+      }
+    },
+    {
+      "id": 123,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Soft serve viscosity",
+        "original_name": "Soft serve viscosity"
+      }
+    },
+    {
+      "id": 124,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Compressor cycle time",
+        "original_name": "Compressor cycle time"
+      }
+    },
+    {
+      "id": 125,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Compressor on delay",
+        "original_name": "Compressor on delay"
+      }
+    },
+    {
+      "id": 126,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Beater off delay",
+        "original_name": "Beater off delay"
+      }
+    },
+    {
+      "id": 127,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Recommended setting",
+        "original_name": "Recommended setting"
+      }
+    },
+    {
+      "id": 128,
+      "labels": [
+        "Procedure",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Service technician",
+        "original_name": "Service technician"
+      }
+    },
+    {
+      "id": 129,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mix pump off delay",
+        "original_name": "Mix pump off delay"
+      }
+    },
+    {
+      "id": 130,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Range",
+        "original_name": "Range"
+      }
+    },
+    {
+      "id": 131,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "White spot adjustment",
+        "original_name": "White spot adjustment"
+      }
+    },
+    {
+      "id": 132,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Recommended white spot setting",
+        "original_name": "Recommended white spot setting"
+      }
+    },
+    {
+      "id": 133,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Calibrate syrup time",
+        "original_name": "Calibrate syrup time"
+      }
+    },
+    {
+      "id": 134,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Recommended cal syrup time",
+        "original_name": "Recommended cal syrup time"
+      }
+    },
+    {
+      "id": 135,
+      "labels": [
+        "Safety",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Draw safety time",
+        "original_name": "Draw safety time"
+      }
+    },
+    {
+      "id": 136,
+      "labels": [
+        "Procedure",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Service technicians",
+        "original_name": "Service technicians"
+      }
+    },
+    {
+      "id": 137,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Product temperature",
+        "original_name": "Product temperature"
+      }
+    },
+    {
+      "id": 138,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Barrel temperature",
+        "original_name": "Barrel temperature"
+      }
+    },
+    {
+      "id": 139,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Raw viscosity",
+        "original_name": "Raw viscosity"
+      }
+    },
+    {
+      "id": 140,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Audible tone",
+        "original_name": "Audible tone"
+      }
+    },
+    {
+      "id": 141,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Select language option",
+        "original_name": "Select language option"
+      }
+    },
+    {
+      "id": 142,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup motor setup",
+        "original_name": "Syrup motor setup"
+      }
+    },
+    {
+      "id": 143,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup motor setting",
+        "original_name": "Syrup motor setting"
+      }
+    },
+    {
+      "id": 144,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Reverse time setting",
+        "original_name": "Reverse time setting"
+      }
+    },
+    {
+      "id": 145,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Thick viscosity syrup",
+        "original_name": "Thick viscosity syrup"
+      }
+    },
+    {
+      "id": 146,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Air pocket",
+        "original_name": "Air pocket"
+      }
+    },
+    {
+      "id": 147,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Heat treatment cycle",
+        "original_name": "Heat treatment cycle"
+      }
+    },
+    {
+      "id": 148,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Heat phase",
+        "original_name": "Heat phase"
+      }
+    },
+    {
+      "id": 149,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Hold phase timer",
+        "original_name": "Hold phase timer"
+      }
+    },
+    {
+      "id": 150,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Hold phase",
+        "original_name": "Hold phase"
+      }
+    },
+    {
+      "id": 151,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Heat soak timer",
+        "original_name": "Heat soak timer"
+      }
+    },
+    {
+      "id": 152,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Cool phase",
+        "original_name": "Cool phase"
+      }
+    },
+    {
+      "id": 153,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Cool phase timer",
+        "original_name": "Cool phase timer"
+      }
+    },
+    {
+      "id": 154,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Heat cycle timer",
+        "original_name": "Heat cycle timer"
+      }
+    },
+    {
+      "id": 155,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Glycol",
+        "original_name": "Glycol"
+      }
+    },
+    {
+      "id": 156,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Beater motor",
+        "original_name": "Beater motor"
+      }
+    },
+    {
+      "id": 157,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Hopper",
+        "original_name": "Hopper"
+      }
+    },
+    {
+      "id": 158,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Glycol pump",
+        "original_name": "Glycol pump"
+      }
+    },
+    {
+      "id": 159,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mix pump",
+        "original_name": "Mix pump"
+      }
+    },
+    {
+      "id": 160,
+      "labels": [
+        "Safety",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Draw safety timer",
+        "original_name": "Draw safety timer"
+      }
+    },
+    {
+      "id": 161,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Brush clean countdown",
+        "original_name": "Brush clean countdown"
+      }
+    },
+    {
+      "id": 162,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Heat phase timer",
+        "original_name": "Heat phase timer"
+      }
+    },
+    {
+      "id": 163,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Glycol system",
+        "original_name": "Glycol system"
+      }
+    },
+    {
+      "id": 164,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Freezing cylinders",
+        "original_name": "Freezing cylinders"
+      }
+    },
+    {
+      "id": 165,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Agitator paddle",
+        "original_name": "Agitator paddle"
+      }
+    },
+    {
+      "id": 166,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Ethylene glycol",
+        "original_name": "Ethylene glycol"
+      }
+    },
+    {
+      "id": 167,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Unit",
+        "original_name": "Unit"
+      }
+    },
+    {
+      "id": 168,
+      "labels": [
+        "Procedure",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Service hose",
+        "original_name": "Service hose"
+      }
+    },
+    {
+      "id": 169,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "System",
+        "original_name": "System"
+      }
+    },
+    {
+      "id": 170,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Glycol accumulator tank",
+        "original_name": "Glycol accumulator tank"
+      }
+    },
+    {
+      "id": 171,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Glycol mixture",
+        "original_name": "Glycol mixture"
+      }
+    },
+    {
+      "id": 172,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Viscosity",
+        "original_name": "Viscosity"
+      }
+    },
+    {
+      "id": 173,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Product",
+        "original_name": "Product"
+      }
+    },
+    {
+      "id": 174,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Amperage load",
+        "original_name": "Amperage load"
+      }
+    },
+    {
+      "id": 175,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Factory default setting",
+        "original_name": "Factory default setting"
+      }
+    },
+    {
+      "id": 176,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Serving temperature",
+        "original_name": "Serving temperature"
+      }
+    },
+    {
+      "id": 177,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Portion control sensor",
+        "original_name": "Portion control sensor"
+      }
+    },
+    {
+      "id": 178,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Control board",
+        "original_name": "Control board"
+      }
+    },
+    {
+      "id": 179,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Interface board",
+        "original_name": "Interface board"
+      }
+    },
+    {
+      "id": 180,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Adjustable draw handle",
+        "original_name": "Adjustable draw handle"
+      }
+    },
+    {
+      "id": 181,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Uvc3 board",
+        "original_name": "Uvc3 board"
+      }
+    },
+    {
+      "id": 182,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Uvc3",
+        "original_name": "Uvc3"
+      }
+    },
+    {
+      "id": 183,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Software program",
+        "original_name": "Software program"
+      }
+    },
+    {
+      "id": 184,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Settings",
+        "original_name": "Settings"
+      }
+    },
+    {
+      "id": 185,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Ram chip",
+        "original_name": "Ram chip"
+      }
+    },
+    {
+      "id": 186,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Power",
+        "original_name": "Power"
+      }
+    },
+    {
+      "id": 187,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Jp1 pins",
+        "original_name": "Jp1 pins"
+      }
+    },
+    {
+      "id": 188,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Jp2 pins",
+        "original_name": "Jp2 pins"
+      }
+    },
+    {
+      "id": 189,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Eprom chip",
+        "original_name": "Eprom chip"
+      }
+    },
+    {
+      "id": 190,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Interface boards",
+        "original_name": "Interface boards"
+      }
+    },
+    {
+      "id": 191,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "16 vac transformer",
+        "original_name": "16 vac transformer"
+      }
+    },
+    {
+      "id": 192,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Control panel interface board",
+        "original_name": "Control panel interface board"
+      }
+    },
+    {
+      "id": 193,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Personality board",
+        "original_name": "Personality board"
+      }
+    },
+    {
+      "id": 194,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Shake proximity sensor",
+        "original_name": "Shake proximity sensor"
+      }
+    },
+    {
+      "id": 195,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Soft serve personality board",
+        "original_name": "Soft serve personality board"
+      }
+    },
+    {
+      "id": 196,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "One connection",
+        "original_name": "One connection"
+      }
+    },
+    {
+      "id": 197,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Vfd",
+        "original_name": "Vfd"
+      }
+    },
+    {
+      "id": 198,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Motor speed control",
+        "original_name": "Motor speed control"
+      }
+    },
+    {
+      "id": 199,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Uvc3 control",
+        "original_name": "Uvc3 control"
+      }
+    },
+    {
+      "id": 200,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Power cord",
+        "original_name": "Power cord"
+      }
+    },
+    {
+      "id": 201,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Transformer",
+        "original_name": "Transformer"
+      }
+    },
+    {
+      "id": 202,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "L1 power",
+        "original_name": "L1 power"
+      }
+    },
+    {
+      "id": 203,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Hopper thermistor probe",
+        "original_name": "Hopper thermistor probe"
+      }
+    },
+    {
+      "id": 204,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Compressor",
+        "original_name": "Compressor"
+      }
+    },
+    {
+      "id": 205,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Main compressors",
+        "original_name": "Main compressors"
+      }
+    },
+    {
+      "id": 206,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Shake product thermistor probes",
+        "original_name": "Shake product thermistor probes"
+      }
+    },
+    {
+      "id": 207,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Flavor selection led",
+        "original_name": "Flavor selection led"
+      }
+    },
+    {
+      "id": 208,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Draw valve solenoid",
+        "original_name": "Draw valve solenoid"
+      }
+    },
+    {
+      "id": 209,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Dual bridge rectifier board",
+        "original_name": "Dual bridge rectifier board"
+      }
+    },
+    {
+      "id": 210,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Output voltage",
+        "original_name": "Output voltage"
+      }
+    },
+    {
+      "id": 211,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pull and hold relays",
+        "original_name": "Pull and hold relays"
+      }
+    },
+    {
+      "id": 212,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Relays",
+        "original_name": "Relays"
+      }
+    },
+    {
+      "id": 213,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pull relay coil",
+        "original_name": "Pull relay coil"
+      }
+    },
+    {
+      "id": 214,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Hold relay",
+        "original_name": "Hold relay"
+      }
+    },
+    {
+      "id": 215,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Actuator plate",
+        "original_name": "Actuator plate"
+      }
+    },
+    {
+      "id": 216,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Bumper access plate",
+        "original_name": "Bumper access plate"
+      }
+    },
+    {
+      "id": 217,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Actuator",
+        "original_name": "Actuator"
+      }
+    },
+    {
+      "id": 218,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Solenoid valve",
+        "original_name": "Solenoid valve"
+      }
+    },
+    {
+      "id": 219,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Height of solenoid",
+        "original_name": "Height of solenoid"
+      }
+    },
+    {
+      "id": 220,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Solenoid adjust tool",
+        "original_name": "Solenoid adjust tool"
+      }
+    },
+    {
+      "id": 221,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup",
+        "original_name": "Syrup"
+      }
+    },
+    {
+      "id": 222,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup flavor",
+        "original_name": "Syrup flavor"
+      }
+    },
+    {
+      "id": 223,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Peristaltic pump",
+        "original_name": "Peristaltic pump"
+      }
+    },
+    {
+      "id": 224,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "24 vdc motor",
+        "original_name": "24 vdc motor"
+      }
+    },
+    {
+      "id": 225,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup flow",
+        "original_name": "Syrup flow"
+      }
+    },
+    {
+      "id": 226,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Calibration cup",
+        "original_name": "Calibration cup"
+      }
+    },
+    {
+      "id": 227,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Proper rate of syrup flow",
+        "original_name": "Proper rate of syrup flow"
+      }
+    },
+    {
+      "id": 228,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup lines",
+        "original_name": "Syrup lines"
+      }
+    },
+    {
+      "id": 229,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup dispensing rate",
+        "original_name": "Syrup dispensing rate"
+      }
+    },
+    {
+      "id": 230,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Cant calibrate message",
+        "original_name": "Can't calibrate message"
+      }
+    },
+    {
+      "id": 231,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup hole plug",
+        "original_name": "Syrup hole plug"
+      }
+    },
+    {
+      "id": 232,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Head pressure",
+        "original_name": "Head pressure"
+      }
+    },
+    {
+      "id": 233,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Liquid line",
+        "original_name": "Liquid line"
+      }
+    },
+    {
+      "id": 234,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Draw valve",
+        "original_name": "Draw valve"
+      }
+    },
+    {
+      "id": 235,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mix pump motor",
+        "original_name": "Mix pump motor"
+      }
+    },
+    {
+      "id": 236,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Air/mix pump",
+        "original_name": "Air/mix pump"
+      }
+    },
+    {
+      "id": 237,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mix feed tube",
+        "original_name": "Mix feed tube"
+      }
+    },
+    {
+      "id": 238,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Product viscosity",
+        "original_name": "Product viscosity"
+      }
+    },
+    {
+      "id": 239,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Scraper blades",
+        "original_name": "Scraper blades"
+      }
+    },
+    {
+      "id": 240,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Condenser",
+        "original_name": "Condenser"
+      }
+    },
+    {
+      "id": 241,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Beater assembly",
+        "original_name": "Beater assembly"
+      }
+    },
+    {
+      "id": 242,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Front bearing",
+        "original_name": "Front bearing"
+      }
+    },
+    {
+      "id": 243,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Draw rate",
+        "original_name": "Draw rate"
+      }
+    },
+    {
+      "id": 244,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pump",
+        "original_name": "Pump"
+      }
+    },
+    {
+      "id": 245,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Fault alert",
+        "original_name": "Fault alert"
+      }
+    },
+    {
+      "id": 246,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Duckbill valve",
+        "original_name": "Duckbill valve"
+      }
+    },
+    {
+      "id": 247,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pump drive",
+        "original_name": "Pump drive"
+      }
+    },
+    {
+      "id": 248,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Connection",
+        "original_name": "Connection"
+      }
+    },
+    {
+      "id": 249,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Piston",
+        "original_name": "Piston"
+      }
+    },
+    {
+      "id": 250,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Gasket",
+        "original_name": "Gasket"
+      }
+    },
+    {
+      "id": 251,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "O-rings",
+        "original_name": "O-rings"
+      }
+    },
+    {
+      "id": 252,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pump cylinder",
+        "original_name": "Pump cylinder"
+      }
+    },
+    {
+      "id": 253,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup line",
+        "original_name": "Syrup line"
+      }
+    },
+    {
+      "id": 254,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Whitespot setting",
+        "original_name": "Whitespot setting"
+      }
+    },
+    {
+      "id": 255,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pump motor reverse time",
+        "original_name": "Pump motor reverse time"
+      }
+    },
+    {
+      "id": 256,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Shake temperature",
+        "original_name": "Shake temperature"
+      }
+    },
+    {
+      "id": 257,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Draw solenoid",
+        "original_name": "Draw solenoid"
+      }
+    },
+    {
+      "id": 258,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Solenoid fuse",
+        "original_name": "Solenoid fuse"
+      }
+    },
+    {
+      "id": 259,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Fuse",
+        "original_name": "Fuse"
+      }
+    },
+    {
+      "id": 260,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Dispensing mechanism",
+        "original_name": "Dispensing mechanism"
+      }
+    },
+    {
+      "id": 261,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Portion control system",
+        "original_name": "Portion control system"
+      }
+    },
+    {
+      "id": 262,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Cup holder",
+        "original_name": "Cup holder"
+      }
+    },
+    {
+      "id": 263,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Shake cup",
+        "original_name": "Shake cup"
+      }
+    },
+    {
+      "id": 264,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Loose wire connection",
+        "original_name": "Loose wire connection"
+      }
+    },
+    {
+      "id": 265,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Pyrosensor",
+        "original_name": "Pyrosensor"
+      }
+    },
+    {
+      "id": 266,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Shake personality board",
+        "original_name": "Shake personality board"
+      }
+    },
+    {
+      "id": 267,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Fill level adjustment screw",
+        "original_name": "Fill level adjustment screw"
+      }
+    },
+    {
+      "id": 268,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Human contamination",
+        "original_name": "Human contamination"
+      }
+    },
+    {
+      "id": 269,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mix",
+        "original_name": "Mix"
+      }
+    },
+    {
+      "id": 270,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Hopper storage",
+        "original_name": "Hopper storage"
+      }
+    },
+    {
+      "id": 271,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Storage temperatures",
+        "original_name": "Storage temperatures"
+      }
+    },
+    {
+      "id": 272,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Covers",
+        "original_name": "Covers"
+      }
+    },
+    {
+      "id": 273,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Warranty for new equipment parts",
+        "original_name": "Warranty for new equipment parts"
+      }
+    },
+    {
+      "id": 274,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Warranty",
+        "original_name": "Warranty"
+      }
+    },
+    {
+      "id": 275,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Motor-reducer",
+        "original_name": "Motor-reducer"
+      }
+    },
+    {
+      "id": 276,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Heater a.-glycol",
+        "original_name": "Heater a.-glycol"
+      }
+    },
+    {
+      "id": 277,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Filter a.-glycol",
+        "original_name": "Filter a.-glycol"
+      }
+    },
+    {
+      "id": 278,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Filter-air",
+        "original_name": "Filter-air"
+      }
+    },
+    {
+      "id": 279,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Grommet-compressor",
+        "original_name": "Grommet-compressor"
+      }
+    },
+    {
+      "id": 280,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Washer-5/16-flat zp steel",
+        "original_name": "Washer-5/16-flat zp steel"
+      }
+    },
+    {
+      "id": 281,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Screw-5/16-18x1-3/4 hex",
+        "original_name": "Screw-5/16-18x1-3/4 hex"
+      }
+    },
+    {
+      "id": 282,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pump a.-ultimate syrup",
+        "original_name": "Pump a.-ultimate syrup"
+      }
+    },
+    {
+      "id": 283,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Tank-glycol",
+        "original_name": "Tank-glycol"
+      }
+    },
+    {
+      "id": 284,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Agitator assembly",
+        "original_name": "Agitator assembly"
+      }
+    },
+    {
+      "id": 285,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Motor a.-spinner",
+        "original_name": "Motor a.-spinner"
+      }
+    },
+    {
+      "id": 286,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pump a.-syrup- heated",
+        "original_name": "Pump a.-syrup- heated"
+      }
+    },
+    {
+      "id": 287,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Panel-side right",
+        "original_name": "Panel-side right"
+      }
+    },
+    {
+      "id": 288,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Seal-drive shaft",
+        "original_name": "Seal-drive shaft"
+      }
+    },
+    {
+      "id": 289,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Shaft-beater",
+        "original_name": "Shaft-beater"
+      }
+    },
+    {
+      "id": 290,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Blade-scraper",
+        "original_name": "Blade-scraper"
+      }
+    },
+    {
+      "id": 291,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Bearing-door front",
+        "original_name": "Bearing-door front"
+      }
+    },
+    {
+      "id": 292,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Beater a.",
+        "original_name": "Beater a."
+      }
+    },
+    {
+      "id": 293,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "O-ring",
+        "original_name": "O-ring"
+      }
+    },
+    {
+      "id": 294,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Drive mix pump",
+        "original_name": "Drive mix pump"
+      }
+    },
+    {
+      "id": 295,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Syrup line assembly",
+        "original_name": "Syrup line assembly"
+      }
+    },
+    {
+      "id": 296,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Ferrule",
+        "original_name": "Ferrule"
+      }
+    },
+    {
+      "id": 297,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Control assembly",
+        "original_name": "Control assembly"
+      }
+    },
+    {
+      "id": 298,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pcb a.-interface-ht-ss-uk",
+        "original_name": "Pcb a.-interface-ht-ss-uk"
+      }
+    },
+    {
+      "id": 299,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pcb a.-personality ht ss",
+        "original_name": "Pcb a.-personality ht ss"
+      }
+    },
+    {
+      "id": 300,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Cover-clamp-ribbon",
+        "original_name": "Cover-clamp-ribbon"
+      }
+    },
+    {
+      "id": 301,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Control-speed-motor",
+        "original_name": "Control-speed-motor"
+      }
+    },
+    {
+      "id": 302,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Capacitor-run",
+        "original_name": "Capacitor-run"
+      }
+    },
+    {
+      "id": 303,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Relay-dpdt-24vac-30a@277",
+        "original_name": "Relay-dpdt-24vac-30a@277"
+      }
+    },
+    {
+      "id": 304,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Screw-6-32 x 3/8",
+        "original_name": "Screw-6-32 x 3/8"
+      }
+    },
+    {
+      "id": 305,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Cable-ribbon-14c-3\u201dl",
+        "original_name": "Cable-ribbon-14c-3\u201dl"
+      }
+    },
+    {
+      "id": 306,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Dispenser a.-cone",
+        "original_name": "Dispenser a.-cone"
+      }
+    },
+    {
+      "id": 307,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Cap a.-valve-draw",
+        "original_name": "Cap a.-valve-draw"
+      }
+    },
+    {
+      "id": 308,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Tray a.-syrup",
+        "original_name": "Tray a.-syrup"
+      }
+    },
+    {
+      "id": 309,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Tank-syrup",
+        "original_name": "Tank-syrup"
+      }
+    },
+    {
+      "id": 310,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Kit a.-peristaltic pump tube",
+        "original_name": "Kit a.-peristaltic pump tube"
+      }
+    },
+    {
+      "id": 311,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Ladle",
+        "original_name": "Ladle"
+      }
+    },
+    {
+      "id": 312,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Accumulator-copper",
+        "original_name": "Accumulator-copper"
+      }
+    },
+    {
+      "id": 313,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Agitator a.-mix hopper",
+        "original_name": "Agitator a.-mix hopper"
+      }
+    },
+    {
+      "id": 314,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Bearing-door-front",
+        "original_name": "Bearing-door-front"
+      }
+    },
+    {
+      "id": 315,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Belt-agitator",
+        "original_name": "Belt-agitator"
+      }
+    },
+    {
+      "id": 316,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Blade a.-spinner",
+        "original_name": "Blade a.-spinner"
+      }
+    },
+    {
+      "id": 317,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Block-hinge",
+        "original_name": "Block-hinge"
+      }
+    },
+    {
+      "id": 318,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Compressor aha2490zxf-ah556rf",
+        "original_name": "Compressor aha2490zxf-ah556rf"
+      }
+    },
+    {
+      "id": 319,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Compressor aha7513zxf-ah245rf",
+        "original_name": "Compressor aha7513zxf-ah245rf"
+      }
+    },
+    {
+      "id": 320,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Condenser-ac 12lx18hx3.12t-5rw",
+        "original_name": "Condenser-ac 12lx18hx3.12t-5rw"
+      }
+    },
+    {
+      "id": 321,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Power cable",
+        "original_name": "Power cable"
+      }
+    },
+    {
+      "id": 322,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Cover-hopper",
+        "original_name": "Cover-hopper"
+      }
+    },
+    {
+      "id": 323,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pin-retaining-hopper cover",
+        "original_name": "Pin-retaining-hopper cover"
+      }
+    },
+    {
+      "id": 324,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Coupling a.-drive-spinner",
+        "original_name": "Coupling a.-drive-spinner"
+      }
+    },
+    {
+      "id": 325,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Deflector-blower exhaust",
+        "original_name": "Deflector-blower exhaust"
+      }
+    },
+    {
+      "id": 326,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Cover-back dispenser box",
+        "original_name": "Cover-back dispenser box"
+      }
+    },
+    {
+      "id": 327,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Stnl 024034",
+        "original_name": "Stnl 024034"
+      }
+    },
+    {
+      "id": 328,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Spring-constant force",
+        "original_name": "Spring-constant force"
+      }
+    },
+    {
+      "id": 329,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Dispenser-cup",
+        "original_name": "Dispenser-cup"
+      }
+    },
+    {
+      "id": 330,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Door a.-cabinet",
+        "original_name": "Door a.-cabinet"
+      }
+    },
+    {
+      "id": 331,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Handle a.-draw-welded",
+        "original_name": "Handle a.-draw-welded"
+      }
+    },
+    {
+      "id": 332,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Valve a.-draw",
+        "original_name": "Valve a.-draw"
+      }
+    },
+    {
+      "id": 333,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Gasket-door ht",
+        "original_name": "Gasket-door ht"
+      }
+    },
+    {
+      "id": 334,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Door-machined-tts shake",
+        "original_name": "Door-machined-tts shake"
+      }
+    },
+    {
+      "id": 335,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "O-ring-6 in odx5 3/4 idx 1/8",
+        "original_name": "O-ring-6 in odx5 3/4 idx 1/8"
+      }
+    },
+    {
+      "id": 336,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Retainer-syrup valve",
+        "original_name": "Retainer-syrup valve"
+      }
+    },
+    {
+      "id": 337,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Filter-air-18.00lx13.50hx.70w",
+        "original_name": "Filter-air-18.00lx13.50hx.70w"
+      }
+    },
+    {
+      "id": 338,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Fuse-15 amp-in line-non delay",
+        "original_name": "Fuse-15 amp-in line-non delay"
+      }
+    },
+    {
+      "id": 339,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Reducer 4.21:1",
+        "original_name": "Reducer 4.21:1"
+      }
+    },
+    {
+      "id": 340,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Grommet-valve-spinner",
+        "original_name": "Grommet-valve-spinner"
+      }
+    },
+    {
+      "id": 341,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Heater a.-glycol-4500 w-prtl",
+        "original_name": "Heater a.-glycol-4500 w-prtl"
+      }
+    },
+    {
+      "id": 342,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Holder a.-sensor-adjustable",
+        "original_name": "Holder a.-sensor-adjustable"
+      }
+    },
+    {
+      "id": 343,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Housing a.-agitator long",
+        "original_name": "Housing a.-agitator long"
+      }
+    },
+    {
+      "id": 344,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Jar-syrup plastic shallow",
+        "original_name": "Jar-syrup plastic shallow"
+      }
+    },
+    {
+      "id": 345,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "C602",
+        "original_name": "C602"
+      }
+    },
+    {
+      "id": 346,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Motor-1.0 hp",
+        "original_name": "Motor-1.0 hp"
+      }
+    },
+    {
+      "id": 347,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Motor-1.5 hp",
+        "original_name": "Motor-1.5 hp"
+      }
+    },
+    {
+      "id": 348,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Label-reset-mix pmp 022723",
+        "original_name": "Label-reset-mix pmp 022723"
+      }
+    },
+    {
+      "id": 349,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pan-drip",
+        "original_name": "Pan-drip"
+      }
+    },
+    {
+      "id": 350,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mix pumps",
+        "original_name": "Mix pumps"
+      }
+    },
+    {
+      "id": 351,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Panel-rear-lower",
+        "original_name": "Panel-rear-lower"
+      }
+    },
+    {
+      "id": 352,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Panel-side left",
+        "original_name": "Panel-side left"
+      }
+    },
+    {
+      "id": 353,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pcb a.-pyro",
+        "original_name": "Pcb a.-pyro"
+      }
+    },
+    {
+      "id": 354,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Chip-software",
+        "original_name": "Chip-software"
+      }
+    },
+    {
+      "id": 355,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pulley-agt dr",
+        "original_name": "Pulley-agt dr"
+      }
+    },
+    {
+      "id": 356,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pulley-agt mtr",
+        "original_name": "Pulley-agt mtr"
+      }
+    },
+    {
+      "id": 357,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pulley-2ak22",
+        "original_name": "Pulley-2ak22"
+      }
+    },
+    {
+      "id": 358,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pulley-ak25",
+        "original_name": "Pulley-ak25"
+      }
+    },
+    {
+      "id": 359,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pump a.-mix simplified",
+        "original_name": "Pump a.-mix simplified"
+      }
+    },
+    {
+      "id": 360,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "O-ring-2-1/8 od x .139w-#225",
+        "original_name": "O-ring-2-1/8 od x .139w-#225"
+      }
+    },
+    {
+      "id": 361,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pin a.-retaining",
+        "original_name": "Pin a.-retaining"
+      }
+    },
+    {
+      "id": 362,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pump a.-syrup-heated-brn",
+        "original_name": "Pump a.-syrup-heated-brn"
+      }
+    },
+    {
+      "id": 363,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Relay-3 pole-20a-208/240 50/60",
+        "original_name": "Relay-3 pole-20a-208/240 50/60"
+      }
+    },
+    {
+      "id": 364,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Sensor a.-evc-slush-6\u201d",
+        "original_name": "Sensor a.-evc-slush-6\u201d"
+      }
+    },
+    {
+      "id": 365,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Shroud-front",
+        "original_name": "Shroud-front"
+      }
+    },
+    {
+      "id": 366,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Switch-reed door interlock 68\u201d",
+        "original_name": "Switch-reed door interlock 68\u201d"
+      }
+    },
+    {
+      "id": 367,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Switch-reed door interlock 97",
+        "original_name": "Switch-reed door interlock 97"
+      }
+    },
+    {
+      "id": 368,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Tank-glycol 1.5qt-plastic",
+        "original_name": "Tank-glycol 1.5qt-plastic"
+      }
+    },
+    {
+      "id": 369,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Valve a.-dispensing",
+        "original_name": "Valve a.-dispensing"
+      }
+    },
+    {
+      "id": 370,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Tray a.-drip-syrup cabinet",
+        "original_name": "Tray a.-drip-syrup cabinet"
+      }
+    },
+    {
+      "id": 371,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Bumper screw",
+        "original_name": "Bumper screw"
+      }
+    },
+    {
+      "id": 372,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Solenoid draw valve",
+        "original_name": "Solenoid draw valve"
+      }
+    },
+    {
+      "id": 373,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Brush",
+        "original_name": "Brush"
+      }
+    },
+    {
+      "id": 374,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Tool",
+        "original_name": "Tool"
+      }
+    },
+    {
+      "id": 375,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "O-ring-1-11/16 od x.139w",
+        "original_name": "O-ring-1-11/16 od x.139w"
+      }
+    },
+    {
+      "id": 376,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Tool-o-ring removal-freezer",
+        "original_name": "Tool-o-ring removal-freezer"
+      }
+    },
+    {
+      "id": 377,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Kit a.-tune up-c602",
+        "original_name": "Kit a.-tune up-c602"
+      }
+    },
+    {
+      "id": 378,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Gasket-door ht 4\u201d-double",
+        "original_name": "Gasket-door ht 4\u201d-double"
+      }
+    },
+    {
+      "id": 379,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "O-ring-11/16odx.103w-red",
+        "original_name": "O-ring-11/16odx.103w-red"
+      }
+    },
+    {
+      "id": 380,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "O-ring-1-3/4 od x .139w",
+        "original_name": "O-ring-1-3/4 od x .139w"
+      }
+    },
+    {
+      "id": 381,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Valve-check-duckbill",
+        "original_name": "Valve-check-duckbill"
+      }
+    },
+    {
+      "id": 382,
+      "labels": [
+        "Entity",
+        "Brand"
+      ],
+      "properties": {
+        "name": "Lubricant-taylor hi perf-4 o",
+        "original_name": "Lubricant-taylor hi perf-4 o"
+      }
+    },
+    {
+      "id": 383,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Parts list",
+        "original_name": "Parts list"
+      }
+    },
+    {
+      "id": 384,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Installation guidelines",
+        "original_name": "Installation guidelines"
+      }
+    },
+    {
+      "id": 385,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Compressor aha2490zxg-ah5",
+        "original_name": "Compressor aha2490zxg-ah5"
+      }
+    },
+    {
+      "id": 386,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Compressor aha7513zxg-ah2",
+        "original_name": "Compressor aha7513zxg-ah2"
+      }
+    },
+    {
+      "id": 387,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Decal",
+        "original_name": "Decal"
+      }
+    },
+    {
+      "id": 388,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Wiring diagram",
+        "original_name": "Wiring diagram"
+      }
+    },
+    {
+      "id": 389,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Starter-3 ph",
+        "original_name": "Starter-3 ph"
+      }
+    },
+    {
+      "id": 390,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Soft serve side",
+        "original_name": "Soft serve side"
+      }
+    },
+    {
+      "id": 391,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Touch panel",
+        "original_name": "Touch panel"
+      }
+    },
+    {
+      "id": 392,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Shake cup holder",
+        "original_name": "Shake cup holder"
+      }
+    },
+    {
+      "id": 393,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Portion control device",
+        "original_name": "Portion control device"
+      }
+    },
+    {
+      "id": 394,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Shake syrup",
+        "original_name": "Shake syrup"
+      }
+    },
+    {
+      "id": 395,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Repairs",
+        "original_name": "Repairs"
+      }
+    },
+    {
+      "id": 396,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pan-drip-rear",
+        "original_name": "Pan-drip-rear"
+      }
+    },
+    {
+      "id": 397,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Panel-rear-upper",
+        "original_name": "Panel-rear-upper"
+      }
+    },
+    {
+      "id": 398,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Caster-4\u201d",
+        "original_name": "Caster-4\u201d"
+      }
+    },
+    {
+      "id": 399,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Coupling a",
+        "original_name": "Coupling a"
+      }
+    },
+    {
+      "id": 400,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Stud-nose cone",
+        "original_name": "Stud-nose cone"
+      }
+    },
+    {
+      "id": 401,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Fitting-panel mount qd",
+        "original_name": "Fitting-panel mount qd"
+      }
+    },
+    {
+      "id": 402,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Sensor a",
+        "original_name": "Sensor a"
+      }
+    },
+    {
+      "id": 403,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pump a",
+        "original_name": "Pump a"
+      }
+    },
+    {
+      "id": 404,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Rack-syrup cabinet",
+        "original_name": "Rack-syrup cabinet"
+      }
+    },
+    {
+      "id": 405,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pump-peristaltic",
+        "original_name": "Pump-peristaltic"
+      }
+    },
+    {
+      "id": 406,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Probe a.-mix out",
+        "original_name": "Probe a.-mix out"
+      }
+    },
+    {
+      "id": 407,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pump a.-mix simplified shake",
+        "original_name": "Pump a.-mix simplified shake"
+      }
+    },
+    {
+      "id": 408,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Adaptor-mix inlet",
+        "original_name": "Adaptor-mix inlet"
+      }
+    },
+    {
+      "id": 409,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "O-ring-11/16 od - red",
+        "original_name": "O-ring-11/16 od - red"
+      }
+    },
+    {
+      "id": 410,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pin-cotter",
+        "original_name": "Pin-cotter"
+      }
+    },
+    {
+      "id": 411,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Shaft a.-drive mix pump",
+        "original_name": "Shaft a.-drive mix pump"
+      }
+    },
+    {
+      "id": 412,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Crank-drive",
+        "original_name": "Crank-drive"
+      }
+    },
+    {
+      "id": 413,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Tube a.-feed-hopper shake",
+        "original_name": "Tube a.-feed-hopper shake"
+      }
+    },
+    {
+      "id": 414,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Hose-beverage",
+        "original_name": "Hose-beverage"
+      }
+    },
+    {
+      "id": 415,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Valve-check duckbill",
+        "original_name": "Valve-check duckbill"
+      }
+    },
+    {
+      "id": 416,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Dispenser a",
+        "original_name": "Dispenser a"
+      }
+    },
+    {
+      "id": 417,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "X56121",
+        "original_name": "X56121"
+      }
+    },
+    {
+      "id": 418,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "052193",
+        "original_name": "052193"
+      }
+    },
+    {
+      "id": 419,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "X58474",
+        "original_name": "X58474"
+      }
+    },
+    {
+      "id": 420,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "O-ring-11mm green",
+        "original_name": "O-ring-11mm green"
+      }
+    },
+    {
+      "id": 421,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Tool-seal install-remove",
+        "original_name": "Tool-seal install-remove"
+      }
+    },
+    {
+      "id": 422,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "O-ring - 1-11/16 od",
+        "original_name": "O-ring - 1-11/16 od"
+      }
+    },
+    {
+      "id": 423,
+      "labels": [
+        "Entity",
+        "Brand"
+      ],
+      "properties": {
+        "name": "Lubricant-taylor hi-performance",
+        "original_name": "Lubricant-taylor hi-performance"
+      }
+    },
+    {
+      "id": 424,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Black bristle brush",
+        "original_name": "Black bristle brush"
+      }
+    },
+    {
+      "id": 425,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Double end brush",
+        "original_name": "Double end brush"
+      }
+    },
+    {
+      "id": 426,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "White bristle brush",
+        "original_name": "White bristle brush"
+      }
+    },
+    {
+      "id": 427,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Beater a.-7 qt. fluted blade",
+        "original_name": "Beater a.-7 qt. fluted blade"
+      }
+    },
+    {
+      "id": 428,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Spinner",
+        "original_name": "Spinner"
+      }
+    },
+    {
+      "id": 429,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Cap-restrictor",
+        "original_name": "Cap-restrictor"
+      }
+    },
+    {
+      "id": 430,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Plunger",
+        "original_name": "Plunger"
+      }
+    },
+    {
+      "id": 431,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Spring-plunger-syrup pump",
+        "original_name": "Spring-plunger-syrup pump"
+      }
+    },
+    {
+      "id": 432,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Seal assembly",
+        "original_name": "Seal assembly"
+      }
+    },
+    {
+      "id": 433,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup pump",
+        "original_name": "Syrup pump"
+      }
+    },
+    {
+      "id": 434,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "O-ring-plunger",
+        "original_name": "O-ring-plunger"
+      }
+    },
+    {
+      "id": 435,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Display-vacuumfluorescent",
+        "original_name": "Display-vacuumfluorescent"
+      }
+    },
+    {
+      "id": 436,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Display",
+        "original_name": "Display"
+      }
+    },
+    {
+      "id": 437,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Reset button",
+        "original_name": "Reset button"
+      }
+    },
+    {
+      "id": 438,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Sanitizing solution",
+        "original_name": "Sanitizing solution"
+      }
+    },
+    {
+      "id": 439,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Water level",
+        "original_name": "Water level"
+      }
+    },
+    {
+      "id": 440,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Topping wells",
+        "original_name": "Topping wells"
+      }
+    },
+    {
+      "id": 441,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Heating process",
+        "original_name": "Heating process"
+      }
+    },
+    {
+      "id": 442,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup valve retainers",
+        "original_name": "Syrup valve retainers"
+      }
+    },
+    {
+      "id": 443,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup valve",
+        "original_name": "Syrup valve"
+      }
+    },
+    {
+      "id": 444,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Restrictor cap",
+        "original_name": "Restrictor cap"
+      }
+    },
+    {
+      "id": 445,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup nose fitting",
+        "original_name": "Syrup nose fitting"
+      }
+    },
+    {
+      "id": 446,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup flavor symbol",
+        "original_name": "Syrup flavor symbol"
+      }
+    },
+    {
+      "id": 447,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Correct amount of syrup",
+        "original_name": "Correct amount of syrup"
+      }
+    },
+    {
+      "id": 448,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Rate of syrup flow",
+        "original_name": "Rate of syrup flow"
+      }
+    },
+    {
+      "id": 449,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Triple thick shake syrups",
+        "original_name": "Triple thick shake syrups"
+      }
+    },
+    {
+      "id": 450,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Freezer door",
+        "original_name": "Freezer door"
+      }
+    },
+    {
+      "id": 451,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Auto start feature",
+        "original_name": "Auto start feature"
+      }
+    },
+    {
+      "id": 452,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup container",
+        "original_name": "Syrup container"
+      }
+    },
+    {
+      "id": 453,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mix hopper",
+        "original_name": "Mix hopper"
+      }
+    },
+    {
+      "id": 454,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Brush clean counter",
+        "original_name": "Brush clean counter"
+      }
+    },
+    {
+      "id": 455,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Agitator",
+        "original_name": "Agitator"
+      }
+    },
+    {
+      "id": 456,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup port brush",
+        "original_name": "Syrup port brush"
+      }
+    },
+    {
+      "id": 457,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Squeeze bottle",
+        "original_name": "Squeeze bottle"
+      }
+    },
+    {
+      "id": 458,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Retainer pins",
+        "original_name": "Retainer pins"
+      }
+    },
+    {
+      "id": 459,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup feed tubes",
+        "original_name": "Syrup feed tubes"
+      }
+    },
+    {
+      "id": 460,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup containers",
+        "original_name": "Syrup containers"
+      }
+    },
+    {
+      "id": 461,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup hose",
+        "original_name": "Syrup hose"
+      }
+    },
+    {
+      "id": 462,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup system",
+        "original_name": "Syrup system"
+      }
+    },
+    {
+      "id": 463,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mcd all purpose super concentrate",
+        "original_name": "Mcd all purpose super concentrate"
+      }
+    },
+    {
+      "id": 464,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup valve fitting",
+        "original_name": "Syrup valve fitting"
+      }
+    },
+    {
+      "id": 465,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup cabinet interior",
+        "original_name": "Syrup cabinet interior"
+      }
+    },
+    {
+      "id": 466,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup topping pump",
+        "original_name": "Syrup topping pump"
+      }
+    },
+    {
+      "id": 467,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Plunger assembly",
+        "original_name": "Plunger assembly"
+      }
+    },
+    {
+      "id": 468,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Discharge tube",
+        "original_name": "Discharge tube"
+      }
+    },
+    {
+      "id": 469,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Parts",
+        "original_name": "Parts"
+      }
+    },
+    {
+      "id": 470,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Seal o-ring",
+        "original_name": "Seal o-ring"
+      }
+    },
+    {
+      "id": 471,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Black shielded brush",
+        "original_name": "Black shielded brush"
+      }
+    },
+    {
+      "id": 472,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Cylinder",
+        "original_name": "Cylinder"
+      }
+    },
+    {
+      "id": 473,
+      "labels": [
+        "Procedure",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Manual cleaning",
+        "original_name": "Manual cleaning"
+      }
+    },
+    {
+      "id": 474,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Heater topping switches",
+        "original_name": "Heater topping switches"
+      }
+    },
+    {
+      "id": 475,
+      "labels": [
+        "Procedure",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Cleaning solution",
+        "original_name": "Cleaning solution"
+      }
+    },
+    {
+      "id": 476,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Sanitizer solution",
+        "original_name": "Sanitizer solution"
+      }
+    },
+    {
+      "id": 477,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Drip pan",
+        "original_name": "Drip pan"
+      }
+    },
+    {
+      "id": 478,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Drip pans",
+        "original_name": "Drip pans"
+      }
+    },
+    {
+      "id": 479,
+      "labels": [
+        "Procedure",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Brush cleaning",
+        "original_name": "Brush cleaning"
+      }
+    },
+    {
+      "id": 480,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Shake beater drive shaft",
+        "original_name": "Shake beater drive shaft"
+      }
+    },
+    {
+      "id": 481,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Draw valve o-rings",
+        "original_name": "Draw valve o-rings"
+      }
+    },
+    {
+      "id": 482,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Spinner shaft seal",
+        "original_name": "Spinner shaft seal"
+      }
+    },
+    {
+      "id": 483,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Freezer door o-ring",
+        "original_name": "Freezer door o-ring"
+      }
+    },
+    {
+      "id": 484,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Spinner blade shaft",
+        "original_name": "Spinner blade shaft"
+      }
+    },
+    {
+      "id": 485,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Beater drive shaft",
+        "original_name": "Beater drive shaft"
+      }
+    },
+    {
+      "id": 486,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Boot seal",
+        "original_name": "Boot seal"
+      }
+    },
+    {
+      "id": 487,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Door gasket",
+        "original_name": "Door gasket"
+      }
+    },
+    {
+      "id": 488,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Draw handle",
+        "original_name": "Draw handle"
+      }
+    },
+    {
+      "id": 489,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Flow rate",
+        "original_name": "Flow rate"
+      }
+    },
+    {
+      "id": 490,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Shorter drip pans",
+        "original_name": "Shorter drip pans"
+      }
+    },
+    {
+      "id": 491,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pump parts",
+        "original_name": "Pump parts"
+      }
+    },
+    {
+      "id": 492,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Valve cap",
+        "original_name": "Valve cap"
+      }
+    },
+    {
+      "id": 493,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Pump assembly",
+        "original_name": "Pump assembly"
+      }
+    },
+    {
+      "id": 494,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Cotter pin",
+        "original_name": "Cotter pin"
+      }
+    },
+    {
+      "id": 495,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Fresh mix",
+        "original_name": "Fresh mix"
+      }
+    },
+    {
+      "id": 496,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Control system",
+        "original_name": "Control system"
+      }
+    },
+    {
+      "id": 497,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Alarm",
+        "original_name": "Alarm"
+      }
+    },
+    {
+      "id": 498,
+      "labels": [
+        "Safety",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Safety timeout screen",
+        "original_name": "Safety timeout screen"
+      }
+    },
+    {
+      "id": 499,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Hardlock",
+        "original_name": "Hardlock"
+      }
+    },
+    {
+      "id": 500,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Softlock",
+        "original_name": "Softlock"
+      }
+    },
+    {
+      "id": 501,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Operator",
+        "original_name": "Operator"
+      }
+    },
+    {
+      "id": 502,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Automatic freezer operation",
+        "original_name": "Automatic freezer operation"
+      }
+    },
+    {
+      "id": 503,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Heat symbol",
+        "original_name": "Heat symbol"
+      }
+    },
+    {
+      "id": 504,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Wash symbol",
+        "original_name": "Wash symbol"
+      }
+    },
+    {
+      "id": 505,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Five minute timer",
+        "original_name": "Five minute timer"
+      }
+    },
+    {
+      "id": 506,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Manager\u2019s menu",
+        "original_name": "Manager\u2019s menu"
+      }
+    },
+    {
+      "id": 507,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Sundae side control keys",
+        "original_name": "Sundae side control keys"
+      }
+    },
+    {
+      "id": 508,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Daylight saving feature",
+        "original_name": "Daylight saving feature"
+      }
+    },
+    {
+      "id": 509,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Manager",
+        "original_name": "Manager"
+      }
+    },
+    {
+      "id": 510,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mix level audible option",
+        "original_name": "Mix level audible option"
+      }
+    },
+    {
+      "id": 511,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Fault description display",
+        "original_name": "Fault description display"
+      }
+    },
+    {
+      "id": 512,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Lockout history screen",
+        "original_name": "Lockout history screen"
+      }
+    },
+    {
+      "id": 513,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Maximum allowable heat mode time",
+        "original_name": "Maximum allowable heat mode time"
+      }
+    },
+    {
+      "id": 514,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Maximum allowable cool mode time",
+        "original_name": "Maximum allowable cool mode time"
+      }
+    },
+    {
+      "id": 515,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Total heat treatment time",
+        "original_name": "Total heat treatment time"
+      }
+    },
+    {
+      "id": 516,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Heat time",
+        "original_name": "Heat time"
+      }
+    },
+    {
+      "id": 517,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Each zone",
+        "original_name": "Each zone"
+      }
+    },
+    {
+      "id": 518,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Heat cycle failure message",
+        "original_name": "Heat cycle failure message"
+      }
+    },
+    {
+      "id": 519,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Variable failure code messages",
+        "original_name": "Variable failure code messages"
+      }
+    },
+    {
+      "id": 520,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Shakes",
+        "original_name": "Shakes"
+      }
+    },
+    {
+      "id": 521,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mixout light",
+        "original_name": "Mixout light"
+      }
+    },
+    {
+      "id": 522,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Viscosity control",
+        "original_name": "Viscosity control"
+      }
+    },
+    {
+      "id": 523,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Hopper cover",
+        "original_name": "Hopper cover"
+      }
+    },
+    {
+      "id": 524,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Gear box",
+        "original_name": "Gear box"
+      }
+    },
+    {
+      "id": 525,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Menu",
+        "original_name": "Menu"
+      }
+    },
+    {
+      "id": 526,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Shake actuator assembly",
+        "original_name": "Shake actuator assembly"
+      }
+    },
+    {
+      "id": 527,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Syrup temperature",
+        "original_name": "Syrup temperature"
+      }
+    },
+    {
+      "id": 528,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Spinner motor",
+        "original_name": "Spinner motor"
+      }
+    },
+    {
+      "id": 529,
+      "labels": [
+        "Component",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Topping heaters",
+        "original_name": "Topping heaters"
+      }
+    },
+    {
+      "id": 530,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Water",
+        "original_name": "Water"
+      }
+    },
+    {
+      "id": 531,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Water temperature",
+        "original_name": "Water temperature"
+      }
+    },
+    {
+      "id": 532,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Data plate",
+        "original_name": "Data plate"
+      }
+    },
+    {
+      "id": 533,
+      "labels": [
+        "Equipment",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Model number",
+        "original_name": "Model number"
+      }
+    },
+    {
+      "id": 534,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Compressor warranty",
+        "original_name": "Compressor warranty"
+      }
+    },
+    {
+      "id": 535,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Unauthorized use of refrigerants",
+        "original_name": "Unauthorized use of refrigerants"
+      }
+    },
+    {
+      "id": 536,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mcdonalds",
+        "original_name": "Mcdonald's"
+      }
+    },
+    {
+      "id": 537,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Ronald mcdonald house charities",
+        "original_name": "Ronald mcdonald house charities"
+      }
+    },
+    {
+      "id": 538,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Employees",
+        "original_name": "Employees"
+      }
+    },
+    {
+      "id": 539,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Operations update",
+        "original_name": "Operations update"
+      }
+    },
+    {
+      "id": 540,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Franchisee news",
+        "original_name": "Franchisee news"
+      }
+    },
+    {
+      "id": 541,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Office update",
+        "original_name": "Office update"
+      }
+    },
+    {
+      "id": 542,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Town hall meetings",
+        "original_name": "Town hall meetings"
+      }
+    },
+    {
+      "id": 543,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Nabit",
+        "original_name": "Nabit"
+      }
+    },
+    {
+      "id": 544,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Nabit bundles",
+        "original_name": "Nabit bundles"
+      }
+    },
+    {
+      "id": 545,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Ourlounge",
+        "original_name": "Ourlounge"
+      }
+    },
+    {
+      "id": 546,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Probationary period",
+        "original_name": "Probationary period"
+      }
+    },
+    {
+      "id": 547,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Expenses",
+        "original_name": "Expenses"
+      }
+    },
+    {
+      "id": 548,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Travel",
+        "original_name": "Travel"
+      }
+    },
+    {
+      "id": 549,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Egencia",
+        "original_name": "Egencia"
+      }
+    },
+    {
+      "id": 550,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Compensation for delay",
+        "original_name": "Compensation for delay"
+      }
+    },
+    {
+      "id": 551,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Travel or hotel accommodation",
+        "original_name": "Travel or hotel accommodation"
+      }
+    },
+    {
+      "id": 552,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "New employees",
+        "original_name": "New employees"
+      }
+    },
+    {
+      "id": 553,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Job grade",
+        "original_name": "Job grade"
+      }
+    },
+    {
+      "id": 554,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Performance conversations",
+        "original_name": "Performance conversations"
+      }
+    },
+    {
+      "id": 555,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mystuff 2.0",
+        "original_name": "Mystuff 2.0"
+      }
+    },
+    {
+      "id": 556,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Campus",
+        "original_name": "Campus"
+      }
+    },
+    {
+      "id": 557,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Headlight",
+        "original_name": "Headlight"
+      }
+    },
+    {
+      "id": 558,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Fred",
+        "original_name": "Fred"
+      }
+    },
+    {
+      "id": 559,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Hamburger university",
+        "original_name": "Hamburger university"
+      }
+    },
+    {
+      "id": 560,
+      "labels": [
+        "Procedure",
+        "Entity"
+      ],
+      "properties": {
+        "name": "People services helpdesk",
+        "original_name": "People services helpdesk"
+      }
+    },
+    {
+      "id": 561,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Employee",
+        "original_name": "Employee"
+      }
+    },
+    {
+      "id": 562,
+      "labels": [
+        "Entity",
+        "Brand"
+      ],
+      "properties": {
+        "name": "Company",
+        "original_name": "Company"
+      }
+    },
+    {
+      "id": 563,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Paydays",
+        "original_name": "Paydays"
+      }
+    },
+    {
+      "id": 564,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Performance rating",
+        "original_name": "Performance rating"
+      }
+    },
+    {
+      "id": 565,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Bonus scheme",
+        "original_name": "Bonus scheme"
+      }
+    },
+    {
+      "id": 566,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pay reviews",
+        "original_name": "Pay reviews"
+      }
+    },
+    {
+      "id": 567,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Salaried stakeholder pension",
+        "original_name": "Salaried stakeholder pension"
+      }
+    },
+    {
+      "id": 568,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Final salary pension",
+        "original_name": "Final salary pension"
+      }
+    },
+    {
+      "id": 569,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Life assurance plan",
+        "original_name": "Life assurance plan"
+      }
+    },
+    {
+      "id": 570,
+      "labels": [
+        "Entity",
+        "Brand"
+      ],
+      "properties": {
+        "name": "Company cars",
+        "original_name": "Company cars"
+      }
+    },
+    {
+      "id": 571,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Uk grade 5",
+        "original_name": "Uk grade 5"
+      }
+    },
+    {
+      "id": 572,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Discount site",
+        "original_name": "Discount site"
+      }
+    },
+    {
+      "id": 573,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "My mcdonald\u2019s app",
+        "original_name": "My mcdonald\u2019s app"
+      }
+    },
+    {
+      "id": 574,
+      "labels": [
+        "Procedure",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Service recognition awards programme",
+        "original_name": "Service recognition awards programme"
+      }
+    },
+    {
+      "id": 575,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "25 years",
+        "original_name": "25 years"
+      }
+    },
+    {
+      "id": 576,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Recognition wall",
+        "original_name": "Recognition wall"
+      }
+    },
+    {
+      "id": 577,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Holiday award",
+        "original_name": "Holiday award"
+      }
+    },
+    {
+      "id": 578,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Circle of excellence",
+        "original_name": "Circle of excellence"
+      }
+    },
+    {
+      "id": 579,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "President\u2019s award",
+        "original_name": "President\u2019s award"
+      }
+    },
+    {
+      "id": 580,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Holiday calendar",
+        "original_name": "Holiday calendar"
+      }
+    },
+    {
+      "id": 581,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Holiday entitlement",
+        "original_name": "Holiday entitlement"
+      }
+    },
+    {
+      "id": 582,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Part-time workers",
+        "original_name": "Part-time workers"
+      }
+    },
+    {
+      "id": 583,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Maternity leave",
+        "original_name": "Maternity leave"
+      }
+    },
+    {
+      "id": 584,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Paternity leave",
+        "original_name": "Paternity leave"
+      }
+    },
+    {
+      "id": 585,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Shared parental leave",
+        "original_name": "Shared parental leave"
+      }
+    },
+    {
+      "id": 586,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Parental leave",
+        "original_name": "Parental leave"
+      }
+    },
+    {
+      "id": 587,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Ivf treatment",
+        "original_name": "Ivf treatment"
+      }
+    },
+    {
+      "id": 588,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Neonatal care",
+        "original_name": "Neonatal care"
+      }
+    },
+    {
+      "id": 589,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Compassionate leave",
+        "original_name": "Compassionate leave"
+      }
+    },
+    {
+      "id": 590,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Parental bereavement leave",
+        "original_name": "Parental bereavement leave"
+      }
+    },
+    {
+      "id": 591,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Jury duty",
+        "original_name": "Jury duty"
+      }
+    },
+    {
+      "id": 592,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Emergency leave",
+        "original_name": "Emergency leave"
+      }
+    },
+    {
+      "id": 593,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Medical appointments",
+        "original_name": "Medical appointments"
+      }
+    },
+    {
+      "id": 594,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Sabbaticals",
+        "original_name": "Sabbaticals"
+      }
+    },
+    {
+      "id": 595,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Military leave",
+        "original_name": "Military leave"
+      }
+    },
+    {
+      "id": 596,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Part time",
+        "original_name": "Part time"
+      }
+    },
+    {
+      "id": 597,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Menopause",
+        "original_name": "Menopause"
+      }
+    },
+    {
+      "id": 598,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Female employees",
+        "original_name": "Female employees"
+      }
+    },
+    {
+      "id": 599,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Work life balance",
+        "original_name": "Work life balance"
+      }
+    },
+    {
+      "id": 600,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Private medical cover programme",
+        "original_name": "Private medical cover programme"
+      }
+    },
+    {
+      "id": 601,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Spouse",
+        "original_name": "Spouse"
+      }
+    },
+    {
+      "id": 602,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Eap",
+        "original_name": "Eap"
+      }
+    },
+    {
+      "id": 603,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Eye test",
+        "original_name": "Eye test"
+      }
+    },
+    {
+      "id": 604,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Mcdonald\u2019s",
+        "original_name": "Mcdonald\u2019s"
+      }
+    },
+    {
+      "id": 605,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Doctor @ hand",
+        "original_name": "Doctor @ hand"
+      }
+    },
+    {
+      "id": 606,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Emergency loan scheme",
+        "original_name": "Emergency loan scheme"
+      }
+    },
+    {
+      "id": 607,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Conflict of interest",
+        "original_name": "Conflict of interest"
+      }
+    },
+    {
+      "id": 608,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Respectful workplace",
+        "original_name": "Respectful workplace"
+      }
+    },
+    {
+      "id": 609,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "No job applicant or employee",
+        "original_name": "No job applicant or employee"
+      }
+    },
+    {
+      "id": 610,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Creating respectful environment",
+        "original_name": "Creating respectful environment"
+      }
+    },
+    {
+      "id": 611,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Social media",
+        "original_name": "Social media"
+      }
+    },
+    {
+      "id": 612,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Internet access",
+        "original_name": "Internet access"
+      }
+    },
+    {
+      "id": 613,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Media",
+        "original_name": "Media"
+      }
+    },
+    {
+      "id": 614,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Whistleblowing procedure",
+        "original_name": "Whistleblowing procedure"
+      }
+    },
+    {
+      "id": 615,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Modern slavery",
+        "original_name": "Modern slavery"
+      }
+    },
+    {
+      "id": 616,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Disciplinary procedure",
+        "original_name": "Disciplinary procedure"
+      }
+    },
+    {
+      "id": 617,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Holiday pay",
+        "original_name": "Holiday pay"
+      }
+    },
+    {
+      "id": 618,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pension scheme",
+        "original_name": "Pension scheme"
+      }
+    },
+    {
+      "id": 619,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Normal retirement age",
+        "original_name": "Normal retirement age"
+      }
+    },
+    {
+      "id": 620,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Final salary scheme",
+        "original_name": "Final salary scheme"
+      }
+    },
+    {
+      "id": 621,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Stakeholder scheme",
+        "original_name": "Stakeholder scheme"
+      }
+    },
+    {
+      "id": 622,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Default retirement age",
+        "original_name": "Default retirement age"
+      }
+    },
+    {
+      "id": 623,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Minimum age",
+        "original_name": "Minimum age"
+      }
+    },
+    {
+      "id": 624,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Contributions",
+        "original_name": "Contributions"
+      }
+    },
+    {
+      "id": 625,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Aviva",
+        "original_name": "Aviva"
+      }
+    },
+    {
+      "id": 626,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pension plan",
+        "original_name": "Pension plan"
+      }
+    },
+    {
+      "id": 627,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Final pensionable salary",
+        "original_name": "Final pensionable salary"
+      }
+    },
+    {
+      "id": 628,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Pension",
+        "original_name": "Pension"
+      }
+    },
+    {
+      "id": 629,
+      "labels": [
+        "Procedure",
+        "Entity"
+      ],
+      "properties": {
+        "name": "Pensionable service",
+        "original_name": "Pensionable service"
+      }
+    },
+    {
+      "id": 630,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Willis towers watson",
+        "original_name": "Willis towers watson"
+      }
+    },
+    {
+      "id": 631,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Axa health",
+        "original_name": "Axa health"
+      }
+    },
+    {
+      "id": 632,
+      "labels": [
+        "Entity",
+        "Concept"
+      ],
+      "properties": {
+        "name": "Uk retirement benefit scheme",
+        "original_name": "Uk retirement benefit scheme"
+      }
+    },
+    {
+      "id": 633,
+      "labels": [
+        "GraphStats"
+      ],
+      "properties": {
+        "relationships_loaded": 1328,
+        "source": "LlamaIndex_QSR_Graph",
+        "entities_loaded": 624,
+        "load_timestamp": "2025-07-03T12:41:54.659000000+00:00"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": 1152925902653358080,
+      "start": 0,
+      "properties": {
+        "original_text": "Has Freezing cylinders",
+        "type": "HAS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 164
+    },
+    {
+      "id": 1155177702467043328,
+      "start": 0,
+      "properties": {
+        "original_text": "Includes Installation guidelines",
+        "type": "INCLUDES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 384
+    },
+    {
+      "id": 1152925902653358083,
+      "start": 3,
+      "properties": {
+        "original_text": "Uses R404a refrigerant",
+        "type": "USES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 18
+    },
+    {
+      "id": null,
+      "start": null,
+      "properties": null,
+      "type": null,
+      "end": null
+    },
+    {
+      "id": 1152925902653358095,
+      "start": 15,
+      "properties": {
+        "original_text": "Is Model c602",
+        "type": "IS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 0
+    },
+    {
+      "id": 1157429502280728591,
+      "start": 15,
+      "properties": {
+        "original_text": "Model C602",
+        "type": "MODEL"
+      },
+      "type": "RELATIONSHIP",
+      "end": 345
+    },
+    {
+      "id": 1155177702467043343,
+      "start": 15,
+      "properties": {
+        "original_text": "Has Parts list",
+        "type": "HAS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 383
+    },
+    {
+      "id": 1152925902653358096,
+      "start": 16,
+      "properties": {
+        "original_text": "Enters Standby mode",
+        "type": "ENTERS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 84
+    },
+    {
+      "id": 1155177702467043344,
+      "start": 16,
+      "properties": {
+        "original_text": "Will automatically exit Standby mode",
+        "type": "WILL_AUTOMATICALLY_EXIT"
+      },
+      "type": "RELATIONSHIP",
+      "end": 84
+    },
+    {
+      "id": 1152925902653358100,
+      "start": 20,
+      "properties": {
+        "original_text": "Will void Compressor warranty",
+        "type": "WILL_VOID"
+      },
+      "type": "RELATIONSHIP",
+      "end": 534
+    },
+    {
+      "id": 1152925902653358102,
+      "start": 22,
+      "properties": {
+        "original_text": "Relates to Compressor",
+        "type": "RELATES_TO"
+      },
+      "type": "RELATIONSHIP",
+      "end": 204
+    },
+    {
+      "id": 6917533425687592984,
+      "start": 27,
+      "properties": {
+        "original_text": "Is Soft serve",
+        "type": "IS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 24
+    },
+    {
+      "id": 6917533425687593032,
+      "start": 27,
+      "properties": {
+        "original_text": "Includes Syrup calibration",
+        "type": "INCLUDES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 72
+    },
+    {
+      "id": 1152925902653358107,
+      "start": 27,
+      "properties": {
+        "original_text": "Has Viscosity setting",
+        "type": "HAS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 122
+    },
+    {
+      "id": 1155177702467043355,
+      "start": 27,
+      "properties": {
+        "original_text": "Has Compressor cycle time",
+        "type": "HAS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 124
+    },
+    {
+      "id": 1161933101908099099,
+      "start": 27,
+      "properties": {
+        "original_text": "Contains Parts list",
+        "type": "CONTAINS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 383
+    },
+    {
+      "id": 6917533425687593343,
+      "start": 27,
+      "properties": {
+        "original_text": "Has Parts list",
+        "type": "HAS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 383
+    },
+    {
+      "id": 6922037025314963839,
+      "start": 27,
+      "properties": {
+        "original_text": "Includes Parts list",
+        "type": "INCLUDES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 383
+    },
+    {
+      "id": 1159681302094413851,
+      "start": 27,
+      "properties": {
+        "original_text": "Includes Installation guidelines",
+        "type": "INCLUDES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 384
+    },
+    {
+      "id": 1164184901721784347,
+      "start": 27,
+      "properties": {
+        "original_text": "Contains Installation guidelines",
+        "type": "CONTAINS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 384
+    },
+    {
+      "id": 6917533425687593344,
+      "start": 27,
+      "properties": {
+        "original_text": "Has Installation guidelines",
+        "type": "HAS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 384
+    },
+    {
+      "id": 6917533425687593348,
+      "start": 27,
+      "properties": {
+        "original_text": "Includes Wiring diagram",
+        "type": "INCLUDES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 388
+    },
+    {
+      "id": 1155177702467043363,
+      "start": 35,
+      "properties": {
+        "original_text": "Placed in Standby mode",
+        "type": "PLACED_IN"
+      },
+      "type": "RELATIONSHIP",
+      "end": 84
+    },
+    {
+      "id": 1152925902653358115,
+      "start": 35,
+      "properties": {
+        "original_text": "Requires Brush cleaning",
+        "type": "REQUIRES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 479
+    },
+    {
+      "id": 1152925902653358130,
+      "start": 50,
+      "properties": {
+        "original_text": "Activates Interface board",
+        "type": "ACTIVATES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 179
+    },
+    {
+      "id": 1152925902653358134,
+      "start": 54,
+      "properties": {
+        "original_text": "Indicates Heat cycle",
+        "type": "INDICATES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 112
+    },
+    {
+      "id": 1152925902653358143,
+      "start": 63,
+      "properties": {
+        "original_text": "Remains on Display",
+        "type": "REMAINS_ON"
+      },
+      "type": "RELATIONSHIP",
+      "end": 436
+    },
+    {
+      "id": 1152925902653358148,
+      "start": 68,
+      "properties": {
+        "original_text": "Accesses Service menu",
+        "type": "ACCESSES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 67
+    },
+    {
+      "id": 1152925902653358149,
+      "start": 69,
+      "properties": {
+        "original_text": "Displays Correct access code",
+        "type": "DISPLAYS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 70
+    },
+    {
+      "id": 1152925902653358151,
+      "start": 71,
+      "properties": {
+        "original_text": "Is on Shake side",
+        "type": "IS_ON"
+      },
+      "type": "RELATIONSHIP",
+      "end": 23
+    },
+    {
+      "id": 1152925902653358166,
+      "start": 86,
+      "properties": {
+        "original_text": "May be changed after Manual cleaning",
+        "type": "MAY_BE_CHANGED_AFTER"
+      },
+      "type": "RELATIONSHIP",
+      "end": 473
+    },
+    {
+      "id": 1152925902653358167,
+      "start": 87,
+      "properties": {
+        "original_text": "Alerts operator with Audible tone",
+        "type": "ALERTS_OPERATOR_WITH"
+      },
+      "type": "RELATIONSHIP",
+      "end": 140
+    },
+    {
+      "id": 1152925902653358182,
+      "start": 102,
+      "properties": {
+        "original_text": "Controls Glycol heater",
+        "type": "CONTROLS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 120
+    },
+    {
+      "id": 1152925902653358183,
+      "start": 103,
+      "properties": {
+        "original_text": "Display on First screen",
+        "type": "DISPLAY_ON"
+      },
+      "type": "RELATIONSHIP",
+      "end": 101
+    },
+    {
+      "id": 1152925902653358186,
+      "start": 106,
+      "properties": {
+        "original_text": "Indicates Power failure",
+        "type": "INDICATES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 108
+    },
+    {
+      "id": 1152925902653358187,
+      "start": 107,
+      "properties": {
+        "original_text": "Indicates Mix out condition",
+        "type": "INDICATES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 97
+    },
+    {
+      "id": 1155177702467043436,
+      "start": 108,
+      "properties": {
+        "original_text": "Occurs Heat treatment cycle",
+        "type": "OCCURS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 147
+    },
+    {
+      "id": 1152925902653358189,
+      "start": 109,
+      "properties": {
+        "original_text": "Appears on Display",
+        "type": "APPEARS_ON"
+      },
+      "type": "RELATIONSHIP",
+      "end": 436
+    },
+    {
+      "id": 1155177702467043440,
+      "start": 112,
+      "properties": {
+        "original_text": "Indicates Power failure",
+        "type": "INDICATES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 108
+    },
+    {
+      "id": 1152925902653358197,
+      "start": 117,
+      "properties": {
+        "original_text": "Is adjusted by Auto symbol",
+        "type": "IS_ADJUSTED_BY"
+      },
+      "type": "RELATIONSHIP",
+      "end": 71
+    },
+    {
+      "id": 1155177702467043445,
+      "start": 117,
+      "properties": {
+        "original_text": "Is saved by Calibration symbol",
+        "type": "IS_SAVED_BY"
+      },
+      "type": "RELATIONSHIP",
+      "end": 78
+    },
+    {
+      "id": 1152925902653358198,
+      "start": 118,
+      "properties": {
+        "original_text": "Is adjusted by Glycol pump",
+        "type": "IS_ADJUSTED_BY"
+      },
+      "type": "RELATIONSHIP",
+      "end": 158
+    },
+    {
+      "id": 1152925902653358203,
+      "start": 123,
+      "properties": {
+        "original_text": "Is measured by Amperage load",
+        "type": "IS_MEASURED_BY"
+      },
+      "type": "RELATIONSHIP",
+      "end": 174
+    },
+    {
+      "id": 1152925902653358235,
+      "start": 155,
+      "properties": {
+        "original_text": "Heated by Glycol heater",
+        "type": "HEATED_BY"
+      },
+      "type": "RELATIONSHIP",
+      "end": 120
+    },
+    {
+      "id": 1152925902653358237,
+      "start": 157,
+      "properties": {
+        "original_text": "Filled with Mix",
+        "type": "FILLED_WITH"
+      },
+      "type": "RELATIONSHIP",
+      "end": 269
+    },
+    {
+      "id": 1155177702467043486,
+      "start": 158,
+      "properties": {
+        "original_text": "Is activated by Hopper temperature",
+        "type": "IS_ACTIVATED_BY"
+      },
+      "type": "RELATIONSHIP",
+      "end": 118
+    },
+    {
+      "id": 1152925902653358241,
+      "start": 161,
+      "properties": {
+        "original_text": "Displays on Control panel",
+        "type": "DISPLAYS_ON"
+      },
+      "type": "RELATIONSHIP",
+      "end": 55
+    },
+    {
+      "id": 1155177702467043492,
+      "start": 164,
+      "properties": {
+        "original_text": "Are cooled using Refrigerant",
+        "type": "ARE_COOLED_USING"
+      },
+      "type": "RELATIONSHIP",
+      "end": 25
+    },
+    {
+      "id": 1152925902653358248,
+      "start": 168,
+      "properties": {
+        "original_text": "Empties Glycol",
+        "type": "EMPTIES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 155
+    },
+    {
+      "id": 1152925902653358258,
+      "start": 178,
+      "properties": {
+        "original_text": "Closes Draw valve",
+        "type": "CLOSES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 234
+    },
+    {
+      "id": 1152925902653358262,
+      "start": 182,
+      "properties": {
+        "original_text": "Communicates with Control panel interface board",
+        "type": "COMMUNICATES_WITH"
+      },
+      "type": "RELATIONSHIP",
+      "end": 192
+    },
+    {
+      "id": 1152925902653358263,
+      "start": 183,
+      "properties": {
+        "original_text": "Resides in Eprom chip",
+        "type": "RESIDES_IN"
+      },
+      "type": "RELATIONSHIP",
+      "end": 189
+    },
+    {
+      "id": 1152925902653358264,
+      "start": 184,
+      "properties": {
+        "original_text": "Are saved in Ram chip",
+        "type": "ARE_SAVED_IN"
+      },
+      "type": "RELATIONSHIP",
+      "end": 185
+    },
+    {
+      "id": 1152925902653358266,
+      "start": 186,
+      "properties": {
+        "original_text": "Is supplied to Uvc3 board",
+        "type": "IS_SUPPLIED_TO"
+      },
+      "type": "RELATIONSHIP",
+      "end": 181
+    },
+    {
+      "id": 1155177702467043520,
+      "start": 192,
+      "properties": {
+        "original_text": "Communicates with Uvc3",
+        "type": "COMMUNICATES_WITH"
+      },
+      "type": "RELATIONSHIP",
+      "end": 182
+    },
+    {
+      "id": 1152925902653358273,
+      "start": 193,
+      "properties": {
+        "original_text": "Plugs into Interface board",
+        "type": "PLUGS_INTO"
+      },
+      "type": "RELATIONSHIP",
+      "end": 179
+    },
+    {
+      "id": 1152925902653358274,
+      "start": 194,
+      "properties": {
+        "original_text": "Is connected to Shake personality board",
+        "type": "IS_CONNECTED_TO"
+      },
+      "type": "RELATIONSHIP",
+      "end": 266
+    },
+    {
+      "id": 1152925902653358277,
+      "start": 197,
+      "properties": {
+        "original_text": "Is located in Control panel",
+        "type": "IS_LOCATED_IN"
+      },
+      "type": "RELATIONSHIP",
+      "end": 55
+    },
+    {
+      "id": 1152925902653358283,
+      "start": 203,
+      "properties": {
+        "original_text": "Is satisfied Glycol pump",
+        "type": "IS_SATISFIED"
+      },
+      "type": "RELATIONSHIP",
+      "end": 158
+    },
+    {
+      "id": 1152925902653358287,
+      "start": 207,
+      "properties": {
+        "original_text": "Activated by Interface board",
+        "type": "ACTIVATED_BY"
+      },
+      "type": "RELATIONSHIP",
+      "end": 179
+    },
+    {
+      "id": 1152925902653358304,
+      "start": 224,
+      "properties": {
+        "original_text": "Drives Peristaltic pump",
+        "type": "DRIVES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 223
+    },
+    {
+      "id": 1155177702467043562,
+      "start": 234,
+      "properties": {
+        "original_text": "Is binding in Freezer door",
+        "type": "IS_BINDING_IN"
+      },
+      "type": "RELATIONSHIP",
+      "end": 450
+    },
+    {
+      "id": 1155177702467043565,
+      "start": 237,
+      "properties": {
+        "original_text": "Is placed in Mix hopper",
+        "type": "IS_PLACED_IN"
+      },
+      "type": "RELATIONSHIP",
+      "end": 453
+    },
+    {
+      "id": 1152925902653358317,
+      "start": 237,
+      "properties": {
+        "original_text": "Is secured with Cotter pin",
+        "type": "IS_SECURED_WITH"
+      },
+      "type": "RELATIONSHIP",
+      "end": 494
+    },
+    {
+      "id": 1152925902653358322,
+      "start": 242,
+      "properties": {
+        "original_text": "Install or replace Front bearing",
+        "type": "INSTALL_OR_REPLACE"
+      },
+      "type": "RELATIONSHIP",
+      "end": 242
+    },
+    {
+      "id": 1155177702467043574,
+      "start": 246,
+      "properties": {
+        "original_text": "Install into Syrup nose fitting",
+        "type": "INSTALL_INTO"
+      },
+      "type": "RELATIONSHIP",
+      "end": 445
+    },
+    {
+      "id": 6917533425687593405,
+      "start": 246,
+      "properties": {
+        "original_text": "Is removed from Syrup nose fitting",
+        "type": "IS_REMOVED_FROM"
+      },
+      "type": "RELATIONSHIP",
+      "end": 445
+    },
+    {
+      "id": 1152925902653358326,
+      "start": 246,
+      "properties": {
+        "original_text": "Replace Duckbill valve",
+        "type": "REPLACE"
+      },
+      "type": "RELATIONSHIP",
+      "end": 246
+    },
+    {
+      "id": 1152925902653358333,
+      "start": 253,
+      "properties": {
+        "original_text": "Should be flushed with Mcd all purpose super concentrate",
+        "type": "SHOULD_BE_FLUSHED_WITH"
+      },
+      "type": "RELATIONSHIP",
+      "end": 463
+    },
+    {
+      "id": 6919785225501278365,
+      "start": 269,
+      "properties": {
+        "original_text": "Is in Hopper",
+        "type": "IS_IN"
+      },
+      "type": "RELATIONSHIP",
+      "end": 157
+    },
+    {
+      "id": 1155177702467043597,
+      "start": 269,
+      "properties": {
+        "original_text": "Is located in Mix hopper",
+        "type": "IS_LOCATED_IN"
+      },
+      "type": "RELATIONSHIP",
+      "end": 453
+    },
+    {
+      "id": 1152925902653358373,
+      "start": 293,
+      "properties": {
+        "original_text": "Is part of Drive shaft",
+        "type": "IS_PART_OF"
+      },
+      "type": "RELATIONSHIP",
+      "end": 28
+    },
+    {
+      "id": 1155177702467043621,
+      "start": 293,
+      "properties": {
+        "original_text": "Is installed on Syrup nose fitting",
+        "type": "IS_INSTALLED_ON"
+      },
+      "type": "RELATIONSHIP",
+      "end": 445
+    },
+    {
+      "id": 1152925902653358374,
+      "start": 294,
+      "properties": {
+        "original_text": "Is part of Taylor c602",
+        "type": "IS_PART_OF"
+      },
+      "type": "RELATIONSHIP",
+      "end": 27
+    },
+    {
+      "id": 1152925902653358375,
+      "start": 295,
+      "properties": {
+        "original_text": "Is part of Taylor c602",
+        "type": "IS_PART_OF"
+      },
+      "type": "RELATIONSHIP",
+      "end": 27
+    },
+    {
+      "id": 1152925902653358377,
+      "start": 297,
+      "properties": {
+        "original_text": "Is part of Taylor c602",
+        "type": "IS_PART_OF"
+      },
+      "type": "RELATIONSHIP",
+      "end": 27
+    },
+    {
+      "id": 1152925902653358386,
+      "start": 306,
+      "properties": {
+        "original_text": "Part number X56121",
+        "type": "PART_NUMBER"
+      },
+      "type": "RELATIONSHIP",
+      "end": 417
+    },
+    {
+      "id": 1152925902653358387,
+      "start": 307,
+      "properties": {
+        "original_text": "Used during Heat treatment cycle",
+        "type": "USED_DURING"
+      },
+      "type": "RELATIONSHIP",
+      "end": 147
+    },
+    {
+      "id": 1152925902653358398,
+      "start": 318,
+      "properties": {
+        "original_text": "Is Soft serve",
+        "type": "IS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 24
+    },
+    {
+      "id": 1152925902653358399,
+      "start": 319,
+      "properties": {
+        "original_text": "Is Shake",
+        "type": "IS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 41
+    },
+    {
+      "id": 1152925902653358412,
+      "start": 332,
+      "properties": {
+        "original_text": "Is part of Taylor c602",
+        "type": "IS_PART_OF"
+      },
+      "type": "RELATIONSHIP",
+      "end": 27
+    },
+    {
+      "id": 1152925902653358414,
+      "start": 334,
+      "properties": {
+        "original_text": "Is part of Taylor c602",
+        "type": "IS_PART_OF"
+      },
+      "type": "RELATIONSHIP",
+      "end": 27
+    },
+    {
+      "id": 1152925902653358415,
+      "start": 335,
+      "properties": {
+        "original_text": "Is part of Taylor c602",
+        "type": "IS_PART_OF"
+      },
+      "type": "RELATIONSHIP",
+      "end": 27
+    },
+    {
+      "id": 1152925902653358416,
+      "start": 336,
+      "properties": {
+        "original_text": "Is part of Taylor c602",
+        "type": "IS_PART_OF"
+      },
+      "type": "RELATIONSHIP",
+      "end": 27
+    },
+    {
+      "id": 1152925902653358417,
+      "start": 337,
+      "properties": {
+        "original_text": "Is part of Taylor c602",
+        "type": "IS_PART_OF"
+      },
+      "type": "RELATIONSHIP",
+      "end": 27
+    },
+    {
+      "id": 1152925902653358418,
+      "start": 338,
+      "properties": {
+        "original_text": "Is part of Taylor c602",
+        "type": "IS_PART_OF"
+      },
+      "type": "RELATIONSHIP",
+      "end": 27
+    },
+    {
+      "id": 1152925902653358425,
+      "start": 345,
+      "properties": {
+        "original_text": "Includes Parts list",
+        "type": "INCLUDES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 383
+    },
+    {
+      "id": 1152925902653358429,
+      "start": 349,
+      "properties": {
+        "original_text": "Is part of Taylor c602",
+        "type": "IS_PART_OF"
+      },
+      "type": "RELATIONSHIP",
+      "end": 27
+    },
+    {
+      "id": 1152925902653358430,
+      "start": 350,
+      "properties": {
+        "original_text": "Is part of Taylor c602",
+        "type": "IS_PART_OF"
+      },
+      "type": "RELATIONSHIP",
+      "end": 27
+    },
+    {
+      "id": 1152925902653358431,
+      "start": 351,
+      "properties": {
+        "original_text": "Is part of Taylor c602",
+        "type": "IS_PART_OF"
+      },
+      "type": "RELATIONSHIP",
+      "end": 27
+    },
+    {
+      "id": 1152925902653358432,
+      "start": 352,
+      "properties": {
+        "original_text": "Is part of Taylor c602",
+        "type": "IS_PART_OF"
+      },
+      "type": "RELATIONSHIP",
+      "end": 27
+    },
+    {
+      "id": 1152925902653358433,
+      "start": 353,
+      "properties": {
+        "original_text": "Is part of Taylor c602",
+        "type": "IS_PART_OF"
+      },
+      "type": "RELATIONSHIP",
+      "end": 27
+    },
+    {
+      "id": 1152925902653358434,
+      "start": 354,
+      "properties": {
+        "original_text": "Is part of Taylor c602",
+        "type": "IS_PART_OF"
+      },
+      "type": "RELATIONSHIP",
+      "end": 27
+    },
+    {
+      "id": 1152925902653358439,
+      "start": 359,
+      "properties": {
+        "original_text": "Is Shake",
+        "type": "IS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 41
+    },
+    {
+      "id": 1152925902653358456,
+      "start": 376,
+      "properties": {
+        "original_text": "Is Tool",
+        "type": "IS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 374
+    },
+    {
+      "id": 1152925902653358478,
+      "start": 398,
+      "properties": {
+        "original_text": "Supports Unit",
+        "type": "SUPPORTS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 167
+    },
+    {
+      "id": 1152925902653358480,
+      "start": 400,
+      "properties": {
+        "original_text": "Holds Freezer door",
+        "type": "HOLDS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 450
+    },
+    {
+      "id": 1152925902653358485,
+      "start": 405,
+      "properties": {
+        "original_text": "Propels Syrup",
+        "type": "PROPELS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 221
+    },
+    {
+      "id": 1152925902653358495,
+      "start": 415,
+      "properties": {
+        "original_text": "Directs Syrup flow",
+        "type": "DIRECTS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 225
+    },
+    {
+      "id": 1152925902653358500,
+      "start": 420,
+      "properties": {
+        "original_text": "Seals Syrup hole plug",
+        "type": "SEALS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 231
+    },
+    {
+      "id": 1152925902653358505,
+      "start": 425,
+      "properties": {
+        "original_text": "Used to clean O-rings",
+        "type": "USED_TO_CLEAN"
+      },
+      "type": "RELATIONSHIP",
+      "end": 251
+    },
+    {
+      "id": 1152925902653358512,
+      "start": 432,
+      "properties": {
+        "original_text": "Is removed from Plunger assembly",
+        "type": "IS_REMOVED_FROM"
+      },
+      "type": "RELATIONSHIP",
+      "end": 467
+    },
+    {
+      "id": 6917533425687593461,
+      "start": 436,
+      "properties": {
+        "original_text": "Notifies Operator",
+        "type": "NOTIFIES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 501
+    },
+    {
+      "id": 1152925902653358518,
+      "start": 438,
+      "properties": {
+        "original_text": "Is poured over Mix hopper",
+        "type": "IS_POURED_OVER"
+      },
+      "type": "RELATIONSHIP",
+      "end": 453
+    },
+    {
+      "id": 1155177702467043766,
+      "start": 438,
+      "properties": {
+        "original_text": "Is agitated by Wash symbol",
+        "type": "IS_AGITATED_BY"
+      },
+      "type": "RELATIONSHIP",
+      "end": 504
+    },
+    {
+      "id": 1152925902653358520,
+      "start": 440,
+      "properties": {
+        "original_text": "Are filled with Water",
+        "type": "ARE_FILLED_WITH"
+      },
+      "type": "RELATIONSHIP",
+      "end": 530
+    },
+    {
+      "id": 1152925902653358523,
+      "start": 443,
+      "properties": {
+        "original_text": "Stops Pump",
+        "type": "STOPS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 244
+    },
+    {
+      "id": 1152925902653358526,
+      "start": 446,
+      "properties": {
+        "original_text": "Starts Syrup pump",
+        "type": "STARTS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 433
+    },
+    {
+      "id": 1157429502280729029,
+      "start": 453,
+      "properties": {
+        "original_text": "Is sanitized with Sanitizing solution",
+        "type": "IS_SANITIZED_WITH"
+      },
+      "type": "RELATIONSHIP",
+      "end": 438
+    },
+    {
+      "id": 1152925902653358535,
+      "start": 455,
+      "properties": {
+        "original_text": "Removed from Mix hopper",
+        "type": "REMOVED_FROM"
+      },
+      "type": "RELATIONSHIP",
+      "end": 453
+    },
+    {
+      "id": 1155177702467043783,
+      "start": 455,
+      "properties": {
+        "original_text": "Cleaned with Mcd all purpose super concentrate",
+        "type": "CLEANED_WITH"
+      },
+      "type": "RELATIONSHIP",
+      "end": 463
+    },
+    {
+      "id": 1152925902653358537,
+      "start": 457,
+      "properties": {
+        "original_text": "Must be filled with Cleaning solution",
+        "type": "MUST_BE_FILLED_WITH"
+      },
+      "type": "RELATIONSHIP",
+      "end": 475
+    },
+    {
+      "id": 1152925902653358539,
+      "start": 459,
+      "properties": {
+        "original_text": "Removed from Syrup containers",
+        "type": "REMOVED_FROM"
+      },
+      "type": "RELATIONSHIP",
+      "end": 460
+    },
+    {
+      "id": 1152925902653358541,
+      "start": 461,
+      "properties": {
+        "original_text": "Connects to Mcd all purpose super concentrate",
+        "type": "CONNECTS_TO"
+      },
+      "type": "RELATIONSHIP",
+      "end": 463
+    },
+    {
+      "id": 6919785225501278461,
+      "start": 463,
+      "properties": {
+        "original_text": "Flows through Syrup line",
+        "type": "FLOWS_THROUGH"
+      },
+      "type": "RELATIONSHIP",
+      "end": 253
+    },
+    {
+      "id": 1155177702467043803,
+      "start": 475,
+      "properties": {
+        "original_text": "Is Mcd all purpose super concentrate",
+        "type": "IS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 463
+    },
+    {
+      "id": 1152925902653358569,
+      "start": 489,
+      "properties": {
+        "original_text": "Provided by Draw handle",
+        "type": "PROVIDED_BY"
+      },
+      "type": "RELATIONSHIP",
+      "end": 488
+    },
+    {
+      "id": 1152925902653358573,
+      "start": 493,
+      "properties": {
+        "original_text": "Is laid in Mix hopper",
+        "type": "IS_LAID_IN"
+      },
+      "type": "RELATIONSHIP",
+      "end": 453
+    },
+    {
+      "id": 1155177702467043822,
+      "start": 494,
+      "properties": {
+        "original_text": "Is removed from Pump",
+        "type": "IS_REMOVED_FROM"
+      },
+      "type": "RELATIONSHIP",
+      "end": 244
+    },
+    {
+      "id": 1152925902653358579,
+      "start": 499,
+      "properties": {
+        "original_text": "Has causes Thermistor failure",
+        "type": "HAS_CAUSES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 62
+    },
+    {
+      "id": 1152925902653358583,
+      "start": 503,
+      "properties": {
+        "original_text": "Starts Heat cycle",
+        "type": "STARTS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 112
+    },
+    {
+      "id": 1152925902653358584,
+      "start": 504,
+      "properties": {
+        "original_text": "Disassembles and brush cleans Machine",
+        "type": "DISASSEMBLES_AND_BRUSH_CLEANS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 16
+    },
+    {
+      "id": 1152925902653358590,
+      "start": 510,
+      "properties": {
+        "original_text": "Alerts Operator",
+        "type": "ALERTS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 501
+    },
+    {
+      "id": 1152925902653358616,
+      "start": 536,
+      "properties": {
+        "original_text": "Manages Salaried stakeholder pension",
+        "type": "MANAGES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 567
+    },
+    {
+      "id": 1155177702467043864,
+      "start": 536,
+      "properties": {
+        "original_text": "Offers Holiday entitlement",
+        "type": "OFFERS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 581
+    },
+    {
+      "id": 6917533425687593565,
+      "start": 536,
+      "properties": {
+        "original_text": "Offers Doctor @ hand",
+        "type": "OFFERS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 605
+    },
+    {
+      "id": 6917533425687593566,
+      "start": 536,
+      "properties": {
+        "original_text": "Provides Emergency loan scheme",
+        "type": "PROVIDES"
+      },
+      "type": "RELATIONSHIP",
+      "end": 606
+    },
+    {
+      "id": 1152925902653358618,
+      "start": 538,
+      "properties": {
+        "original_text": "Covered by Life assurance plan",
+        "type": "COVERED_BY"
+      },
+      "type": "RELATIONSHIP",
+      "end": 569
+    },
+    {
+      "id": 1152925902653358630,
+      "start": 550,
+      "properties": {
+        "original_text": "Can be kept by Employee",
+        "type": "CAN_BE_KEPT_BY"
+      },
+      "type": "RELATIONSHIP",
+      "end": 561
+    },
+    {
+      "id": 1152925902653358631,
+      "start": 551,
+      "properties": {
+        "original_text": "Should be paid back to Mcdonald's",
+        "type": "SHOULD_BE_PAID_BACK_TO"
+      },
+      "type": "RELATIONSHIP",
+      "end": 536
+    },
+    {
+      "id": 1155177702467043889,
+      "start": 561,
+      "properties": {
+        "original_text": "Inform Manager",
+        "type": "INFORM"
+      },
+      "type": "RELATIONSHIP",
+      "end": 509
+    },
+    {
+      "id": 1152925902653358642,
+      "start": 562,
+      "properties": {
+        "original_text": "Offers Bonus scheme",
+        "type": "OFFERS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 565
+    },
+    {
+      "id": 1155177702467043895,
+      "start": 567,
+      "properties": {
+        "original_text": "Managed by Aviva",
+        "type": "MANAGED_BY"
+      },
+      "type": "RELATIONSHIP",
+      "end": 625
+    },
+    {
+      "id": 1152925902653358648,
+      "start": 568,
+      "properties": {
+        "original_text": "Managed by Willis towers watson",
+        "type": "MANAGED_BY"
+      },
+      "type": "RELATIONSHIP",
+      "end": 630
+    },
+    {
+      "id": 1152925902653358650,
+      "start": 570,
+      "properties": {
+        "original_text": "Offered by Mcdonald's",
+        "type": "OFFERED_BY"
+      },
+      "type": "RELATIONSHIP",
+      "end": 536
+    },
+    {
+      "id": 1152925902653358680,
+      "start": 600,
+      "properties": {
+        "original_text": "Provided by Axa health",
+        "type": "PROVIDED_BY"
+      },
+      "type": "RELATIONSHIP",
+      "end": 631
+    },
+    {
+      "id": 1152925902653358694,
+      "start": 614,
+      "properties": {
+        "original_text": "Provides safeguards for Employees",
+        "type": "PROVIDES_SAFEGUARDS_FOR"
+      },
+      "type": "RELATIONSHIP",
+      "end": 538
+    },
+    {
+      "id": 1152925902653358698,
+      "start": 618,
+      "properties": {
+        "original_text": "Managed by Aviva",
+        "type": "MANAGED_BY"
+      },
+      "type": "RELATIONSHIP",
+      "end": 625
+    },
+    {
+      "id": 1152925902653358700,
+      "start": 620,
+      "properties": {
+        "original_text": "Has Normal retirement age",
+        "type": "HAS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 619
+    },
+    {
+      "id": 1152925902653358701,
+      "start": 621,
+      "properties": {
+        "original_text": "Has Default retirement age",
+        "type": "HAS"
+      },
+      "type": "RELATIONSHIP",
+      "end": 622
+    },
+    {
+      "id": 1152925902653358704,
+      "start": 624,
+      "properties": {
+        "original_text": "Remain in Pension plan",
+        "type": "REMAIN_IN"
+      },
+      "type": "RELATIONSHIP",
+      "end": 626
+    }
+  ]
+}

@@ -237,11 +237,17 @@ except Exception as e:
     voice_agent = None
 
 class VoiceOrchestrator:
-    """Intelligent voice conversation orchestrator using PydanticAI"""
+    """Intelligent voice conversation orchestrator using PydanticAI with Neo4j graph context"""
     
     def __init__(self):
         self.active_contexts: Dict[str, ConversationContext] = {}
         self.default_session = "default"
+        self.voice_graph_service = None  # Will be set by main.py startup
+    
+    def set_voice_graph_service(self, voice_graph_service):
+        """Set the voice graph query service for Neo4j integration"""
+        self.voice_graph_service = voice_graph_service
+        logger.info("✅ Voice graph service integrated with voice orchestrator")
     
     def clear_all_contexts(self):
         """Clear all conversation contexts (useful for model updates)"""
@@ -268,11 +274,55 @@ class VoiceOrchestrator:
         relevant_docs: List[Dict] = None,
         session_id: str = None
     ) -> VoiceResponse:
-        """Process voice message with advanced intelligent orchestration"""
+        """Process voice message with advanced intelligent orchestration and Neo4j graph context"""
         
         context = self.get_context(session_id)
+        session_id = session_id or self.default_session
         
-        # Add user message to conversation history
+        # STEP 1: Check for graph-specific voice commands first
+        graph_response = None
+        if self.voice_graph_service:
+            try:
+                graph_response = await self.voice_graph_service.process_voice_query_with_graph_context(
+                    message, session_id
+                )
+                
+                # If graph service handled the query completely, use its response
+                if graph_response and graph_response.get("context_maintained") and graph_response.get("response"):
+                    logger.info(f"Graph service handled query: {message[:50]}...")
+                    
+                    # Update conversation context with graph information
+                    if graph_response.get("equipment_context"):
+                        context.current_entity = graph_response["equipment_context"]
+                        if graph_response["equipment_context"] not in context.entity_history:
+                            context.entity_history.append(graph_response["equipment_context"])
+                    
+                    # Create VoiceResponse from graph response
+                    graph_voice_response = VoiceResponse(
+                        text_response=graph_response["response"],
+                        detected_intent=ConversationIntent.EQUIPMENT_QUESTION,
+                        confidence_score=0.9,
+                        should_continue_listening=True,
+                        equipment_mentioned=graph_response.get("equipment_context"),
+                        context_references=["neo4j_graph_context"],
+                        response_type="factual"
+                    )
+                    
+                    # Add to conversation history
+                    context.conversation_history.append({
+                        "user": message,
+                        "assistant": graph_response["response"],
+                        "timestamp": time.time(),
+                        "source": "neo4j_graph"
+                    })
+                    
+                    return graph_voice_response
+                    
+            except Exception as e:
+                logger.error(f"Graph service error: {e}")
+                # Fall back to regular processing
+        
+        # STEP 2: Add user message to conversation history
         context.conversation_history.append({
             "user": message,
             "assistant": "",  # Will be filled after AI response

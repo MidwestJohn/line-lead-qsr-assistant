@@ -6,6 +6,7 @@ import ServiceStatus from './ServiceStatus';
 import ErrorBoundary from './ErrorBoundary';
 import ChatService from './ChatService';
 import ProgressiveLoader from './components/ProgressiveLoader';
+import MultiModalCitation from './components/MultiModalCitation';
 import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react";
 import { Send, Square, Upload, MessageCircle, WifiOff, Copy, RefreshCw, Check, BookOpen, Mic, MicOff, Volume2, VolumeX, Headphones } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -77,6 +78,11 @@ function App() {
   const speechRecognitionRunningRef = useRef(false);
   const messageBeingSentRef = useRef(false);
   const lastSentTranscriptRef = useRef('');
+  
+  // Multimodal citations state (always enabled)
+  const [currentEquipment, setCurrentEquipment] = useState(null);
+  const [lastVisualCitations, setLastVisualCitations] = useState([]);
+  const [lastManualReferences, setLastManualReferences] = useState([]);
   
   // Text-to-Speech state
   const [ttsAvailable, setTtsAvailable] = useState(false);
@@ -1272,23 +1278,68 @@ function App() {
     console.log('Falling back to regular API...');
     
     try {
-      // Use the original non-streaming API
-      const result = await ChatService.sendMessage(messageText, {
-        maxRetries: 2,
-        timeout: 15000
-      });
+      // Detect if this should use multimodal endpoint (always check for citations)
+      const shouldUseMultiModal = (
+        // Equipment-related keywords
+        /(?:taylor|hobart|fryer|grill|oven|ice cream|machine|equipment|compressor|temperature|safety|diagram|manual|page|section)/i.test(messageText) ||
+        // Current equipment context exists
+        currentEquipment ||
+        // Citation-triggering phrases
+        /(?:show|see|check|refer to|diagram|table|chart|safety|warning)/i.test(messageText)
+      );
+
+      console.log(`Using ${shouldUseMultiModal ? 'multimodal' : 'regular'} API for: "${messageText}"`);
+
+      let result;
+      if (shouldUseMultiModal) {
+        // Use multimodal API with citations
+        result = await ChatService.sendMultiModalMessage(messageText, {
+          currentEquipment: currentEquipment,
+          enableCitations: true,
+          maxRetries: 2,
+          timeout: 15000
+        });
+      } else {
+        // Use regular API
+        result = await ChatService.sendMessage(messageText, {
+          maxRetries: 2,
+          timeout: 15000
+        });
+      }
 
       if (result.success) {
+        // Extract response data (handle both regular and multimodal responses)
+        const responseText = result.data.response;
+        const visualCitations = result.data.visual_citations || [];
+        const manualReferences = result.data.manual_references || [];
+        const equipmentContext = result.data.equipment_context;
+
+        // Update current equipment context if provided
+        if (equipmentContext && equipmentContext !== currentEquipment) {
+          setCurrentEquipment(equipmentContext);
+          console.log(`Updated equipment context: ${equipmentContext}`);
+        }
+
+        // Store citations for display
+        if (visualCitations.length > 0 || manualReferences.length > 0) {
+          setLastVisualCitations(visualCitations);
+          setLastManualReferences(manualReferences);
+          console.log(`Found ${visualCitations.length} visual citations and ${manualReferences.length} manual references`);
+        }
+
         if (messageCreated) {
           // Update existing message
           setMessages(prev => prev.map(msg => 
             msg.id === streamingMsgId 
               ? {
                   ...msg,
-                  text: result.data.response,
+                  text: responseText,
                   isStreaming: false,
                   isThinking: false,
-                  isFallback: true
+                  isFallback: true,
+                  visualCitations: visualCitations,
+                  manualReferences: manualReferences,
+                  equipmentContext: equipmentContext
                 }
               : msg
           ));
@@ -1296,10 +1347,13 @@ function App() {
           // Create new message
           const fallbackMessage = {
             id: streamingMsgId,
-            text: result.data.response,
+            text: responseText,
             sender: 'assistant',
             timestamp: new Date(),
-            isFallback: true
+            isFallback: true,
+            visualCitations: visualCitations,
+            manualReferences: manualReferences,
+            equipmentContext: equipmentContext
           };
           setMessages(prev => [...prev, fallbackMessage]);
         }
@@ -1956,6 +2010,20 @@ function App() {
                         {message.isStreaming && <span className="streaming-cursor"></span>}
                         {message.isFallback && <span className="fallback-indicator"> (via fallback)</span>}
                       </div>
+                      
+                      {/* Multimodal Citations */}
+                      {message.sender === 'assistant' && (message.visualCitations || message.manualReferences) && (
+                        <MultiModalCitation
+                          citations={message.visualCitations || []}
+                          manualReferences={message.manualReferences || []}
+                          isVisible={true}
+                          onCitationClick={(citation) => {
+                            console.log('Citation clicked:', citation);
+                            // Optional: Add analytics or other actions
+                          }}
+                        />
+                      )}
+                      
                       <div className="message-time">{formatTime(message.timestamp)}</div>
                       {message.isError && message.retryFunction && (
                         <button 

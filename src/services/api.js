@@ -80,6 +80,18 @@ class APIService {
         return result.data;
     }
 
+    async sendMultiModalMessage(message, currentEquipment = null, enableCitations = true) {
+        const result = await this.post('/voice-with-multimodal-citations', {
+            message,
+            current_equipment: currentEquipment,
+            enable_citations: enableCitations
+        });
+        if (!result.success) {
+            throw new Error(`Multimodal chat failed: ${result.error}`);
+        }
+        return result.data;
+    }
+
     async uploadFile(file, onProgress = null) {
         const formData = new FormData();
         formData.append('file', file);

@@ -1,0 +1,229 @@
+{
+  "backup_timestamp": "20250705_230401",
+  "nodes": [
+    {
+      "id": 25,
+      "labels": [
+        "Component"
+      ],
+      "props": {
+        "description": "Ice cream mix circulation pump",
+        "name": "Mix Pump",
+        "document_source": "semantic_test_manual.pdf"
+      }
+    },
+    {
+      "id": 26,
+      "labels": [
+        "Component"
+      ],
+      "props": {
+        "description": "Temperature monitoring sensor",
+        "name": "Temperature Sensor",
+        "document_source": "semantic_test_manual.pdf"
+      }
+    },
+    {
+      "id": 27,
+      "labels": [
+        "Procedure"
+      ],
+      "props": {
+        "description": "Daily cleaning and sanitization procedure",
+        "name": "Daily Cleaning",
+        "document_source": "semantic_test_manual.pdf"
+      }
+    },
+    {
+      "id": 28,
+      "labels": [
+        "Procedure"
+      ],
+      "props": {
+        "description": "Regular maintenance and service schedule",
+        "name": "Maintenance Schedule",
+        "document_source": "semantic_test_manual.pdf"
+      }
+    },
+    {
+      "id": 29,
+      "labels": [
+        "Safety"
+      ],
+      "props": {
+        "description": "Safety warning and precautions",
+        "name": "Warning",
+        "document_source": "semantic_test_manual.pdf"
+      }
+    },
+    {
+      "id": 30,
+      "labels": [
+        "Procedure"
+      ],
+      "props": {
+        "description": "Operational caution and safety measures",
+        "name": "Caution",
+        "document_source": "semantic_test_manual.pdf"
+      }
+    },
+    {
+      "id": 31,
+      "labels": [
+        "Component"
+      ],
+      "props": {
+        "description": "Temperature control and monitoring",
+        "name": "Temperature Control",
+        "document_source": "semantic_test_manual.pdf"
+      }
+    },
+    {
+      "id": 32,
+      "labels": [
+        "Equipment"
+      ],
+      "props": {
+        "description": "Taylor C602 ice cream machine",
+        "name": "Taylor C602",
+        "document_source": "semantic_test_manual.pdf"
+      }
+    },
+    {
+      "id": 33,
+      "labels": [
+        "Equipment"
+      ],
+      "props": {
+        "description": "Refrigeration compressor component",
+        "name": "Compressor",
+        "document_source": "semantic_test_manual.pdf"
+      }
+    },
+    {
+      "id": 34,
+      "labels": [
+        "Equipment"
+      ],
+      "props": {
+        "description": "Unified unknown equipment representation",
+        "name": "Unknown_Equipment_Unified",
+        "document_source": "semantic_test_manual.pdf"
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "start": 27,
+      "end": 32,
+      "type": "PROCEDURE_FOR",
+      "props": {
+        "description": "daily cleaning procedure for taylor c602",
+        "context": "procedure for equipment",
+        "confidence": 0.9
+      }
+    },
+    {
+      "start": 28,
+      "end": 32,
+      "type": "PROCEDURE_FOR",
+      "props": {
+        "description": "maintenance schedule procedure for taylor c602",
+        "context": "procedure for equipment",
+        "confidence": 0.9
+      }
+    },
+    {
+      "start": 29,
+      "end": 32,
+      "type": "SAFETY_WARNING_FOR",
+      "props": {
+        "description": "warning applies to taylor c602",
+        "context": "safety applies to equipment",
+        "confidence": 0.9
+      }
+    },
+    {
+      "start": 29,
+      "end": 32,
+      "type": "SAFETY_WARNING_FOR",
+      "props": {
+        "description": "Warning applies to Taylor C602",
+        "context": "inferred safety-equipment relationship",
+        "confidence": 0.5
+      }
+    },
+    {
+      "start": 29,
+      "end": 33,
+      "type": "SAFETY_WARNING_FOR",
+      "props": {
+        "description": "Warning applies to Compressor",
+        "context": "inferred safety-equipment relationship",
+        "confidence": 0.5
+      }
+    },
+    {
+      "start": 29,
+      "end": 34,
+      "type": "SAFETY_WARNING_FOR",
+      "props": {
+        "description": "Warning applies to Unknown_Equipment_Unified",
+        "context": "inferred safety-equipment relationship",
+        "confidence": 0.5
+      }
+    },
+    {
+      "start": 30,
+      "end": 32,
+      "type": "RELATED_TO",
+      "props": {
+        "description": "caution applies to taylor c602",
+        "context": "safety applies to equipment",
+        "confidence": 0.5
+      }
+    },
+    {
+      "start": 31,
+      "end": 32,
+      "type": "RELATED_TO",
+      "props": {
+        "description": "temperature control parameter of taylor c602",
+        "context": "parameter of equipment",
+        "confidence": 0.5
+      }
+    },
+    {
+      "start": 32,
+      "end": 25,
+      "type": "CONTAINS",
+      "props": {
+        "description": "taylor c602 contains mix pump",
+        "context": "equipment contains component",
+        "confidence": 0.9
+      }
+    },
+    {
+      "start": 32,
+      "end": 26,
+      "type": "CONTAINS",
+      "props": {
+        "description": "taylor c602 contains temperature sensor",
+        "context": "equipment contains component",
+        "confidence": 0.9
+      }
+    },
+    {
+      "start": 32,
+      "end": 33,
+      "type": "RELATED_TO",
+      "props": {
+        "description": "taylor c602 contains compressor",
+        "context": "equipment contains component",
+        "confidence": 0.5
+      }
+    }
+  ],
+  "node_count": 0,
+  "relationship_count": 0
+}

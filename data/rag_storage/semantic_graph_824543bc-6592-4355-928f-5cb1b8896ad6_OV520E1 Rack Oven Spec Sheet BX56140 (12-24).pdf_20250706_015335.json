@@ -1,0 +1,75 @@
+{
+  "entities": [
+    {
+      "name": "Control Panel",
+      "description": "Equipment control and monitoring panel",
+      "id": "entity_0",
+      "content": "Equipment control and monitoring panel",
+      "document_source": "824543bc-6592-4355-928f-5cb1b8896ad6_OV520E1 Rack Oven Spec Sheet BX56140 (12-24).pdf",
+      "type": "Equipment",
+      "classification_confidence": 0.85,
+      "qsr_classified": true,
+      "extraction_timestamp": "2025-07-06T01:53:35.013543"
+    },
+    {
+      "name": "Warning",
+      "description": "Safety warning and precautions",
+      "id": "entity_1",
+      "content": "Safety warning and precautions",
+      "document_source": "824543bc-6592-4355-928f-5cb1b8896ad6_OV520E1 Rack Oven Spec Sheet BX56140 (12-24).pdf",
+      "type": "Safety",
+      "classification_confidence": 0.92,
+      "qsr_classified": true,
+      "extraction_timestamp": "2025-07-06T01:53:35.013561"
+    },
+    {
+      "name": "Caution",
+      "description": "Operational caution and safety measures",
+      "id": "entity_2",
+      "content": "Operational caution and safety measures",
+      "document_source": "824543bc-6592-4355-928f-5cb1b8896ad6_OV520E1 Rack Oven Spec Sheet BX56140 (12-24).pdf",
+      "type": "Procedure",
+      "classification_confidence": 0.88,
+      "qsr_classified": true,
+      "extraction_timestamp": "2025-07-06T01:53:35.013570"
+    }
+  ],
+  "relationships": [
+    {
+      "source": "Warning",
+      "target": "Control Panel",
+      "type": "SAFETY_WARNING_FOR",
+      "description": "Warning applies to Control Panel",
+      "context": "inferred safety-equipment relationship",
+      "semantic_confidence": 0.7,
+      "auto_generated": true,
+      "document_source": "824543bc-6592-4355-928f-5cb1b8896ad6_OV520E1 Rack Oven Spec Sheet BX56140 (12-24).pdf"
+    }
+  ],
+  "analysis": {
+    "total_entities": 3,
+    "total_relationships": 1,
+    "entity_types": {
+      "Equipment": 1,
+      "Safety": 1,
+      "Procedure": 1
+    },
+    "relationship_types": {
+      "SAFETY_WARNING_FOR": 1
+    },
+    "equipment_hierarchies": {
+      "total_equipment": 1,
+      "unified_equipment": 0,
+      "equipment_brands": [
+        "unknown"
+      ],
+      "contains_relationships": 0,
+      "part_of_relationships": 0
+    },
+    "semantic_density": 0.3333333333333333,
+    "document_source": "824543bc-6592-4355-928f-5cb1b8896ad6_OV520E1 Rack Oven Spec Sheet BX56140 (12-24).pdf",
+    "processing_timestamp": "2025-07-06T01:53:35.013644"
+  },
+  "document_source": "824543bc-6592-4355-928f-5cb1b8896ad6_OV520E1 Rack Oven Spec Sheet BX56140 (12-24).pdf",
+  "storage_timestamp": "2025-07-06T01:53:35.013675"
+}
