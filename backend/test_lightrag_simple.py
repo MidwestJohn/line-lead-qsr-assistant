@@ -64,6 +64,14 @@ async def main():
         
         print("✅ LightRAG instance created")
         
+        # CORRECT INITIALIZATION SEQUENCE (FIXED):
+        print("Initializing LightRAG storages...")
+        
+        # Step 1: Initialize storages
+        await rag.initialize_storages()
+        
+        print("✅ LightRAG properly initialized")
+        
         # Test document
         test_doc = """
         Taylor C714 Advanced Ice Cream Machine

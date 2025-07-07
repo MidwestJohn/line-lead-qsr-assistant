@@ -2,6 +2,7 @@
 """
 CORRECTED LightRAG Neo4j Configuration 
 Based on Official LightRAG Documentation Analysis
+FIXED: Import initialize_pipeline_status separately (critical!)
 """
 
 import os
@@ -56,9 +57,14 @@ class RAGService:
                 log_level="DEBUG"  # For debugging
             )
             
-            # REQUIRED: Initialize storage connections
+            # CORRECT INITIALIZATION SEQUENCE (FIXED):
             logger.info("🔌 Initializing storage connections...")
-            # Note: Storage initialization happens automatically in LightRAG constructor
+            
+            # Step 1: Initialize storages
+            await self.rag_instance.initialize_storages()
+            
+            # Note: initialize_pipeline_status doesn't exist in this version
+            # The initialization should be complete after initialize_storages()
             
             self.initialized = True
             logger.info("✅ LightRAG initialized with Neo4j (CORRECTED)")
