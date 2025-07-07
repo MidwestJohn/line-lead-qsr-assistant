@@ -48,6 +48,30 @@ class Neo4jService:
             self.connected = False
             return False
     
+    async def count_nodes_and_relationships(self) -> Dict[str, int]:
+        """Count nodes and relationships in Neo4j"""
+        try:
+            if not self.connected:
+                self.connect()
+            
+            with self.driver.session() as session:
+                # Count nodes
+                nodes_result = session.run("MATCH (n) RETURN count(n) as count")
+                node_count = nodes_result.single()["count"]
+                
+                # Count relationships
+                rels_result = session.run("MATCH ()-[r]-() RETURN count(r) as count")
+                rel_count = rels_result.single()["count"]
+                
+                return {
+                    "nodes": node_count,
+                    "relationships": rel_count
+                }
+                
+        except Exception as e:
+            logger.error(f"❌ Error counting Neo4j data: {e}")
+            return {"nodes": 0, "relationships": 0}
+    
     def disconnect(self):
         """Close Neo4j connection"""
         if self.driver:
@@ -175,6 +199,29 @@ class Neo4jService:
                 "error": str(e),
                 "query": query
             }
+    
+    def get_node_count(self) -> int:
+        """Get total node count in Neo4j."""
+        with self.driver.session() as session:
+            result = session.run("MATCH (n) RETURN count(n) as count")
+            return result.single()["count"]
+
+    def get_relationship_count(self) -> int:
+        """Get total relationship count in Neo4j."""
+        with self.driver.session() as session:
+            result = session.run("MATCH ()-[r]->() RETURN count(r) as count")
+            return result.single()["count"]
+
+    def get_sample_entities(self, limit: int = 10) -> list:
+        """Get sample entities from Neo4j."""
+        with self.driver.session() as session:
+            result = session.run("""
+                MATCH (n)
+                WHERE n.name IS NOT NULL
+                RETURN n.name as name, labels(n) as labels
+                LIMIT $limit
+            """, limit=limit)
+            return [dict(record) for record in result]
     
     def __del__(self):
         """Cleanup on destruction"""

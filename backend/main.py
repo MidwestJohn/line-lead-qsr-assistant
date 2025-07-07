@@ -30,6 +30,7 @@ from voice_agent import voice_orchestrator, VoiceState, ConversationIntent
 
 # Add these imports for RAG-Anything integration
 from services.rag_service import rag_service
+from services.neo4j_service import neo4j_service
 from services.true_rag_service import true_rag_service
 from services.search_strategy import ExistingSearchStrategy, RAGAnythingStrategy, HybridSearchStrategy
 from services.document_processor import document_processor, ProcessedContent
@@ -288,9 +289,24 @@ app.add_middleware(
 # Add RAG-Anything startup event
 @app.on_event("startup")
 async def startup_event():
-    """Initialize RAG services on startup."""
-    await rag_service.initialize()
-    await true_rag_service.initialize()
+    """Initialize services with proper Neo4j integration."""
+    
+    logger.info("🚀 Starting Line Lead backend...")
+    
+    # Test Neo4j connection first
+    if not neo4j_service.test_connection():
+        logger.error("❌ Neo4j connection failed")
+        raise RuntimeError("Neo4j connection required for startup")
+    
+    logger.info("✅ Neo4j connection verified")
+    
+    # Initialize RAG service with Neo4j storage
+    rag_success = await rag_service.initialize()
+    if not rag_success:
+        logger.error("❌ RAG service initialization failed")
+        raise RuntimeError("RAG service initialization required for startup")
+    
+    logger.info("✅ Line Lead backend ready")
 
 @app.on_event("startup")
 async def startup_unified_neo4j():
@@ -2508,6 +2524,87 @@ async def get_processing_capabilities():
         }
     }
 
+def extract_pdf_text(content: bytes) -> str:
+    """Extract text from PDF content."""
+    try:
+        pdf_reader = PyPDF2.PdfReader(BytesIO(content))
+        text_content = ""
+        for page in pdf_reader.pages:
+            text_content += page.extract_text()
+        return text_content
+    except Exception as e:
+        logger.error(f"PDF text extraction failed: {e}")
+        return ""
+
+@app.post("/process-document-neo4j")
+async def process_document_neo4j(file: UploadFile = File(...)):
+    """Process document and automatically populate Neo4j through LightRAG."""
+    
+    if file.content_type != "application/pdf":
+        raise HTTPException(status_code=400, detail="Only PDF files allowed")
+    
+    try:
+        # Get baseline node count
+        baseline_nodes = neo4j_service.get_node_count()
+        logger.info(f"📊 Baseline nodes in Neo4j: {baseline_nodes}")
+        
+        # Extract PDF content
+        content = await file.read()
+        # Convert to text
+        text_content = extract_pdf_text(content)
+        
+        # Process through LightRAG (auto-populates Neo4j)
+        result = await rag_service.process_document(text_content, file.filename)
+        
+        # Check new node count
+        final_nodes = neo4j_service.get_node_count()
+        nodes_added = final_nodes - baseline_nodes
+        
+        return {
+            "message": "Document processed successfully",
+            "file": file.filename,
+            "baseline_nodes": baseline_nodes,
+            "final_nodes": final_nodes,
+            "nodes_added": nodes_added,
+            "auto_population_working": nodes_added > 0,
+            "result": result
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Document processing failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/validate-neo4j-population")
+async def validate_neo4j_population():
+    """Validate that LightRAG is populating Neo4j correctly."""
+    
+    try:
+        # Get current Neo4j state
+        node_count = neo4j_service.get_node_count()
+        relationship_count = neo4j_service.get_relationship_count()
+        
+        # Get sample entities
+        sample_entities = neo4j_service.get_sample_entities()
+        
+        # Check if RAG service is using Neo4j storage
+        rag_using_neo4j = (
+            rag_service.initialized and 
+            hasattr(rag_service.rag_instance, 'kg_storage') and
+            'Neo4J' in str(type(rag_service.rag_instance.kg_storage))
+        )
+        
+        return {
+            "neo4j_populated": node_count > 10,  # More than baseline
+            "total_nodes": node_count,
+            "total_relationships": relationship_count,
+            "sample_entities": sample_entities,
+            "rag_using_neo4j_storage": rag_using_neo4j,
+            "lightrag_initialized": rag_service.initialized
+        }
+        
+    except Exception as e:
+        return {"error": str(e)}
+
 # Voice Integration with Knowledge Graph Context - NEW ENDPOINTS ONLY
 @app.post("/voice-query")
 async def voice_query(request: dict):
@@ -2646,6 +2743,116 @@ async def neo4j_custom_query(request: dict):
     
     result = neo4j_service.execute_query(query, parameters)
     return result
+
+@app.get("/neo4j-stats")
+async def get_neo4j_stats():
+    """Get Neo4j database statistics and node type breakdown"""
+    try:
+        # Get basic counts
+        counts = await neo4j_service.count_nodes_and_relationships()
+        
+        # Get node type breakdown
+        if not neo4j_service.connected:
+            neo4j_service.connect()
+            
+        node_types = {}
+        with neo4j_service.driver.session() as session:
+            # Get node counts by label
+            result = session.run("""
+                MATCH (n)
+                RETURN labels(n) as labels, count(n) as count
+                ORDER BY count DESC
+            """)
+            
+            for record in result:
+                labels = record["labels"]
+                count = record["count"]
+                if labels:
+                    label = labels[0]  # Take first label
+                    node_types[label] = count
+        
+        return {
+            "success": True,
+            "total_nodes": counts["nodes"],
+            "total_relationships": counts["relationships"],
+            "node_types": node_types
+        }
+    except Exception as e:
+        logger.error(f"Neo4j stats error: {e}")
+        return {"success": False, "error": str(e)}
+
+@app.post("/process-with-lightrag")
+async def process_with_lightrag(request: dict):
+    """Process document using corrected LightRAG Neo4j integration"""
+    try:
+        content = request.get("content")
+        filename = request.get("filename", "unknown.txt")
+        
+        if not content:
+            raise HTTPException(status_code=400, detail="Content is required")
+        
+        # Ensure RAG service is initialized
+        if not rag_service.initialized:
+            result = await rag_service.initialize()
+            if not result:
+                raise HTTPException(status_code=503, detail="RAG service initialization failed")
+        
+        # Get counts before processing
+        counts_before = await neo4j_service.count_nodes_and_relationships()
+        
+        # Process the document
+        logger.info(f"Processing document: {filename}")
+        
+        # Use a thread to avoid event loop conflicts
+        import threading
+        import concurrent.futures
+        
+        def process_document():
+            try:
+                # Create a new event loop for this thread
+                import asyncio
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                # Process the document
+                result = loop.run_until_complete(rag_service.rag_instance.ainsert(content))
+                return {"success": True, "result": result}
+            except Exception as e:
+                logger.error(f"Document processing error: {e}")
+                return {"success": False, "error": str(e)}
+            finally:
+                loop.close()
+        
+        # Run in thread pool
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(process_document)
+            processing_result = future.result(timeout=120)  # 2 minute timeout
+        
+        if not processing_result["success"]:
+            raise HTTPException(status_code=500, detail=processing_result["error"])
+        
+        # Get counts after processing
+        counts_after = await neo4j_service.count_nodes_and_relationships()
+        
+        # Calculate difference
+        nodes_added = counts_after["nodes"] - counts_before["nodes"]
+        rels_added = counts_after["relationships"] - counts_before["relationships"]
+        
+        return {
+            "success": True,
+            "message": f"Document processed successfully",
+            "filename": filename,
+            "nodes_before": counts_before["nodes"],
+            "nodes_after": counts_after["nodes"],
+            "nodes_added": nodes_added,
+            "relationships_before": counts_before["relationships"],
+            "relationships_after": counts_after["relationships"],
+            "relationships_added": rels_added
+        }
+        
+    except Exception as e:
+        logger.error(f"LightRAG processing error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Database Management Endpoints - SAFETY FIRST
 @app.get("/neo4j-backup")
