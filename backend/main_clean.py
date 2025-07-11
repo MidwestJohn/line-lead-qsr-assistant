@@ -53,16 +53,18 @@ import openai
 openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 async def simple_openai_response(prompt: str, relevant_context: List[Dict] = None) -> Dict[str, Any]:
-    """Simple OpenAI response generation"""
+    """Simple OpenAI response generation with timeout"""
     try:
+        # Use faster model and add timeout
         response = openai_client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",  # Faster than GPT-4
             messages=[
                 {"role": "system", "content": "You are Line Lead, a helpful QSR (Quick Service Restaurant) assistant."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=1000,
-            temperature=0.7
+            max_tokens=500,  # Reduced for faster responses
+            temperature=0.7,
+            timeout=15  # 15 second timeout
         )
         
         return {
@@ -657,29 +659,39 @@ async def chat_endpoint(chat_message: ChatMessage):
             except Exception as e:
                 logger.warning(f"⚠️ Local search failed: {e}")
         
-        # Generate context-aware prompt
+        # Generate context-aware prompt (optimized for speed)
         context_text = ""
         if relevant_content:
-            context_text = "\n\n".join([
-                f"From {item['source']}: {item['content']}" 
-                for item in relevant_content[:3]  # Use top 3 results
-            ])
+            # Limit context to prevent slow OpenAI responses
+            limited_content = []
+            total_length = 0
+            max_context_length = 1500  # Reasonable limit for fast responses
+            
+            for item in relevant_content[:2]:  # Use top 2 results only
+                content_preview = item['content'][:400] + "..." if len(item['content']) > 400 else item['content']
+                context_item = f"From {item['source']}: {content_preview}"
+                
+                if total_length + len(context_item) > max_context_length:
+                    break
+                    
+                limited_content.append(context_item)
+                total_length += len(context_item)
+            
+            context_text = "\n\n".join(limited_content)
         
-        enhanced_prompt = f"""You are Line Lead, a QSR (Quick Service Restaurant) assistant specialized in restaurant operations, equipment, and procedures.
+        # Simplified prompt for faster responses
+        if context_text:
+            enhanced_prompt = f"""QSR Assistant - Answer based on context:
 
-User Question: {user_message}
+Question: {user_message}
 
-Relevant Context:
-{context_text if context_text else "No specific context found - provide general QSR guidance."}
+Context: {context_text}
 
-Instructions:
-- Provide practical, actionable advice for QSR operations
-- Focus on safety, efficiency, and compliance
-- Include specific steps when applicable
-- If equipment is mentioned, provide operational guidance
-- Be concise but comprehensive
+Provide practical QSR advice with specific steps. Be concise."""
+        else:
+            enhanced_prompt = f"""QSR Assistant - Answer this question: {user_message}
 
-Response:"""
+Provide practical restaurant operations advice. Be concise."""
         
         # Generate AI response using OpenAI
         try:
