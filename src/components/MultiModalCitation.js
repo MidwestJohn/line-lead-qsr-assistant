@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Image, Eye, Book, AlertTriangle, FileText, Grid3x3, Table } from 'lucide-react';
 import './MultiModalCitation.css';
 
@@ -157,7 +157,13 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
           onClick={() => setSelectedCitation(null)}
           onKeyDown={(e) => e.key === 'Escape' && setSelectedCitation(null)}
         >
-          <div className="citation-modal" onClick={(e) => e.stopPropagation()}>
+          <div 
+            className="citation-modal" 
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.key === 'Escape' && setSelectedCitation(null)}
+          >
             <div className="modal-header">
               <h3>{formatCitationReference(selectedCitation)}</h3>
               <button 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 import FileUpload from './FileUpload';
 import DocumentList from './DocumentList';
@@ -9,7 +9,7 @@ import ProgressiveLoader from './components/ProgressiveLoader';
 import MultiModalCitation from './components/MultiModalCitation';
 import ProcessingDashboard from './components/ProcessingDashboard';
 import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react";
-import { Send, Square, Upload, MessageCircle, WifiOff, Copy, RefreshCw, Check, BookOpen, Mic, MicOff, Volume2, VolumeX, Headphones, Activity } from 'lucide-react';
+import { Send, Square, MessageCircle, WifiOff, Copy, RefreshCw, Check, BookOpen, Mic, MicOff, Volume2, VolumeX, Headphones, Activity } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -19,7 +19,7 @@ import { apiService } from './services/api';
 function App() {
   
   // Assistant UI Runtime - memoized to prevent infinite re-renders
-  const onNewMessage = useCallback(async ({ content }) => {
+  const onNewMessage = useCallback(async () => {
     // For now, just return a simple response
     return {
       role: "assistant",
@@ -68,7 +68,7 @@ function App() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
-  const [isCurrentlyStreaming, setIsCurrentlyStreaming] = useState(false); // NEW: Track streaming state to prevent status overlay
+
   
   // Message actions state
   const [hoveredMessage, setHoveredMessage] = useState(null);
@@ -83,8 +83,7 @@ function App() {
   
   // Multimodal citations state (always enabled)
   const [currentEquipment, setCurrentEquipment] = useState(null);
-  const [lastVisualCitations, setLastVisualCitations] = useState([]);
-  const [lastManualReferences, setLastManualReferences] = useState([]);
+
   
   // Text-to-Speech state
   const [ttsAvailable, setTtsAvailable] = useState(false);
@@ -93,11 +92,11 @@ function App() {
   // Hands-free mode state
   const [handsFreeMode, setHandsFreeMode] = useState(false);
   const [handsFreeStatus, setHandsFreeStatus] = useState('idle'); // 'listening', 'processing', 'speaking', 'ready', 'idle'
-  const [autoVoiceTimer, setAutoVoiceTimer] = useState(null);
+
   
   // Silence detection state
-  const [silenceDetectionEnabled, setSilenceDetectionEnabled] = useState(true); // Feature flag for easy disable
-  const [silenceCountdown, setSilenceCountdown] = useState(0);
+  const [silenceDetectionEnabled] = useState(true); // Feature flag for easy disable
+
   const [isCountingDown, setIsCountingDown] = useState(false);
   
   // Keep silence detection ref in sync
@@ -252,7 +251,7 @@ function App() {
 
     // Start pre-generating items with rate limiting (max 2 concurrent)
     const queueItems = [...ttsQueueRef.current];
-    queueItems.slice(0, maxConcurrentCalls).forEach((item, index) => {
+    queueItems.slice(0, maxConcurrentCalls).forEach((item) => {
       if (!audioBufferRef.current.has(item.queueId)) {
         preGenerateAudio(item.queueId, item.text);
       }
@@ -449,7 +448,6 @@ function App() {
                   console.log('🗣️ User continuing sentence - canceling countdown. Old:', currentLength, 'New:', newLength);
                   stopTranscriptTimer();
                   setIsCountingDown(false);
-                  setSilenceCountdown(0);
                   messageSentRef.current = false; // Reset send flag
                 } else {
                   console.log('📝 Minor transcript update during countdown, not canceling');
@@ -513,13 +511,13 @@ function App() {
                   stopTranscriptTimer();
                   
                   // Start 2-second countdown with visual feedback
-                  setSilenceCountdown(2);
+
                   setIsCountingDown(true);
                   
                   let countdown = 2;
                   const smartDelayTimer = () => {
                     countdown--;
-                    setSilenceCountdown(countdown);
+
                     
                     if (countdown > 0) {
                       silenceTimerRef.current = setTimeout(smartDelayTimer, 1000);
@@ -531,7 +529,6 @@ function App() {
                         
                         messageSentRef.current = true;
                         setIsCountingDown(false);
-                        setSilenceCountdown(0);
                         
                         // Stop speech recognition
                         if (speechRecognitionRef.current) {
@@ -701,10 +698,8 @@ function App() {
   const processMessageQueue = useCallback(async () => {
     if (messageQueue.length === 0) return;
 
-    for (const queuedMessage of messageQueue) {
-      // We'll handle this differently to avoid circular dependencies
-      // For now, just clear the queue - could implement proper retry logic later
-    }
+    // We'll handle this differently to avoid circular dependencies
+    // For now, just clear the queue - could implement proper retry logic later
     setMessageQueue([]);
   }, [messageQueue]);
 
@@ -768,7 +763,7 @@ function App() {
     setIsThinking(false);
     setIsWaitingForResponse(false);
     setStreamingMessage(null);
-    setIsCurrentlyStreaming(false); // Reset streaming state when stopped
+
     
     // Clear streaming timeout
     if (streamingTimeoutRef.current) {
@@ -1004,7 +999,7 @@ function App() {
             console.log('📨 First chunk received at:', firstChunkTime);
             
             // CRITICAL FIX: Clear inline loading state IMMEDIATELY when first chunk arrives
-            setIsCurrentlyStreaming(true);
+
             setIsWaitingForResponse(false); // Clear waiting state - this hides the inline "Assistant is responding..." overlay
             
             // Update hands-free status to show proper streaming state in chip
@@ -1104,7 +1099,7 @@ function App() {
       setIsThinking(false);
       setIsWaitingForResponse(false);
       setStreamingMessage(null);
-      setIsCurrentlyStreaming(false); // Reset streaming state on error
+
       setMessageStatus({
         isLoading: false,
         isRetrying: false,
@@ -1119,7 +1114,7 @@ function App() {
     setIsThinking(false);
     setIsWaitingForResponse(false);
     setStreamingMessage(null);
-    setIsCurrentlyStreaming(false); // Reset streaming state on error
+
     
     // Reset deduplication flags on error
     messageBeingSentRef.current = false;
@@ -1147,7 +1142,7 @@ function App() {
     });
   };
 
-  const completeStreaming = (streamingMsgId, metadata) => {
+  const completeStreaming = (streamingMsgId) => {
     const completionTime = performance.now();
     console.log('🎯 Stream completion at:', completionTime, 'for message:', streamingMsgId);
     
@@ -1159,7 +1154,6 @@ function App() {
     setIsThinking(false);
     setIsWaitingForResponse(false);
     setStreamingMessage(null);
-    setIsCurrentlyStreaming(false); // Reset streaming state
     
     // Mark message as complete
     setMessages(prev => prev.map(msg => 
@@ -1324,8 +1318,6 @@ function App() {
 
         // Store citations for display
         if (visualCitations.length > 0 || manualReferences.length > 0) {
-          setLastVisualCitations(visualCitations);
-          setLastManualReferences(manualReferences);
           console.log(`Found ${visualCitations.length} visual citations and ${manualReferences.length} manual references`);
         }
 
@@ -1370,7 +1362,6 @@ function App() {
     setIsThinking(false);
     setIsWaitingForResponse(false);
     setStreamingMessage(null);
-    setIsCurrentlyStreaming(false); // Reset streaming state in fallback
     setMessageStatus({
       isLoading: false,
       isRetrying: false,
@@ -1565,8 +1556,8 @@ function App() {
     const newText = cleanFullText.substring(alreadySpoken.length);
     
     // Only speak if we have a complete sentence or significant chunk
-    const sentenceEnders = /[.!?]\s+/g;
-    const completeSentences = newText.match(/^.*?[.!?]\s+/);
+    const sentenceEnders = /^.*?[.!?]\s+/;
+    const completeSentences = newText.match(sentenceEnders);
     
     if (completeSentences) {
       const textToSpeak = completeSentences[0];
@@ -1797,13 +1788,13 @@ function App() {
       }
       
       // Start visual countdown from 1 second (1.5s total delay)
-      setSilenceCountdown(1);
+
       setIsCountingDown(true);
       
       // Much faster countdown
       silenceTimerRef.current = setTimeout(() => {
         setIsCountingDown(false);
-        setSilenceCountdown(0);
+
         setHandsFreeStatus('processing');
         
         const transcriptToSend = currentTranscriptRef.current.trim();
@@ -1825,7 +1816,7 @@ function App() {
       transcriptDebounceTimerRef.current = null;
     }
     setIsCountingDown(false);
-    setSilenceCountdown(0);
+
     messageSentRef.current = false; // Reset send flag to allow future sends
     console.log('Transcript timer and debounce timer stopped');
   };

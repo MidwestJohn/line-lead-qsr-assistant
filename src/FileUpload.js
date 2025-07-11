@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import './FileUpload.css';
 import { Paperclip, Loader2 } from 'lucide-react';
 import { apiService } from './services/api';
@@ -7,7 +7,7 @@ import SimpleUploadProgress from './components/SimpleUploadProgress';
 function FileUpload({ onUploadSuccess, onDocumentsUpdate }) {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+
   const [uploadMessage, setUploadMessage] = useState('');
   const [processId, setProcessId] = useState(null);
   const [showProgress, setShowProgress] = useState(false);
@@ -59,7 +59,6 @@ function FileUpload({ onUploadSuccess, onDocumentsUpdate }) {
       validateFile(file);
       
       setUploading(true);
-      setUploadProgress(0);
       setProgressCompleted(false); // Reset completion flag for new upload
       setUploadMessage('Starting enhanced upload with progress tracking...');
 
@@ -92,7 +91,7 @@ function FileUpload({ onUploadSuccess, onDocumentsUpdate }) {
       console.log('Falling back to regular upload...');
       try {
         const fallbackResult = await apiService.uploadFile(file);
-        setUploadProgress(100);
+
         setUploadMessage(`✅ ${fallbackResult.message} (${fallbackResult.pages_extracted} pages extracted) - Basic upload completed`);
         
         // Notify parent components
@@ -106,7 +105,6 @@ function FileUpload({ onUploadSuccess, onDocumentsUpdate }) {
         // Clear message after 3 seconds
         setTimeout(() => {
           setUploadMessage('');
-          setUploadProgress(0);
         }, 3000);
       } catch (fallbackError) {
         console.error('Fallback upload also failed:', fallbackError);
