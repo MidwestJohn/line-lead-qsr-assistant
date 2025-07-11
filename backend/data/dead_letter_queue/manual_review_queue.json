@@ -26,5 +26,233 @@
     "max_retries": 3,
     "retry_strategy": "manual",
     "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752218606841272",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-11T02:23:26.841277",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752218880409884",
+    "operation_type": "file_upload",
+    "operation_data": {
+      "process_id": "upload_06620c6a_1752218880",
+      "filename": "test_multimodal_qsr_manual.pdf",
+      "document_id": "doc_5bdb19d7"
+    },
+    "error_message": "I/O operation on closed file.",
+    "error_type": "ValueError",
+    "failure_time": "2025-07-11T02:28:00.409903",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752219642829899",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-11T02:40:42.829904",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752219679009035",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-11T02:41:19.009041",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752246631811022",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-11T10:10:31.811028",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752246736321091",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-11T10:12:16.321097",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752246774307661",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-11T10:12:54.307666",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752246818802338",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-11T10:13:38.802342",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752246856337483",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-11T10:14:16.337488",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752247174822788",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-11T10:19:34.822794",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752247280933724",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-11T10:21:20.933732",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752247337326304",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-11T10:22:17.326310",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752247638056903",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-11T10:27:18.056910",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752248498643292",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-11T10:41:38.643297",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752252717131405",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-11T11:51:57.131409",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752253286472783",
+    "operation_type": "file_upload",
+    "operation_data": {
+      "process_id": "upload_2f038b98_1752253286",
+      "filename": "test_document.pdf",
+      "document_id": "doc_a8fc2a52"
+    },
+    "error_message": "I/O operation on closed file.",
+    "error_type": "ValueError",
+    "failure_time": "2025-07-11T12:01:26.472797",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
   }
 ]

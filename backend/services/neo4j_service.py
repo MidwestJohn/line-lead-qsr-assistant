@@ -1,5 +1,7 @@
 import os
 import logging
+import asyncio
+import time
 from typing import Dict, Any, Optional
 from dotenv import load_dotenv
 
@@ -17,6 +19,12 @@ class Neo4jService:
         self.password = os.getenv('NEO4J_PASSWORD')
         self.driver = None
         self.connected = False
+        
+        # Keep-alive configuration for Enterprise Bridge reliability
+        self.keep_alive_enabled = True
+        self.keep_alive_interval = 300  # 5 minutes
+        self.last_activity = time.time()
+        self.keep_alive_task = None
         
     def connect(self) -> bool:
         """Connect to Neo4j with Aura-optimized settings"""
@@ -74,10 +82,88 @@ class Neo4jService:
     
     def disconnect(self):
         """Close Neo4j connection"""
+        if self.keep_alive_task:
+            self.keep_alive_task.cancel()
+            self.keep_alive_task = None
+            
         if self.driver:
             self.driver.close()
             self.connected = False
             logger.info("Neo4j connection closed")
+    
+    async def start_keep_alive(self):
+        """Start Neo4j keep-alive heartbeat for Enterprise Bridge reliability"""
+        if not self.keep_alive_enabled or self.keep_alive_task:
+            return
+            
+        self.keep_alive_task = asyncio.create_task(self._keep_alive_loop())
+        logger.info(f"🔗 Neo4j keep-alive started (interval: {self.keep_alive_interval}s)")
+    
+    async def _keep_alive_loop(self):
+        """Keep-alive loop to maintain Neo4j connection for Enterprise Bridge"""
+        while self.keep_alive_enabled and self.connected:
+            try:
+                await asyncio.sleep(self.keep_alive_interval)
+                
+                # Check if connection is still needed (recent activity)
+                if time.time() - self.last_activity > self.keep_alive_interval * 2:
+                    logger.debug("Neo4j keep-alive: No recent activity, skipping ping")
+                    continue
+                
+                # Perform keep-alive ping
+                success = await self._ping_neo4j()
+                if success:
+                    logger.info("🔗 Neo4j Keep-Alive: Connection healthy")
+                else:
+                    logger.warning("⚠️ Neo4j Keep-Alive: Connection unhealthy, attempting reconnect")
+                    await self._attempt_reconnect()
+                    
+            except asyncio.CancelledError:
+                logger.info("Neo4j keep-alive task cancelled")
+                break
+            except Exception as e:
+                logger.error(f"Neo4j keep-alive error: {e}")
+                await asyncio.sleep(60)  # Wait before retrying
+    
+    async def _ping_neo4j(self) -> bool:
+        """Ping Neo4j to check connection health"""
+        try:
+            if not self.driver or not self.connected:
+                return False
+                
+            # Simple query to test connection
+            with self.driver.session() as session:
+                result = session.run("RETURN 1 as ping")
+                ping_result = result.single()
+                self.last_activity = time.time()
+                return ping_result["ping"] == 1
+                
+        except Exception as e:
+            logger.warning(f"Neo4j ping failed: {e}")
+            return False
+    
+    async def _attempt_reconnect(self):
+        """Attempt to reconnect to Neo4j for Enterprise Bridge"""
+        try:
+            logger.info("🔄 Attempting Neo4j reconnection for Enterprise Bridge...")
+            
+            # Close existing connection
+            if self.driver:
+                self.driver.close()
+            
+            # Reconnect
+            success = self.connect()
+            if success:
+                logger.info("✅ Neo4j reconnection successful")
+            else:
+                logger.error("❌ Neo4j reconnection failed")
+                
+        except Exception as e:
+            logger.error(f"Neo4j reconnection error: {e}")
+    
+    def update_activity(self):
+        """Update last activity timestamp when Neo4j is used"""
+        self.last_activity = time.time()
     
     def test_connection(self) -> Dict[str, Any]:
         """Test Neo4j connection with Aura-specific checks"""
@@ -202,12 +288,14 @@ class Neo4jService:
     
     def get_node_count(self) -> int:
         """Get total node count in Neo4j."""
+        self.update_activity()  # Track activity for keep-alive
         with self.driver.session() as session:
             result = session.run("MATCH (n) RETURN count(n) as count")
             return result.single()["count"]
 
     def get_relationship_count(self) -> int:
         """Get total relationship count in Neo4j."""
+        self.update_activity()  # Track activity for keep-alive
         with self.driver.session() as session:
             result = session.run("MATCH ()-[r]->() RETURN count(r) as count")
             return result.single()["count"]
