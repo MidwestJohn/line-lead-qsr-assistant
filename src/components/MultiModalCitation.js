@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Image, Eye, Book, AlertTriangle, FileText, Grid3x3, Table } from 'lucide-react';
 import './MultiModalCitation.css';
 
@@ -89,7 +89,11 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
               <div
                 key={citation.citation_id || index}
                 className={`citation-card ${citation.type} ${selectedCitation?.citation_id === citation.citation_id ? 'selected' : ''}`}
+                role="button"
+                tabIndex={0}
                 onClick={() => handleCitationClick(citation)}
+                onKeyDown={(e) => e.key === 'Enter' && handleCitationClick(citation)}
+                style={{cursor: 'pointer'}}
               >
                 <div className="citation-header">
                   {getCitationIcon(citation.type)}
@@ -146,7 +150,13 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
 
       {/* Selected Citation Modal */}
       {selectedCitation && selectedCitation.has_content && (
-        <div className="citation-modal-overlay" onClick={() => setSelectedCitation(null)}>
+        <div 
+          className="citation-modal-overlay" 
+          role="button"
+          tabIndex={0}
+          onClick={() => setSelectedCitation(null)}
+          onKeyDown={(e) => e.key === 'Escape' && setSelectedCitation(null)}
+        >
           <div className="citation-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{formatCitationReference(selectedCitation)}</h3>

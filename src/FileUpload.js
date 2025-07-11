@@ -157,17 +157,7 @@ function FileUpload({ onUploadSuccess, onDocumentsUpdate }) {
     }, 5000);
   };
 
-  const handleProgressError = (error) => {
-    console.error('Processing error:', error);
-    setUploadMessage(`❌ Processing failed: ${error.message}`);
-    
-    // Hide progress and reset state after showing error
-    setTimeout(() => {
-      setShowProgress(false);
-      setProcessId(null);
-      setUploadMessage('');
-    }, 5000);
-  };
+
 
   return (
     <div className="file-upload-container">

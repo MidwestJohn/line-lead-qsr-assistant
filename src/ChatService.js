@@ -178,6 +178,7 @@ class ChatService {
       let lastChunkTime = Date.now();
 
       try {
+        // eslint-disable-next-line no-constant-condition
         while (true) {
           // Check for data timeout (no chunks received for 10 seconds)
           if (Date.now() - lastChunkTime > 10000) {

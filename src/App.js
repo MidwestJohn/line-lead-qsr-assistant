@@ -12,7 +12,7 @@ import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react";
 import { Send, Square, Upload, MessageCircle, WifiOff, Copy, RefreshCw, Check, BookOpen, Mic, MicOff, Volume2, VolumeX, Headphones, Activity } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { API_BASE_URL } from './config';
+
 import { apiService } from './services/api';
 
 
@@ -1562,7 +1562,7 @@ function App() {
     const alreadySpoken = streamingTTSRef.current.spokenText;
     
     // Find new text that hasn't been spoken yet
-    let newText = cleanFullText.substring(alreadySpoken.length);
+    const newText = cleanFullText.substring(alreadySpoken.length);
     
     // Only speak if we have a complete sentence or significant chunk
     const sentenceEnders = /[.!?]\s+/g;

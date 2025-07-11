@@ -92,7 +92,7 @@ class APIService {
         return result.data;
     }
 
-    async uploadFile(file, onProgress = null) {
+    async uploadFile(file) {
         const formData = new FormData();
         formData.append('file', file);
 
