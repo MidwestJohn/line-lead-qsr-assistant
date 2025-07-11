@@ -7,8 +7,9 @@ import ErrorBoundary from './ErrorBoundary';
 import ChatService from './ChatService';
 import ProgressiveLoader from './components/ProgressiveLoader';
 import MultiModalCitation from './components/MultiModalCitation';
+import ProcessingDashboard from './components/ProcessingDashboard';
 import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react";
-import { Send, Square, Upload, MessageCircle, WifiOff, Copy, RefreshCw, Check, BookOpen, Mic, MicOff, Volume2, VolumeX, Headphones } from 'lucide-react';
+import { Send, Square, Upload, MessageCircle, WifiOff, Copy, RefreshCw, Check, BookOpen, Mic, MicOff, Volume2, VolumeX, Headphones, Activity } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { API_BASE_URL } from './config';
@@ -42,6 +43,7 @@ function App() {
   ]);
   const [inputText, setInputText] = useState('');
   const [showUpload, setShowUpload] = useState(false);
+  const [showProcessing, setShowProcessing] = useState(false);
   const [documentsRefresh, setDocumentsRefresh] = useState(0);
   
   // Service status and resilience state
@@ -1907,7 +1909,7 @@ function App() {
               )}
               
               {/* Hands-Free Mode Toggle */}
-              {voiceAvailable && ttsAvailable && !showUpload && (
+              {voiceAvailable && ttsAvailable && !showUpload && !showProcessing && (
                 <button 
                   className={`hands-free-toggle ${handsFreeMode ? 'active' : ''}`}
                   onClick={() => {
@@ -1923,7 +1925,10 @@ function App() {
               
               <button 
                 className="upload-toggle-btn"
-                onClick={() => setShowUpload(!showUpload)}
+                onClick={() => {
+                  setShowUpload(!showUpload);
+                  setShowProcessing(false);
+                }}
                 title={showUpload ? "Hide Upload" : "Upload Manual"}
                 aria-label={showUpload ? "Show chat" : "Show documents"}
               >
@@ -1933,6 +1938,22 @@ function App() {
                   <BookOpen className="toggle-icon" />
                 )}
               </button>
+              
+              {/* Processing Dashboard temporarily hidden - keeping for troubleshooting */}
+              {/*
+              <button 
+                className={`processing-toggle-btn ${showProcessing ? 'active' : ''}`}
+                onClick={() => {
+                  setShowProcessing(!showProcessing);
+                  setShowUpload(false);
+                }}
+                title={showProcessing ? "Hide Processing Dashboard" : "Show Processing Dashboard"}
+                aria-label={showProcessing ? "Show chat" : "Show processing status"}
+              >
+                <Activity className="toggle-icon" />
+                {showProcessing && <span className="active-indicator">Processing</span>}
+              </button>
+              */}
             </div>
           </div>
         </header>
@@ -1946,8 +1967,6 @@ function App() {
                   <ServiceStatus onStatusChange={handleServiceStatusChange} />
                 </div>
 
-
-                
                 <FileUpload 
                   onUploadSuccess={handleUploadSuccess}
                   onDocumentsUpdate={handleDocumentsUpdate}
@@ -1956,6 +1975,13 @@ function App() {
                   refreshTrigger={documentsRefresh}
                   onDocumentDeleted={handleDocumentsUpdate}
                 />
+              </ErrorBoundary>
+            </div>
+          ) : showProcessing ? (
+            /* Processing Dashboard temporarily hidden - keeping for troubleshooting */
+            <div className="processing-section">
+              <ErrorBoundary>
+                <ProcessingDashboard />
               </ErrorBoundary>
             </div>
           ) : (

@@ -1,0 +1,31 @@
+{
+  "test_timestamp": "2025-07-10T22:41:16.174485",
+  "phase": "Phase 1 - Core Reliability Infrastructure",
+  "total_tests": 4,
+  "passed_tests": 1,
+  "success_rate": 25.0,
+  "overall_status": "FAILED",
+  "detailed_results": {
+    "circuit_breaker_cascade_prevention": {
+      "status": "FAILED",
+      "error": "Circuit should be CLOSED after recovery"
+    },
+    "transaction_rollback_partial_failures": {
+      "status": "PASSED",
+      "details": {
+        "operations_executed": 2,
+        "rollback_triggered": true,
+        "commit_prevented": true,
+        "transaction_id": "test_partial_failure"
+      }
+    },
+    "dead_letter_queue_capture_retry": {
+      "status": "FAILED",
+      "error": "Background processor should be running"
+    },
+    "existing_file_processing_compatibility": {
+      "status": "FAILED",
+      "error": "No module named 'lightrag'"
+    }
+  }
+}

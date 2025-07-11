@@ -1,0 +1,400 @@
+{
+  "test_summary": {
+    "total_tests": 23,
+    "passed_tests": 21,
+    "failed_tests": 2,
+    "success_rate": 91.30434782608695,
+    "overall_status": "GOOD"
+  },
+  "phase_results": {
+    "phase_3a_health_monitoring": {
+      "tests": 6,
+      "success_rate": 66.66666666666666,
+      "status": "FAILED"
+    },
+    "phase_3b_automated_recovery": {
+      "tests": 8,
+      "success_rate": 100.0,
+      "status": "PASSED"
+    },
+    "phase_3c_performance_optimization": {
+      "tests": 6,
+      "success_rate": 100.0,
+      "status": "PASSED"
+    },
+    "integration_tests": {
+      "tests": 5,
+      "success_rate": 100.0,
+      "status": "PASSED"
+    }
+  },
+  "test_details": [
+    {
+      "test_name": "Health Monitoring System Setup",
+      "passed": true,
+      "description": "Health monitoring system initialized successfully",
+      "execution_time": 2.0016491413116455,
+      "error_message": null,
+      "details": {
+        "status": {
+          "monitoring_enabled": true,
+          "monitoring_thread_alive": false,
+          "metrics_buffer_size": 0,
+          "alerts_buffer_size": 0,
+          "active_alerts_count": 0,
+          "thresholds_configured": 7,
+          "component_health_count": 0,
+          "system_uptime": 0.013499,
+          "last_metric_collection": null
+        }
+      }
+    },
+    {
+      "test_name": "Real-time Metrics Collection",
+      "passed": false,
+      "description": "Real-time metrics collection functionality",
+      "execution_time": 15.002217054367065,
+      "error_message": "No new metrics collected: 12 -> 12",
+      "details": {
+        "initial": 12,
+        "updated": 12
+      }
+    },
+    {
+      "test_name": "Threshold-based Alerting",
+      "passed": true,
+      "description": "Threshold-based alerting system",
+      "execution_time": 3.509392023086548,
+      "error_message": null,
+      "details": {
+        "initial_alerts": 1,
+        "updated_alerts": 2,
+        "alerts_generated": true,
+        "test_metric_value": 85.0,
+        "threshold": 80.0
+      }
+    },
+    {
+      "test_name": "Stuck File Detection",
+      "passed": true,
+      "description": "Stuck file detection capabilities",
+      "execution_time": 0.00033593177795410156,
+      "error_message": null,
+      "details": {
+        "stuck_files_detected": 0,
+        "detection_mechanism_working": true
+      }
+    },
+    {
+      "test_name": "Health Status Reporting",
+      "passed": true,
+      "description": "Health status reporting integration working correctly",
+      "execution_time": 0.00010418891906738281,
+      "error_message": null,
+      "details": {
+        "overall_status": "critical",
+        "component_count": 9,
+        "active_alerts": 2,
+        "uptime_seconds": 20.529167
+      }
+    },
+    {
+      "test_name": "Proactive Monitoring",
+      "passed": false,
+      "description": "Proactive monitoring capabilities",
+      "execution_time": 0.000209808349609375,
+      "error_message": null,
+      "details": {
+        "performance_trends": {},
+        "trends_analyzed": false
+      }
+    },
+    {
+      "test_name": "Automated Recovery System Setup",
+      "passed": true,
+      "description": "Automated recovery system initialized successfully",
+      "execution_time": 2.0073039531707764,
+      "error_message": null,
+      "details": {
+        "status": {
+          "recovery_enabled": true,
+          "monitoring_active": false,
+          "queue_size": 0,
+          "recoveries_in_progress": 0,
+          "recent_recoveries": 0,
+          "statistics": {
+            "total_recoveries_attempted": 0,
+            "successful_recoveries": 0,
+            "failed_recoveries": 0,
+            "escalated_recoveries": 0,
+            "recovery_success_rate": 0,
+            "avg_recovery_time": 0,
+            "most_common_failure_type": null
+          },
+          "configuration": {
+            "max_recovery_attempts": 3,
+            "recovery_cooldown_minutes": 10,
+            "escalation_threshold": 2
+          },
+          "last_updated": "2025-07-10T23:40:34.323468"
+        }
+      }
+    },
+    {
+      "test_name": "Stuck File Recovery",
+      "passed": true,
+      "description": "Stuck file recovery capabilities",
+      "execution_time": 0.00019407272338867188,
+      "error_message": null,
+      "details": {
+        "recovery_strategies_configured": 8,
+        "stuck_strategies_configured": true,
+        "recovery_statistics": {
+          "total_recoveries": 0,
+          "successful_recoveries": 0,
+          "success_rate": 0
+        }
+      }
+    },
+    {
+      "test_name": "Memory Exhaustion Recovery",
+      "passed": true,
+      "description": "Memory exhaustion recovery capabilities",
+      "execution_time": 0.00011801719665527344,
+      "error_message": null,
+      "details": {
+        "memory_recovery_strategies": 3,
+        "configured_strategies": [
+          "clear_memory",
+          "restart_process",
+          "escalate_to_manual"
+        ]
+      }
+    },
+    {
+      "test_name": "Connection Failure Recovery",
+      "passed": true,
+      "description": "Connection failure recovery capabilities",
+      "execution_time": 1.5020370483398438e-05,
+      "error_message": null,
+      "details": {
+        "connection_recovery_strategies": 4,
+        "configured_strategies": [
+          "reset_connection",
+          "circuit_breaker_reset",
+          "retry_operation",
+          "escalate_to_manual"
+        ]
+      }
+    },
+    {
+      "test_name": "Escalation System",
+      "passed": true,
+      "description": "Escalation system functionality",
+      "execution_time": 1.52587890625e-05,
+      "error_message": null,
+      "details": {
+        "escalation_threshold": 2,
+        "escalation_configured": true,
+        "escalation_strategy_exists": true
+      }
+    },
+    {
+      "test_name": "Recovery Result Tracking",
+      "passed": true,
+      "description": "Recovery result tracking capabilities",
+      "execution_time": 4.792213439941406e-05,
+      "error_message": null,
+      "details": {
+        "stats_tracked": true,
+        "recovery_statistics": {
+          "total_recoveries": 0,
+          "successful_recoveries": 0,
+          "failed_recoveries": 0,
+          "success_rate": 0
+        }
+      }
+    },
+    {
+      "test_name": "Performance Optimization Engine Setup",
+      "passed": true,
+      "description": "Performance optimization engine initialized successfully",
+      "execution_time": 2.0067827701568604,
+      "error_message": null,
+      "details": {
+        "status": {
+          "optimization_enabled": true,
+          "monitoring_active": false,
+          "queue_size": 0,
+          "active_optimizations": 0,
+          "performance_trends": {},
+          "current_parameters": {
+            "batch_size": 1,
+            "connection_pool_size": 5,
+            "memory_limit_mb": 1024,
+            "processing_timeout_seconds": 300,
+            "retry_attempts": 3,
+            "circuit_breaker_threshold": 5,
+            "transaction_timeout_seconds": 600
+          },
+          "optimization_statistics": {
+            "total_optimizations": 0,
+            "successful_optimizations": 0,
+            "reverted_optimizations": 0,
+            "success_rate": 0
+          },
+          "recent_optimizations": [],
+          "configuration": {
+            "enabled": true,
+            "analysis_window_hours": 24,
+            "confidence_threshold": 0.7,
+            "optimization_interval_minutes": 30
+          },
+          "last_updated": "2025-07-10T23:40:36.341479"
+        }
+      }
+    },
+    {
+      "test_name": "Performance Trend Analysis",
+      "passed": true,
+      "description": "Performance trend analysis capabilities",
+      "execution_time": 2.3126602172851562e-05,
+      "error_message": null,
+      "details": {
+        "trends_analyzed": 0,
+        "trend_analysis_working": true,
+        "performance_trends": {}
+      }
+    },
+    {
+      "test_name": "Dynamic Parameter Adjustment",
+      "passed": true,
+      "description": "Dynamic parameter adjustment capabilities",
+      "execution_time": 1.7881393432617188e-05,
+      "error_message": null,
+      "details": {
+        "parameters_tracked": 7,
+        "current_parameters": {
+          "batch_size": 1,
+          "connection_pool_size": 5,
+          "memory_limit_mb": 1024,
+          "processing_timeout_seconds": 300,
+          "retry_attempts": 3,
+          "circuit_breaker_threshold": 5,
+          "transaction_timeout_seconds": 600
+        },
+        "optimization_queue_size": 0
+      }
+    },
+    {
+      "test_name": "Gradual Optimization Changes",
+      "passed": true,
+      "description": "Gradual optimization changes configuration",
+      "execution_time": 1.8835067749023438e-05,
+      "error_message": null,
+      "details": {
+        "confidence_threshold": 0.7,
+        "optimization_interval_minutes": 30,
+        "gradual_changes_configured": true
+      }
+    },
+    {
+      "test_name": "Optimization Reversal",
+      "passed": true,
+      "description": "Optimization reversal capabilities",
+      "execution_time": 1.2874603271484375e-05,
+      "error_message": null,
+      "details": {
+        "auto_revert_threshold": 0.1,
+        "auto_revert_configured": true
+      }
+    },
+    {
+      "test_name": "Performance Improvement",
+      "passed": true,
+      "description": "Performance improvement tracking",
+      "execution_time": 1.6927719116210938e-05,
+      "error_message": null,
+      "details": {
+        "optimization_statistics": {
+          "total_optimizations": 0,
+          "successful_optimizations": 0,
+          "reverted_optimizations": 0,
+          "success_rate": 0
+        },
+        "stats_tracked": true
+      }
+    },
+    {
+      "test_name": "Monitoring Recovery Integration",
+      "passed": true,
+      "description": "Monitoring and recovery systems integration",
+      "execution_time": 0.00012993812561035156,
+      "error_message": null,
+      "details": {
+        "monitoring_working": true,
+        "recovery_working": true,
+        "integration_working": true
+      }
+    },
+    {
+      "test_name": "Recovery Optimization Integration",
+      "passed": true,
+      "description": "Recovery and optimization systems integration",
+      "execution_time": 3.910064697265625e-05,
+      "error_message": null,
+      "details": {
+        "recovery_working": true,
+        "optimization_working": true,
+        "integration_working": true
+      }
+    },
+    {
+      "test_name": "Complete Operational Workflow",
+      "passed": true,
+      "description": "Complete operational workflow with all Phase 3 systems",
+      "execution_time": 4.410743713378906e-05,
+      "error_message": null,
+      "details": {
+        "health_monitoring": true,
+        "automated_recovery": true,
+        "performance_optimization": true,
+        "all_systems_working": true
+      }
+    },
+    {
+      "test_name": "Performance Impact Validation",
+      "passed": true,
+      "description": "Performance impact validation for Phase 3 systems",
+      "execution_time": 1.0150139331817627,
+      "error_message": null,
+      "details": {
+        "total_time": 1.0149991512298584,
+        "performance_threshold": 2.0,
+        "performance_acceptable": true
+      }
+    },
+    {
+      "test_name": "System Stability Under Load",
+      "passed": true,
+      "description": "System stability under concurrent load",
+      "execution_time": 0.0558931827545166,
+      "error_message": null,
+      "details": {
+        "total_tasks": 20,
+        "failed_tasks": 0,
+        "success_rate": 1.0,
+        "stability_acceptable": true
+      }
+    }
+  ],
+  "recommendations": [
+    "Address 2 failed tests before production deployment",
+    "Review health monitoring system configuration and thresholds"
+  ],
+  "test_metadata": {
+    "test_start_time": "2025-07-10T23:40:13.806749",
+    "test_end_time": "2025-07-10T23:40:39.420951",
+    "total_duration": 25.614207
+  }
+}

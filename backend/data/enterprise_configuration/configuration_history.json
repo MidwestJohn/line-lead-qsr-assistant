@@ -1,0 +1,158 @@
+[
+  {
+    "change_id": "config_change_1752210283",
+    "change_type": "update",
+    "environment": "development",
+    "user_id": "test_user",
+    "timestamp": "2025-07-11T00:04:43.297513",
+    "key_path": "processing.batch_size",
+    "old_value": 1,
+    "new_value": 3,
+    "validation_results": [],
+    "applied": true,
+    "rollback_available": true,
+    "metadata": {}
+  },
+  {
+    "change_id": "config_change_1752210283",
+    "change_type": "update",
+    "environment": "development",
+    "user_id": "test_user",
+    "timestamp": "2025-07-11T00:04:43.297880",
+    "key_path": "processing.batch_size",
+    "old_value": 3,
+    "new_value": 100,
+    "validation_results": [
+      {
+        "key_path": "processing.batch_size",
+        "severity": "error",
+        "message": "batch_size must be an integer between 1 and 10",
+        "suggestion": null,
+        "valid": false
+      }
+    ],
+    "applied": true,
+    "rollback_available": true,
+    "metadata": {}
+  },
+  {
+    "change_id": "config_change_1752210283",
+    "change_type": "update",
+    "environment": "development",
+    "user_id": "test_user",
+    "timestamp": "2025-07-11T00:04:43.298211",
+    "key_path": "processing.batch_size",
+    "old_value": 100,
+    "new_value": 1,
+    "validation_results": [
+      {
+        "key_path": "processing.batch_size",
+        "severity": "error",
+        "message": "Value 100 exceeds maximum 10",
+        "suggestion": "Set value to at most 10",
+        "valid": false
+      },
+      {
+        "key_path": "processing.batch_size",
+        "severity": "warning",
+        "message": "Value 100 exceeds recommended threshold 5",
+        "suggestion": "Consider reducing value below 5",
+        "valid": true
+      },
+      {
+        "key_path": "processing.batch_size",
+        "severity": "warning",
+        "message": "High performance impact setting: 100",
+        "suggestion": "Monitor system performance after this change",
+        "valid": true
+      }
+    ],
+    "applied": true,
+    "rollback_available": true,
+    "metadata": {}
+  },
+  {
+    "change_id": "config_change_1752210283",
+    "change_type": "update",
+    "environment": "development",
+    "user_id": "test_user",
+    "timestamp": "2025-07-11T00:04:43.299173",
+    "key_path": "processing.timeout_seconds",
+    "old_value": 300,
+    "new_value": 450,
+    "validation_results": [],
+    "applied": true,
+    "rollback_available": true,
+    "metadata": {}
+  },
+  {
+    "change_id": "config_change_1752210283",
+    "change_type": "update",
+    "environment": "development",
+    "user_id": "test_user",
+    "timestamp": "2025-07-11T00:04:43.299729",
+    "key_path": "processing.timeout_seconds",
+    "old_value": 450,
+    "new_value": 300,
+    "validation_results": [],
+    "applied": true,
+    "rollback_available": true,
+    "metadata": {}
+  },
+  {
+    "change_id": "config_change_1752210283",
+    "change_type": "update",
+    "environment": "development",
+    "user_id": "config_test",
+    "timestamp": "2025-07-11T00:04:43.300932",
+    "key_path": "monitoring.health_check_interval",
+    "old_value": 30,
+    "new_value": 45,
+    "validation_results": [],
+    "applied": true,
+    "rollback_available": true,
+    "metadata": {}
+  },
+  {
+    "change_id": "config_change_1752210283",
+    "change_type": "update",
+    "environment": "development",
+    "user_id": "config_test",
+    "timestamp": "2025-07-11T00:04:43.301347",
+    "key_path": "monitoring.health_check_interval",
+    "old_value": 45,
+    "new_value": 30,
+    "validation_results": [],
+    "applied": true,
+    "rollback_available": true,
+    "metadata": {}
+  },
+  {
+    "change_id": "config_change_1752210283",
+    "change_type": "update",
+    "environment": "development",
+    "user_id": "reliability_test",
+    "timestamp": "2025-07-11T00:04:43.521811",
+    "key_path": "processing.batch_size",
+    "old_value": 1,
+    "new_value": 2,
+    "validation_results": [],
+    "applied": true,
+    "rollback_available": true,
+    "metadata": {}
+  },
+  {
+    "change_id": "config_change_1752210283",
+    "change_type": "update",
+    "environment": "development",
+    "user_id": "reliability_test",
+    "timestamp": "2025-07-11T00:04:43.525253",
+    "key_path": "processing.batch_size",
+    "old_value": 2,
+    "new_value": 1,
+    "validation_results": [],
+    "applied": true,
+    "rollback_available": true,
+    "metadata": {}
+  }
+]

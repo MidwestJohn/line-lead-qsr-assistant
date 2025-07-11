@@ -1,0 +1,30 @@
+[
+  {
+    "operation_id": "failed_1752207247050439",
+    "operation_type": "integrity_verification",
+    "operation_data": {
+      "bridge_operation_id": "test_repair_d8b08801-7858-4b59-8e46-3428e481ff14"
+    },
+    "error_message": "Circuit breaker 'neo4j_operations' is OPEN",
+    "error_type": "CircuitBreakerOpenError",
+    "failure_time": "2025-07-10T23:14:07.050445",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752207396848402",
+    "operation_type": "integrity_verification",
+    "operation_data": {
+      "bridge_operation_id": "test_repair_2dfd91a5-434f-4217-b9b1-ebae0f64e73f"
+    },
+    "error_message": "Circuit breaker 'neo4j_operations' is OPEN",
+    "error_type": "CircuitBreakerOpenError",
+    "failure_time": "2025-07-10T23:16:36.848408",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  }
+]

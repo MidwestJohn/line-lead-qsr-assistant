@@ -30,7 +30,7 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
     }
 
     try {
-      const response = await fetch(`/api/citation-content/${citationId}`);
+      const response = await fetch(`/citation-content/${citationId}`);
       if (response.ok) {
         const blob = await response.blob();
         const imageUrl = URL.createObjectURL(blob);

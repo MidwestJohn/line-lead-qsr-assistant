@@ -181,6 +181,19 @@ class UnifiedNeo4jService:
                 "uri": self.connection_config.get("uri", "unknown")
             }
     
+    def execute_query(self, query: str, parameters: Dict = None) -> List[Dict]:
+        """Execute a Cypher query and return results."""
+        if not self.connected or not self.driver:
+            raise RuntimeError("Neo4j service not connected. Call initialize_from_backend_config() first.")
+        
+        try:
+            with self.get_session() as session:
+                result = session.run(query, parameters or {})
+                return [record.data() for record in result]
+        except Exception as e:
+            logger.error(f"Query execution failed: {e}")
+            raise e
+    
     def close(self):
         """Close connection."""
         if self.driver and not getattr(self, '_using_backend_driver', False):

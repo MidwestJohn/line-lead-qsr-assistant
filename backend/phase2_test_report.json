@@ -1,0 +1,426 @@
+{
+  "test_summary": {
+    "total_tests": 16,
+    "passed_tests": 14,
+    "failed_tests": 2,
+    "success_rate": 87.5,
+    "overall_status": "ACCEPTABLE"
+  },
+  "phase_results": {
+    "phase_2a_visual_citations": {
+      "tests": 4,
+      "success_rate": 75.0,
+      "status": "FAILED"
+    },
+    "phase_2b_entity_deduplication": {
+      "tests": 4,
+      "success_rate": 75.0,
+      "status": "FAILED"
+    },
+    "phase_2c_integrity_verification": {
+      "tests": 3,
+      "success_rate": 100.0,
+      "status": "PASSED"
+    },
+    "integration_tests": {
+      "tests": 4,
+      "success_rate": 100.0,
+      "status": "PASSED"
+    }
+  },
+  "test_details": [
+    {
+      "test_name": "Visual Citation Preservation Setup",
+      "passed": true,
+      "description": "Visual citation preservation system initialized successfully",
+      "execution_time": 1.3113021850585938e-05,
+      "error_message": null,
+      "details": {
+        "status": {
+          "total_citations": 0,
+          "preservation_status_breakdown": {},
+          "entity_links_count": 0,
+          "integrity_verified_count": 0,
+          "neo4j_nodes_created": 0,
+          "failed_extractions": 0,
+          "storage_path": "data/visual_citations",
+          "last_updated": "2025-07-10T23:16:36.845729"
+        }
+      }
+    },
+    {
+      "test_name": "Visual Citation Extraction",
+      "passed": true,
+      "description": "Successfully extracted visual citations from PDF",
+      "execution_time": 2.5987625122070312e-05,
+      "error_message": null,
+      "details": {
+        "citations_found": 0,
+        "extraction_successful": true
+      }
+    },
+    {
+      "test_name": "Visual Citation Neo4j Integration",
+      "passed": false,
+      "description": "Integrate visual citations with Neo4j database",
+      "execution_time": 0.0004220008850097656,
+      "error_message": "Cannot connect to Neo4j",
+      "details": {}
+    },
+    {
+      "test_name": "Visual Citation Referential Integrity",
+      "passed": true,
+      "description": "Visual citation referential integrity maintained",
+      "execution_time": 2.002716064453125e-05,
+      "error_message": null,
+      "details": {
+        "integrity_rate": 1.0,
+        "total_citations": 0,
+        "verified_links": 0,
+        "broken_links": 0
+      }
+    },
+    {
+      "test_name": "QSR Entity Deduplication Setup",
+      "passed": true,
+      "description": "QSR entity deduplication system initialized successfully",
+      "execution_time": 1.0013580322265625e-05,
+      "error_message": null,
+      "details": {
+        "stats": {
+          "statistics": {},
+          "total_entities_processed": 0,
+          "duplicates_found": 0,
+          "entities_merged": 0,
+          "canonical_names_created": 0,
+          "patterns_configured": 5,
+          "equipment_models": 3,
+          "procedure_patterns": 3,
+          "brand_aliases": 8,
+          "last_updated": "2025-07-10T23:16:36.846354"
+        }
+      }
+    },
+    {
+      "test_name": "QSR Fuzzy Matching",
+      "passed": true,
+      "description": "QSR fuzzy matching for equipment names",
+      "execution_time": 0.00020384788513183594,
+      "error_message": null,
+      "details": {
+        "success_rate": 1.0,
+        "passed_tests": 5,
+        "total_tests": 5
+      }
+    },
+    {
+      "test_name": "QSR Canonical Resolution",
+      "passed": false,
+      "description": "QSR canonical name resolution for equipment",
+      "execution_time": 0.00011801719665527344,
+      "error_message": null,
+      "details": {
+        "test_entities": [
+          "Taylor C602",
+          "C602",
+          "Taylor Model C602",
+          "C602 Soft Serve Machine"
+        ],
+        "canonical_names": [
+          "Taylor C602",
+          "C 602",
+          "Model C602",
+          "C 602"
+        ],
+        "unique_canonicals": [
+          "Model C602",
+          "C 602",
+          "Taylor C602"
+        ]
+      }
+    },
+    {
+      "test_name": "QSR Domain Specific Patterns",
+      "passed": true,
+      "description": "QSR domain-specific pattern recognition",
+      "execution_time": 1.2874603271484375e-05,
+      "error_message": null,
+      "details": {
+        "success_rate": 1.0,
+        "pattern_matches": 5,
+        "total_patterns": 5
+      }
+    },
+    {
+      "test_name": "Data Integrity Verification Setup",
+      "passed": true,
+      "description": "Data integrity verification system initialized successfully",
+      "execution_time": 1.2874603271484375e-05,
+      "error_message": null,
+      "details": {
+        "summary": {
+          "recent_reports": [
+            {
+              "report_id": "integrity_test_operation_5bff4d42-ac98-44f6-866f-7de260f30cee_1752207247",
+              "bridge_operation_id": "test_operation_5bff4d42-ac98-44f6-866f-7de260f30cee",
+              "verification_timestamp": "2025-07-10T23:14:07.048804",
+              "overall_status": "error",
+              "total_issues": 0,
+              "critical_issues": 0,
+              "repaired_issues": 0
+            }
+          ],
+          "summary_stats": {
+            "total_reports": 1,
+            "passed_reports": 0,
+            "failed_reports": 0,
+            "success_rate": 0.0
+          },
+          "overall_health": "poor",
+          "last_updated": "2025-07-10T23:16:36.846833"
+        }
+      }
+    },
+    {
+      "test_name": "Integrity Check Types",
+      "passed": true,
+      "description": "All integrity check types performed successfully",
+      "execution_time": 0.0014629364013671875,
+      "error_message": null,
+      "details": {
+        "expected_checks": [
+          "entity_relationship_consistency",
+          "visual_citation_links",
+          "entity_deduplication_success",
+          "document_completeness",
+          "node_count_verification",
+          "relationship_count_verification",
+          "orphaned_entities",
+          "duplicate_relationships",
+          "referential_integrity"
+        ],
+        "performed_checks": [
+          "entity_relationship_consistency",
+          "visual_citation_links",
+          "entity_deduplication_success",
+          "document_completeness",
+          "node_count_verification",
+          "relationship_count_verification",
+          "orphaned_entities",
+          "duplicate_relationships",
+          "referential_integrity"
+        ],
+        "missing_checks": [],
+        "total_issues": 0,
+        "critical_issues": 0
+      }
+    },
+    {
+      "test_name": "Auto-Repair Capabilities",
+      "passed": true,
+      "description": "Auto-repair capabilities functional",
+      "execution_time": 0.0002830028533935547,
+      "error_message": null,
+      "details": {
+        "total_issues": 0,
+        "repaired_issues": 0,
+        "overall_status": "error",
+        "auto_repair_enabled": true
+      }
+    },
+    {
+      "test_name": "Integration with Pipeline",
+      "passed": true,
+      "description": "Data integrity verification integrated with reliable upload pipeline",
+      "execution_time": 1.5974044799804688e-05,
+      "error_message": null,
+      "details": {
+        "pipeline_stats": {
+          "total_processes": 0,
+          "successful_processes": 0,
+          "failed_processes": 0,
+          "success_rate": 0.0,
+          "active_processes": 0,
+          "average_duration": 0.0,
+          "reliability_metrics": {
+            "circuit_breaker": {
+              "name": "neo4j_operations",
+              "state": "open",
+              "total_requests": 6,
+              "successful_requests": 1,
+              "failed_requests": 5,
+              "failure_rate": 0.8333333333333334,
+              "consecutive_failures": 0,
+              "consecutive_successes": 1,
+              "last_failure_time": "2025-07-10T23:16:36.847598",
+              "last_success_time": "2025-07-10T23:16:36.847797",
+              "state_changes": 1
+            },
+            "dead_letter_queue": {
+              "failed_operations": 2,
+              "manual_review_queue": 0,
+              "ready_for_retry": 0,
+              "processing_enabled": true,
+              "background_processor_running": true
+            }
+          }
+        },
+        "integration_confirmed": true
+      }
+    },
+    {
+      "test_name": "Complete Multi-modal Workflow",
+      "passed": true,
+      "description": "Complete multi-modal workflow with all Phase 2 enhancements",
+      "execution_time": 1.4781951904296875e-05,
+      "error_message": null,
+      "details": {
+        "visual_citations": {
+          "total_citations": 0,
+          "preservation_status_breakdown": {},
+          "entity_links_count": 0,
+          "integrity_verified_count": 0,
+          "neo4j_nodes_created": 0,
+          "failed_extractions": 0,
+          "storage_path": "data/visual_citations",
+          "last_updated": "2025-07-10T23:16:36.848709"
+        },
+        "entity_deduplication": {
+          "statistics": {},
+          "total_entities_processed": 0,
+          "duplicates_found": 0,
+          "entities_merged": 0,
+          "canonical_names_created": 0,
+          "patterns_configured": 5,
+          "equipment_models": 3,
+          "procedure_patterns": 3,
+          "brand_aliases": 8,
+          "last_updated": "2025-07-10T23:16:36.848712"
+        },
+        "integrity_verification": {
+          "recent_reports": [
+            {
+              "report_id": "integrity_test_operation_bcc2194f-d8b5-4c08-ab85-1da81a0fdd71_1752207396",
+              "bridge_operation_id": "test_operation_bcc2194f-d8b5-4c08-ab85-1da81a0fdd71",
+              "verification_timestamp": "2025-07-10T23:16:36.846891",
+              "overall_status": "error",
+              "total_issues": 0,
+              "critical_issues": 0,
+              "repaired_issues": 0
+            },
+            {
+              "report_id": "integrity_test_operation_5bff4d42-ac98-44f6-866f-7de260f30cee_1752207247",
+              "bridge_operation_id": "test_operation_5bff4d42-ac98-44f6-866f-7de260f30cee",
+              "verification_timestamp": "2025-07-10T23:14:07.048804",
+              "overall_status": "error",
+              "total_issues": 0,
+              "critical_issues": 0,
+              "repaired_issues": 0
+            }
+          ],
+          "summary_stats": {
+            "total_reports": 2,
+            "passed_reports": 0,
+            "failed_reports": 0,
+            "success_rate": 0.0
+          },
+          "overall_health": "poor",
+          "last_updated": "2025-07-10T23:16:36.848718"
+        }
+      }
+    },
+    {
+      "test_name": "Backwards Compatibility",
+      "passed": true,
+      "description": "Backwards compatibility maintained with existing systems",
+      "execution_time": 1.0013580322265625e-05,
+      "error_message": null,
+      "details": {
+        "pipeline_stats": {
+          "total_processes": 0,
+          "successful_processes": 0,
+          "failed_processes": 0,
+          "success_rate": 0.0,
+          "active_processes": 0,
+          "average_duration": 0.0,
+          "reliability_metrics": {
+            "circuit_breaker": {
+              "name": "neo4j_operations",
+              "state": "open",
+              "total_requests": 6,
+              "successful_requests": 1,
+              "failed_requests": 5,
+              "failure_rate": 0.8333333333333334,
+              "consecutive_failures": 0,
+              "consecutive_successes": 1,
+              "last_failure_time": "2025-07-10T23:16:36.847598",
+              "last_success_time": "2025-07-10T23:16:36.847797",
+              "state_changes": 1
+            },
+            "dead_letter_queue": {
+              "failed_operations": 2,
+              "manual_review_queue": 0,
+              "ready_for_retry": 0,
+              "processing_enabled": true,
+              "background_processor_running": true
+            }
+          }
+        },
+        "missing_stats": [],
+        "compatibility_confirmed": true
+      }
+    },
+    {
+      "test_name": "Performance Impact",
+      "passed": true,
+      "description": "Performance impact of Phase 2 enhancements is acceptable",
+      "execution_time": 1.2159347534179688e-05,
+      "error_message": null,
+      "details": {
+        "total_time": 1.0013580322265625e-05,
+        "performance_threshold": 5.0,
+        "performance_acceptable": true
+      }
+    },
+    {
+      "test_name": "Error Recovery Integration",
+      "passed": true,
+      "description": "Error recovery integration with reliability infrastructure",
+      "execution_time": 9.298324584960938e-06,
+      "error_message": null,
+      "details": {
+        "circuit_breaker_metrics": {
+          "name": "neo4j_operations",
+          "state": "open",
+          "total_requests": 6,
+          "successful_requests": 1,
+          "failed_requests": 5,
+          "failure_rate": 0.8333333333333334,
+          "consecutive_failures": 0,
+          "consecutive_successes": 1,
+          "last_failure_time": "2025-07-10T23:16:36.847598",
+          "last_success_time": "2025-07-10T23:16:36.847797",
+          "state_changes": 1
+        },
+        "dead_letter_queue_status": {
+          "failed_operations": 2,
+          "manual_review_queue": 0,
+          "ready_for_retry": 0,
+          "processing_enabled": true,
+          "background_processor_running": true
+        },
+        "integration_working": true
+      }
+    }
+  ],
+  "recommendations": [
+    "Address 2 failed tests before production deployment",
+    "Review visual citation preservation system implementation",
+    "Optimize QSR entity deduplication patterns and thresholds"
+  ],
+  "test_metadata": {
+    "test_start_time": "2025-07-10T23:16:36.845321",
+    "test_end_time": "2025-07-10T23:16:36.848861",
+    "total_duration": 0.003541
+  }
+}

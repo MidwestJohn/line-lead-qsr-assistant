@@ -1,0 +1,170 @@
+[
+  {
+    "event_id": "manual_1752210283",
+    "trigger": "manual_override",
+    "from_mode": "normal",
+    "to_mode": "local_queue",
+    "timestamp": "2025-07-11T00:04:43.287320",
+    "health_metrics": {},
+    "context": {
+      "reason": "test_degradation_detection",
+      "manual": true
+    }
+  },
+  {
+    "event_id": "manual_1752210283",
+    "trigger": "manual_override",
+    "from_mode": "local_queue",
+    "to_mode": "normal",
+    "timestamp": "2025-07-11T00:04:43.289289",
+    "health_metrics": {},
+    "context": {
+      "reason": "test_reset",
+      "manual": true
+    }
+  },
+  {
+    "event_id": "manual_1752210283",
+    "trigger": "manual_override",
+    "from_mode": "normal",
+    "to_mode": "local_queue",
+    "timestamp": "2025-07-11T00:04:43.290572",
+    "health_metrics": {},
+    "context": {
+      "reason": "test_local_queue",
+      "manual": true
+    }
+  },
+  {
+    "event_id": "manual_1752210283",
+    "trigger": "manual_override",
+    "from_mode": "local_queue",
+    "to_mode": "normal",
+    "timestamp": "2025-07-11T00:04:43.291939",
+    "health_metrics": {},
+    "context": {
+      "reason": "test_reset",
+      "manual": true
+    }
+  },
+  {
+    "event_id": "manual_1752210283",
+    "trigger": "manual_override",
+    "from_mode": "normal",
+    "to_mode": "memory_constrained",
+    "timestamp": "2025-07-11T00:04:43.292168",
+    "health_metrics": {},
+    "context": {
+      "reason": "test_memory_constrained",
+      "manual": true
+    }
+  },
+  {
+    "event_id": "manual_1752210283",
+    "trigger": "manual_override",
+    "from_mode": "memory_constrained",
+    "to_mode": "normal",
+    "timestamp": "2025-07-11T00:04:43.292344",
+    "health_metrics": {},
+    "context": {
+      "reason": "test_reset",
+      "manual": true
+    }
+  },
+  {
+    "event_id": "manual_1752210283",
+    "trigger": "manual_override",
+    "from_mode": "normal",
+    "to_mode": "selective_processing",
+    "timestamp": "2025-07-11T00:04:43.292554",
+    "health_metrics": {},
+    "context": {
+      "reason": "test_selective_processing",
+      "manual": true
+    }
+  },
+  {
+    "event_id": "manual_1752210283",
+    "trigger": "manual_override",
+    "from_mode": "selective_processing",
+    "to_mode": "normal",
+    "timestamp": "2025-07-11T00:04:43.294034",
+    "health_metrics": {},
+    "context": {
+      "reason": "test_reset",
+      "manual": true
+    }
+  },
+  {
+    "event_id": "manual_1752210283",
+    "trigger": "manual_override",
+    "from_mode": "normal",
+    "to_mode": "local_queue",
+    "timestamp": "2025-07-11T00:04:43.294412",
+    "health_metrics": {},
+    "context": {
+      "reason": "test_data_integrity",
+      "manual": true
+    }
+  },
+  {
+    "event_id": "manual_1752210283",
+    "trigger": "manual_override",
+    "from_mode": "local_queue",
+    "to_mode": "normal",
+    "timestamp": "2025-07-11T00:04:43.295098",
+    "health_metrics": {},
+    "context": {
+      "reason": "test_reset",
+      "manual": true
+    }
+  },
+  {
+    "event_id": "manual_1752210283",
+    "trigger": "manual_override",
+    "from_mode": "normal",
+    "to_mode": "local_queue",
+    "timestamp": "2025-07-11T00:04:43.300388",
+    "health_metrics": {},
+    "context": {
+      "reason": "security_integration_test",
+      "manual": true
+    }
+  },
+  {
+    "event_id": "manual_1752210283",
+    "trigger": "manual_override",
+    "from_mode": "local_queue",
+    "to_mode": "normal",
+    "timestamp": "2025-07-11T00:04:43.300650",
+    "health_metrics": {},
+    "context": {
+      "reason": "test_reset",
+      "manual": true
+    }
+  },
+  {
+    "event_id": "manual_1752210283",
+    "trigger": "manual_override",
+    "from_mode": "normal",
+    "to_mode": "memory_constrained",
+    "timestamp": "2025-07-11T00:04:43.523649",
+    "health_metrics": {},
+    "context": {
+      "reason": "reliability_test",
+      "manual": true
+    }
+  },
+  {
+    "event_id": "manual_1752210283",
+    "trigger": "manual_override",
+    "from_mode": "memory_constrained",
+    "to_mode": "normal",
+    "timestamp": "2025-07-11T00:04:43.525877",
+    "health_metrics": {},
+    "context": {
+      "reason": "reliability_test_reset",
+      "manual": true
+    }
+  }
+]
