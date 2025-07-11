@@ -1,0 +1,73 @@
+{
+  "thresholds": {
+    "processing_time_avg": {
+      "warning_threshold": 300.0,
+      "critical_threshold": 600.0,
+      "operator": "greater_than",
+      "duration_minutes": 5,
+      "enabled": true
+    },
+    "success_rate": {
+      "warning_threshold": 0.95,
+      "critical_threshold": 0.9,
+      "operator": "less_than",
+      "duration_minutes": 10,
+      "enabled": true
+    },
+    "memory_usage_percent": {
+      "warning_threshold": 80.0,
+      "critical_threshold": 90.0,
+      "operator": "greater_than",
+      "duration_minutes": 5,
+      "enabled": true
+    },
+    "queue_depth": {
+      "warning_threshold": 50,
+      "critical_threshold": 100,
+      "operator": "greater_than",
+      "duration_minutes": 3,
+      "enabled": true
+    },
+    "stuck_files_count": {
+      "warning_threshold": 3,
+      "critical_threshold": 5,
+      "operator": "greater_than",
+      "duration_minutes": 5,
+      "enabled": true
+    },
+    "neo4j_response_time": {
+      "warning_threshold": 5.0,
+      "critical_threshold": 10.0,
+      "operator": "greater_than",
+      "duration_minutes": 5,
+      "enabled": true
+    },
+    "error_rate": {
+      "warning_threshold": 0.05,
+      "critical_threshold": 0.1,
+      "operator": "greater_than",
+      "duration_minutes": 10,
+      "enabled": true
+    },
+    "test_metric": {
+      "warning_threshold": 50.0,
+      "critical_threshold": 80.0,
+      "operator": "greater_than",
+      "duration_minutes": 1,
+      "enabled": true
+    }
+  },
+  "collection_intervals": {
+    "processing_time": 30,
+    "success_rate": 60,
+    "neo4j_health": 60,
+    "memory_usage": 30,
+    "queue_depth": 30,
+    "connection_health": 60,
+    "stuck_files": 120,
+    "throughput": 60,
+    "error_rate": 60
+  },
+  "monitoring_enabled": true,
+  "last_updated": "2025-07-10T23:40:30.812812"
+}

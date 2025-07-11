@@ -1,0 +1,36 @@
+{
+  "report_id": "d3757ed8-354d-4f77-8669-3f7d16e84b3e",
+  "framework": "soc2",
+  "period_start": "2025-06-11T00:04:43.295839",
+  "period_end": "2025-07-11T00:04:43.295840",
+  "generated_at": "2025-07-11T00:04:43.296423",
+  "compliance_score": 70.0,
+  "audit_events": 0,
+  "violations": 0,
+  "recommendations": [
+    "Implement regular security awareness training",
+    "Review and update access control policies",
+    "Establish incident response procedures"
+  ],
+  "details": {
+    "audit_summary": {
+      "total_events": 0,
+      "event_types": {},
+      "user_activity": {},
+      "risk_distribution": {}
+    },
+    "violation_summary": {
+      "total_violations": 0,
+      "by_severity": {},
+      "by_type": {},
+      "by_user": {}
+    },
+    "compliance_metrics": {
+      "security_controls": {
+        "access_logging": 0,
+        "configuration_changes": 0,
+        "data_access": 0
+      }
+    }
+  }
+}

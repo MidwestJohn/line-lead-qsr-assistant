@@ -1,0 +1,247 @@
+[
+  {
+    "report_id": "integrity_test_operation_5bff4d42-ac98-44f6-866f-7de260f30cee_1752207247",
+    "bridge_operation_id": "test_operation_5bff4d42-ac98-44f6-866f-7de260f30cee",
+    "verification_timestamp": "2025-07-10T23:14:07.048804",
+    "overall_status": "error",
+    "check_results": [
+      {
+        "check_type": "entity_relationship_consistency",
+        "status": "error",
+        "message": "Check failed: Cannot connect to Neo4j",
+        "details": {
+          "error": "Cannot connect to Neo4j"
+        },
+        "issues_found": [],
+        "execution_time": 0.000322,
+        "recommendations": []
+      },
+      {
+        "check_type": "visual_citation_links",
+        "status": "pass",
+        "message": "Visual citation links check: 0 issues found",
+        "details": {
+          "total_citations": 0,
+          "preservation_status_breakdown": {},
+          "entity_links_count": 0,
+          "integrity_verified_count": 0,
+          "neo4j_nodes_created": 0,
+          "storage_path": "data/visual_citations",
+          "last_updated": "2025-07-10T23:14:07.049224"
+        },
+        "issues_found": [],
+        "execution_time": 1.2e-05,
+        "recommendations": []
+      },
+      {
+        "check_type": "entity_deduplication_success",
+        "status": "error",
+        "message": "Check failed: Cannot connect to Neo4j",
+        "details": {
+          "error": "Cannot connect to Neo4j"
+        },
+        "issues_found": [],
+        "execution_time": 0.000174,
+        "recommendations": []
+      },
+      {
+        "check_type": "document_completeness",
+        "status": "error",
+        "message": "Check failed: Cannot connect to Neo4j",
+        "details": {
+          "error": "Cannot connect to Neo4j"
+        },
+        "issues_found": [],
+        "execution_time": 0.00014,
+        "recommendations": []
+      },
+      {
+        "check_type": "node_count_verification",
+        "status": "error",
+        "message": "Check failed: Cannot connect to Neo4j",
+        "details": {
+          "error": "Cannot connect to Neo4j"
+        },
+        "issues_found": [],
+        "execution_time": 0.000131,
+        "recommendations": []
+      },
+      {
+        "check_type": "relationship_count_verification",
+        "status": "error",
+        "message": "Check failed: Cannot connect to Neo4j",
+        "details": {
+          "error": "Cannot connect to Neo4j"
+        },
+        "issues_found": [],
+        "execution_time": 0.000199,
+        "recommendations": []
+      },
+      {
+        "check_type": "orphaned_entities",
+        "status": "error",
+        "message": "Check failed: Cannot connect to Neo4j",
+        "details": {
+          "error": "Cannot connect to Neo4j"
+        },
+        "issues_found": [],
+        "execution_time": 2.6e-05,
+        "recommendations": []
+      },
+      {
+        "check_type": "duplicate_relationships",
+        "status": "error",
+        "message": "Check failed: Cannot connect to Neo4j",
+        "details": {
+          "error": "Cannot connect to Neo4j"
+        },
+        "issues_found": [],
+        "execution_time": 1.9e-05,
+        "recommendations": []
+      },
+      {
+        "check_type": "referential_integrity",
+        "status": "error",
+        "message": "Check failed: Cannot connect to Neo4j",
+        "details": {
+          "error": "Cannot connect to Neo4j"
+        },
+        "issues_found": [],
+        "execution_time": 1.8e-05,
+        "recommendations": []
+      }
+    ],
+    "total_issues": 0,
+    "critical_issues": 0,
+    "repaired_issues": 0,
+    "processing_metadata": {
+      "verification_duration": 0.001208,
+      "auto_repair_enabled": false,
+      "expected_counts": {},
+      "checks_performed": 9
+    }
+  },
+  {
+    "report_id": "integrity_test_operation_bcc2194f-d8b5-4c08-ab85-1da81a0fdd71_1752207396",
+    "bridge_operation_id": "test_operation_bcc2194f-d8b5-4c08-ab85-1da81a0fdd71",
+    "verification_timestamp": "2025-07-10T23:16:36.846891",
+    "overall_status": "error",
+    "check_results": [
+      {
+        "check_type": "entity_relationship_consistency",
+        "status": "error",
+        "message": "Check failed: Cannot connect to Neo4j",
+        "details": {
+          "error": "Cannot connect to Neo4j"
+        },
+        "issues_found": [],
+        "execution_time": 0.000171,
+        "recommendations": []
+      },
+      {
+        "check_type": "visual_citation_links",
+        "status": "pass",
+        "message": "Visual citation links check: 0 issues found",
+        "details": {
+          "total_citations": 0,
+          "preservation_status_breakdown": {},
+          "entity_links_count": 0,
+          "integrity_verified_count": 0,
+          "neo4j_nodes_created": 0,
+          "failed_extractions": 0,
+          "storage_path": "data/visual_citations",
+          "last_updated": "2025-07-10T23:16:36.847119"
+        },
+        "issues_found": [],
+        "execution_time": 1.2e-05,
+        "recommendations": []
+      },
+      {
+        "check_type": "entity_deduplication_success",
+        "status": "error",
+        "message": "Check failed: Cannot connect to Neo4j",
+        "details": {
+          "error": "Cannot connect to Neo4j"
+        },
+        "issues_found": [],
+        "execution_time": 0.00018,
+        "recommendations": []
+      },
+      {
+        "check_type": "document_completeness",
+        "status": "error",
+        "message": "Check failed: Cannot connect to Neo4j",
+        "details": {
+          "error": "Cannot connect to Neo4j"
+        },
+        "issues_found": [],
+        "execution_time": 0.000163,
+        "recommendations": []
+      },
+      {
+        "check_type": "node_count_verification",
+        "status": "error",
+        "message": "Check failed: Cannot connect to Neo4j",
+        "details": {
+          "error": "Cannot connect to Neo4j"
+        },
+        "issues_found": [],
+        "execution_time": 0.000182,
+        "recommendations": []
+      },
+      {
+        "check_type": "relationship_count_verification",
+        "status": "error",
+        "message": "Check failed: Cannot connect to Neo4j",
+        "details": {
+          "error": "Cannot connect to Neo4j"
+        },
+        "issues_found": [],
+        "execution_time": 2.2e-05,
+        "recommendations": []
+      },
+      {
+        "check_type": "orphaned_entities",
+        "status": "error",
+        "message": "Check failed: Cannot connect to Neo4j",
+        "details": {
+          "error": "Cannot connect to Neo4j"
+        },
+        "issues_found": [],
+        "execution_time": 2.1e-05,
+        "recommendations": []
+      },
+      {
+        "check_type": "duplicate_relationships",
+        "status": "error",
+        "message": "Check failed: Cannot connect to Neo4j",
+        "details": {
+          "error": "Cannot connect to Neo4j"
+        },
+        "issues_found": [],
+        "execution_time": 1.8e-05,
+        "recommendations": []
+      },
+      {
+        "check_type": "referential_integrity",
+        "status": "error",
+        "message": "Check failed: Cannot connect to Neo4j",
+        "details": {
+          "error": "Cannot connect to Neo4j"
+        },
+        "issues_found": [],
+        "execution_time": 1.8e-05,
+        "recommendations": []
+      }
+    ],
+    "total_issues": 0,
+    "critical_issues": 0,
+    "repaired_issues": 0,
+    "processing_metadata": {
+      "verification_duration": 0.000913,
+      "auto_repair_enabled": false,
+      "expected_counts": {},
+      "checks_performed": 9
+    }
+  }
+]

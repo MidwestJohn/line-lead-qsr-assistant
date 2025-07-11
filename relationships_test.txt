@@ -1,0 +1,1 @@
+Taylor fryer requires daily cleaning procedure. Equipment-procedure relationships show fryer connects to cleaning protocol. Safety-equipment connections include fryer requires safety shutdown before maintenance. Temperature monitoring relates to fryer operation safety.

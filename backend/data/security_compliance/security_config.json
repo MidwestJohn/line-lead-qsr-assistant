@@ -1,0 +1,24 @@
+{
+  "monitoring_enabled": true,
+  "violation_detection_enabled": true,
+  "data_sanitization_enabled": true,
+  "rate_limits": {
+    "document_upload": [
+      10,
+      300
+    ],
+    "document_query": [
+      100,
+      60
+    ],
+    "system_config": [
+      5,
+      3600
+    ],
+    "data_export": [
+      3,
+      3600
+    ]
+  },
+  "last_updated": "2025-07-11T00:04:43.297105"
+}

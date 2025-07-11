@@ -80,7 +80,19 @@ class APIService {
         return result.data;
     }
 
-    async uploadFile(file, onProgress = null) {
+    async sendMultiModalMessage(message, currentEquipment = null, enableCitations = true) {
+        const result = await this.post('/voice-with-multimodal-citations', {
+            message,
+            current_equipment: currentEquipment,
+            enable_citations: enableCitations
+        });
+        if (!result.success) {
+            throw new Error(`Multimodal chat failed: ${result.error}`);
+        }
+        return result.data;
+    }
+
+    async uploadFile(file) {
         const formData = new FormData();
         formData.append('file', file);
 
@@ -94,6 +106,41 @@ class APIService {
             console.error('File upload failed:', error);
             throw error;
         }
+    }
+
+    async uploadFileWithProgress(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            // Use the simple, reliable upload endpoint
+            const result = await this.postFormData('/upload-simple', formData);
+            if (!result.success) {
+                throw new Error(`Simple upload failed: ${result.error}`);
+            }
+            return result;
+        } catch (error) {
+            console.error('Simple file upload failed:', error);
+            throw error;
+        }
+    }
+
+    async getProcessingStatus(processId) {
+        const result = await this.get(`/api/v2/processing-status/${processId}`);
+        if (!result.success) {
+            console.warn('Failed to get processing status:', result.error);
+            return null;
+        }
+        return result.data;
+    }
+
+    async getProcessingResult(processId) {
+        const result = await this.get(`/api/v2/processing-result/${processId}`);
+        if (!result.success) {
+            console.warn('Failed to get processing result:', result.error);
+            return null;
+        }
+        return result.data;
     }
 
     async getDocuments() {

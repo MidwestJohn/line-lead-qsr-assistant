@@ -1,0 +1,19 @@
+{
+  "processing.batch_size": {
+    "min": 1,
+    "max": 10,
+    "warning_threshold": 5,
+    "performance_impact": "high"
+  },
+  "database.connection_pool_size": {
+    "min": 1,
+    "max": 50,
+    "recommended_min": 3,
+    "recommended_max": 20
+  },
+  "monitoring.metrics_collection_interval": {
+    "min": 10,
+    "max": 300,
+    "production_max": 60
+  }
+}

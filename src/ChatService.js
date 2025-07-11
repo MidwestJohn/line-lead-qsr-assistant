@@ -178,6 +178,7 @@ class ChatService {
       let lastChunkTime = Date.now();
 
       try {
+        // eslint-disable-next-line no-constant-condition
         while (true) {
           // Check for data timeout (no chunks received for 10 seconds)
           if (Date.now() - lastChunkTime > 10000) {
@@ -306,6 +307,78 @@ class ChatService {
         lastError = this.categorizeError(error);
         
         if (attempt === maxRetries) {
+          break;
+        }
+      }
+    }
+
+    return {
+      success: false,
+      error: lastError,
+      attempts: maxRetries + 1
+    };
+  }
+
+  // Send multimodal message with visual citations
+  async sendMultiModalMessage(message, options = {}) {
+    const {
+      currentEquipment = null,
+      enableCitations = true,
+      maxRetries = 3,
+      timeout = this.defaultTimeout,
+      onRetry = null,
+      onProgress = null
+    } = options;
+
+    let lastError = null;
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          const delay = Math.pow(2, attempt - 1) * 1000;
+          
+          if (onRetry) {
+            onRetry(attempt, maxRetries, delay);
+          }
+          
+          await this.delay(delay);
+        }
+
+        if (onProgress) {
+          onProgress('sending');
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+        // Use the multimodal API service
+        const data = await apiService.sendMultiModalMessage(message, currentEquipment, enableCitations);
+        clearTimeout(timeoutId);
+
+        if (onProgress) {
+          onProgress('processing');
+        }
+
+        if (onProgress) {
+          onProgress('complete');
+        }
+
+        return {
+          success: true,
+          data: data,
+          attempts: attempt + 1
+        };
+
+      } catch (error) {
+        lastError = error;
+        console.error(`MultiModal message attempt ${attempt + 1} failed:`, error);
+
+        const errorDetails = this.parseError(error);
+        if (errorDetails.type === 'network' && attempt < maxRetries) {
+          // Retry network errors
+          continue;
+        } else {
+          // Don't retry other types of errors
           break;
         }
       }

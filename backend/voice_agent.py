@@ -237,11 +237,17 @@ except Exception as e:
     voice_agent = None
 
 class VoiceOrchestrator:
-    """Intelligent voice conversation orchestrator using PydanticAI"""
+    """Intelligent voice conversation orchestrator using PydanticAI with Neo4j graph context"""
     
     def __init__(self):
         self.active_contexts: Dict[str, ConversationContext] = {}
         self.default_session = "default"
+        self.voice_graph_service = None  # Will be set by main.py startup
+    
+    def set_voice_graph_service(self, voice_graph_service):
+        """Set the voice graph query service for Neo4j integration"""
+        self.voice_graph_service = voice_graph_service
+        logger.info("✅ Voice graph service integrated with voice orchestrator")
     
     def clear_all_contexts(self):
         """Clear all conversation contexts (useful for model updates)"""
@@ -268,11 +274,49 @@ class VoiceOrchestrator:
         relevant_docs: List[Dict] = None,
         session_id: str = None
     ) -> VoiceResponse:
-        """Process voice message with advanced intelligent orchestration"""
+        """Process voice message with advanced intelligent orchestration and Neo4j graph context"""
         
         context = self.get_context(session_id)
+        session_id = session_id or self.default_session
         
-        # Add user message to conversation history
+        # STEP 1: Check for graph-specific voice commands first
+        graph_response = None
+        if self.voice_graph_service:
+            try:
+                graph_response = await self.voice_graph_service.process_voice_query_with_graph_context(
+                    message, session_id
+                )
+                
+                # If graph service found relevant content, use it as context for LLM processing
+                if graph_response and graph_response.get("context_maintained"):
+                    logger.info(f"Graph service found context for: {message[:50]}...")
+                    
+                    # Update conversation context with graph information
+                    if graph_response.get("equipment_context"):
+                        context.current_entity = graph_response["equipment_context"]
+                        if graph_response["equipment_context"] not in context.entity_history:
+                            context.entity_history.append(graph_response["equipment_context"])
+                    
+                    # Use graph response as enhanced context for LLM processing
+                    # Rather than returning raw content, we'll pass it to the LLM below
+                    enhanced_context = {
+                        "graph_context": graph_response.get("response", ""),
+                        "source_content": graph_response.get("source_content", []),
+                        "page_references": graph_response.get("page_references", []),
+                        "visual_citations": graph_response.get("visual_citations", []),
+                        "equipment_context": graph_response.get("equipment_context"),
+                        "query_type": graph_response.get("query_type", "general")
+                    }
+                    
+                    logger.info(f"Enhanced context prepared with {len(enhanced_context.get('source_content', []))} source chunks")
+                else:
+                    enhanced_context = None
+                    
+            except Exception as e:
+                logger.error(f"Graph service error: {e}")
+                # Fall back to regular processing
+        
+        # STEP 2: Add user message to conversation history
         context.conversation_history.append({
             "user": message,
             "assistant": "",  # Will be filled after AI response
@@ -325,7 +369,7 @@ class VoiceOrchestrator:
                 logger.warning("PydanticAI voice agent not available, using fallback")
                 return self._fallback_response(message, context)
             
-            # Enhanced prompt with context (avoiding complex conversation history that causes issues)
+            # Enhanced prompt with context and graph data
             enhanced_prompt = f"""
 VOICE MESSAGE: "{message}"
 
@@ -345,6 +389,9 @@ CONVERSATION CONTEXT:
 - Messages exchanged: {len(context.conversation_history)}
 - Entity history: {', '.join(context.entity_history) if context.entity_history else 'None'}
 - Topics covered: {', '.join(context.topics_covered) if context.topics_covered else 'None'}
+
+ENHANCED KNOWLEDGE BASE CONTEXT:
+{self._format_enhanced_context(enhanced_context) if enhanced_context else "No specific equipment documentation found."}
 
 RELEVANT DOCUMENTS:
 {json.dumps(relevant_docs or [], indent=2)}
@@ -391,6 +438,46 @@ RESPOND WITH ALL REQUIRED FIELDS INCLUDING:
             else:
                 # Enhanced error recovery with context preservation
                 return self._enhanced_error_recovery(message, context)
+    
+    def _format_enhanced_context(self, enhanced_context: Dict[str, Any]) -> str:
+        """Format enhanced context from graph service for LLM processing"""
+        if not enhanced_context:
+            return "No specific context available."
+        
+        context_parts = []
+        
+        # Add query type context
+        query_type = enhanced_context.get("query_type", "general")
+        if query_type == "temperature":
+            context_parts.append("QUERY TYPE: Temperature and food safety requirements")
+        elif query_type == "safety":
+            context_parts.append("QUERY TYPE: Safety procedures and guidelines")
+        
+        # Add source content (most important)
+        source_content = enhanced_context.get("source_content", [])
+        if source_content:
+            context_parts.append("RELEVANT MANUAL CONTENT:")
+            for i, content in enumerate(source_content[:3], 1):  # Top 3 chunks
+                # Clean and format the content
+                clean_content = content.replace("\n", " ").strip()
+                if len(clean_content) > 300:
+                    clean_content = clean_content[:300] + "..."
+                context_parts.append(f"{i}. {clean_content}")
+        
+        # Add page references
+        page_refs = enhanced_context.get("page_references", [])
+        if page_refs:
+            context_parts.append(f"PAGE REFERENCES: {', '.join(map(str, page_refs))}")
+        
+        # Add equipment context
+        equipment = enhanced_context.get("equipment_context")
+        if equipment:
+            context_parts.append(f"EQUIPMENT CONTEXT: {equipment}")
+        
+        # Add instruction for LLM
+        context_parts.append("\nINSTRUCTION: Use the above manual content to provide a specific, helpful answer about temperature requirements or safety procedures. Extract specific numbers, temperatures, and procedures from the manual content. Do not repeat the raw manual text - synthesize it into a clear, conversational response.")
+        
+        return "\n".join(context_parts)
     
     def _fallback_response(self, message: str, context: ConversationContext) -> VoiceResponse:
         """Fallback response when PydanticAI agent isn't available"""
