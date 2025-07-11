@@ -249,17 +249,22 @@ app = FastAPI(
 )
 
 # Configure CORS
+CORS_ORIGINS = [
+    "https://app.linelead.io",                # Your custom domain
+    "https://linelead.io",                    # Legacy domain (keeping for compatibility)
+    "https://line-lead-qsr-assistant.vercel.app",  # Default Vercel URL
+    "https://line-lead-qsr-assistant-qz7ni39d8-johninniger-projects.vercel.app",  # Preview deployment
+    "http://localhost:3000",                  # Local development (default)
+    "http://localhost:3001",                  # Local development (alternative port)
+    "http://localhost:8000",                  # Local backend testing
+]
+
+# Debug: Log CORS origins for troubleshooting
+logger.info(f"CORS origins configured: {CORS_ORIGINS}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://app.linelead.io",                # Your custom domain
-        "https://linelead.io",                    # Legacy domain (keeping for compatibility)
-        "https://line-lead-qsr-assistant.vercel.app",  # Default Vercel URL
-        "https://line-lead-qsr-assistant-qz7ni39d8-johninniger-projects.vercel.app",  # Preview deployment
-        "http://localhost:3000",                  # Local development (default)
-        "http://localhost:3001",                  # Local development (alternative port)
-        "http://localhost:8000",                  # Local backend testing
-    ],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -395,6 +400,16 @@ class ChatVoiceWithAudioResponse(BaseModel):
     suggested_follow_ups: List[str] = []
 
 # Enhanced Health Check with Connection Management
+@app.get("/debug/cors")
+async def debug_cors():
+    """Debug endpoint to check CORS configuration"""
+    return {
+        "cors_origins": CORS_ORIGINS,
+        "timestamp": datetime.datetime.now().isoformat(),
+        "commit_hash": "624bb5b",
+        "cors_middleware_active": True
+    }
+
 @app.get("/health", response_model=HealthResponse)
 async def health_check(request: Request):
     """Comprehensive health check with connection monitoring and keep-alive"""
