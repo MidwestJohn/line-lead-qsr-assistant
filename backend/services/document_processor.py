@@ -31,7 +31,31 @@ class DocumentProcessor:
     
     async def process_pdf_basic(self, file_path: str) -> ProcessedContent:
         """Process PDF using existing PyPDF2 method."""
-        from backend.main import extract_text_from_pdf  # Use existing function
+        try:
+            from backend.main import extract_text_from_pdf  # Use existing function
+        except ImportError:
+            # Try alternative import path
+            try:
+                from main import extract_text_from_pdf
+            except ImportError:
+                # Use basic PyPDF2 extraction as fallback
+                import PyPDF2
+                
+                def extract_text_from_pdf(file_path_or_content):
+                    if isinstance(file_path_or_content, str):
+                        with open(file_path_or_content, 'rb') as file:
+                            reader = PyPDF2.PdfReader(file)
+                            text = ""
+                            for page in reader.pages:
+                                text += page.extract_text()
+                            return text
+                    else:
+                        # Assume it's content bytes
+                        reader = PyPDF2.PdfReader(file_path_or_content)
+                        text = ""
+                        for page in reader.pages:
+                            text += page.extract_text()
+                        return text
         
         text_content = extract_text_from_pdf(file_path)
         

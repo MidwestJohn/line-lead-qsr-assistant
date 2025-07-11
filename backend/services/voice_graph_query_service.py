@@ -315,7 +315,7 @@ class VoiceGraphQueryService:
     
     async def _handle_safety_query(self, analysis: Dict, session_id: str) -> Dict[str, Any]:
         """
-        Handle safety-related queries
+        Handle safety-related queries with multi-modal enhanced data
         """
         context = self.get_conversation_context(session_id)
         current_equipment = context.get("current_equipment")
@@ -328,30 +328,108 @@ class VoiceGraphQueryService:
         
         try:
             with self.neo4j_service.driver.session() as session:
+                # Enhanced safety query to use multi-modal data from New Crew Handbook
                 safety_query = """
-                MATCH (s:Safety)-[r:SAFETY_WARNING_FOR]->(e:Equipment)
-                WHERE e.name = $equipment_name OR $equipment_name IS NULL
-                RETURN s.name as safety_item, s.description as safety_description, e.name as equipment_name
+                MATCH (n)
+                WHERE (n.name CONTAINS "safety" OR n.name CONTAINS "temperature" OR n.name CONTAINS "warning" OR n.name CONTAINS "procedure")
+                AND n.document_source CONTAINS "New-Crew-Handbook"
+                RETURN n.name as safety_item, 
+                       n.description as safety_description, 
+                       n.type as entity_type,
+                       n.visual_refs as visual_refs,
+                       n.page_refs as page_refs,
+                       n.document_source as document
+                ORDER BY size(coalesce(n.visual_refs, [])) DESC
+                LIMIT 10
                 """
                 
                 result = session.run(safety_query, equipment_name=current_equipment)
                 safety_data = [dict(record) for record in result]
                 
                 if safety_data:
-                    safety_items = []
-                    for item in safety_data:
-                        safety_text = item.get("safety_description") or item.get("safety_item")
-                        safety_items.append(safety_text)
+                    # Enhanced approach: Get actual safety content from source documents
+                    from services.enhanced_document_retrieval_service import enhanced_document_retrieval_service
+                    
+                    # Retrieve source content for safety entities
+                    safety_query_text = "safety procedures temperature requirements food safety guidelines"
+                    retrieval_result = await enhanced_document_retrieval_service.retrieve_source_content_for_entities(
+                        safety_data, safety_query_text, max_chunks=2
+                    )
                     
                     equipment_text = f" for the {current_equipment}" if current_equipment else ""
-                    response = f"Here are the safety guidelines{equipment_text}: {self._format_list_for_speech(safety_items)}. Always follow these precautions when working with the equipment."
                     
-                    return {
-                        "response": response,
-                        "safety_guidelines": safety_items,
-                        "context_maintained": True,
-                        "priority": "high"  # Safety information is high priority
-                    }
+                    if retrieval_result["content_available"]:
+                        # Use actual source content for safety guidelines
+                        source_chunks = retrieval_result["source_content"]
+                        visual_citations = retrieval_result["visual_citations"]
+                        
+                        response_parts = [f"Here are the safety guidelines{equipment_text}:"]
+                        
+                        # Add actual safety content from documents
+                        for chunk in source_chunks:
+                            content = chunk["content"]
+                            if len(content) > 250:
+                                content = content[:250] + "..."
+                            response_parts.append(content)
+                        
+                        # Collect page references
+                        page_references = []
+                        for citation in visual_citations:
+                            page_references.extend(citation.get("page_refs", []))
+                        
+                        # Add page references
+                        if page_references:
+                            unique_pages = list(set(page_references))
+                            unique_pages.sort()
+                            if len(unique_pages) <= 3:
+                                response_parts.append(f"See pages {', '.join(map(str, unique_pages))} for complete safety procedures.")
+                        
+                        response_parts.append("Always follow these precautions when working with equipment.")
+                        
+                        return {
+                            "response": " ".join(response_parts),
+                            "source_content": [chunk["content"] for chunk in source_chunks],
+                            "visual_citations": visual_citations,
+                            "page_references": list(set(page_references)),
+                            "multimodal_enhanced": True,
+                            "context_maintained": True,
+                            "priority": "high",
+                            "content_source": "enhanced_retrieval"
+                        }
+                    else:
+                        # Fallback to entity metadata if no source content
+                        safety_items = []
+                        page_references = []
+                        
+                        for item in safety_data:
+                            safety_desc = item.get("safety_description") or item.get("item_description", "")
+                            if safety_desc and len(safety_desc) > 20:
+                                safety_items.append(safety_desc[:200] + "..." if len(safety_desc) > 200 else safety_desc)
+                            
+                            page_refs = item.get("page_refs") or []
+                            page_references.extend(page_refs)
+                        
+                        response_parts = [f"Here are the safety guidelines{equipment_text}:"]
+                        
+                        if safety_items:
+                            response_parts.extend(safety_items[:2])  # Top 2 items
+                        
+                        if page_references:
+                            unique_pages = list(set(page_references))
+                            unique_pages.sort()
+                            response_parts.append(f"See pages {', '.join(map(str, unique_pages))} for complete details.")
+                        
+                        response_parts.append("Always follow these precautions when working with equipment.")
+                        
+                        return {
+                            "response": " ".join(response_parts),
+                            "safety_guidelines": safety_items,
+                            "page_references": list(set(page_references)),
+                            "multimodal_enhanced": True,
+                            "context_maintained": True,
+                            "priority": "high",
+                            "content_source": "entity_metadata"
+                        }
                 else:
                     return {
                         "response": f"I don't have specific safety information{' for the ' + current_equipment if current_equipment else ''} in the system. Please refer to the equipment manual for safety guidelines.",
@@ -368,7 +446,7 @@ class VoiceGraphQueryService:
     
     async def _handle_general_query_with_context(self, query: str, analysis: Dict, session_id: str) -> Dict[str, Any]:
         """
-        Handle general queries with equipment context from the graph
+        Handle general queries with equipment context from the graph, enhanced with multi-modal support
         """
         context = self.get_conversation_context(session_id)
         current_equipment = context.get("current_equipment")
@@ -380,28 +458,150 @@ class VoiceGraphQueryService:
             }
         
         try:
-            # Search for relevant information based on query and current context
+            # Check if this is a temperature-related query
+            query_lower = query.lower()
+            is_temperature_query = any(term in query_lower for term in ["temperature", "temp", "degrees", "hot", "cold", "heating", "cooling"])
+            is_safety_query = any(term in query_lower for term in ["safety", "safe", "danger", "warning", "precaution"])
+            
             with self.neo4j_service.driver.session() as session:
-                # Create a context-aware search query
+                if is_temperature_query or is_safety_query:
+                    # Enhanced query for temperature and safety across ALL documents
+                    enhanced_query = """
+                    MATCH (n)
+                    WHERE (
+                        n.name CONTAINS "temperature" OR 
+                        n.name CONTAINS "safety" OR 
+                        n.name CONTAINS "warning" OR
+                        n.name CONTAINS "procedure" OR
+                        n.name CONTAINS "temp" OR
+                        n.name CONTAINS "heat" OR
+                        n.name CONTAINS "food"
+                    )
+                    RETURN n.name as item_name, 
+                           n.type as item_type,
+                           n.description as item_description,
+                           n.visual_refs as visual_refs,
+                           n.page_refs as page_refs,
+                           n.document_source as document_source,
+                           n.multimodal_enhanced as enhanced
+                    ORDER BY size(coalesce(n.visual_refs, [])) DESC
+                    LIMIT 10
+                    """
+                    
+                    result = session.run(enhanced_query)
+                    items = [dict(record) for record in result]
+                    
+                    if items:
+                        # Enhanced approach: Get actual source document content
+                        from services.enhanced_document_retrieval_service import enhanced_document_retrieval_service
+                        
+                        # Retrieve source content for these entities
+                        retrieval_result = await enhanced_document_retrieval_service.retrieve_source_content_for_entities(
+                            items, query, max_chunks=3
+                        )
+                        
+                        if retrieval_result["content_available"]:
+                            # Use source content to generate natural response
+                            source_chunks = retrieval_result["source_content"]
+                            visual_citations = retrieval_result["visual_citations"]
+                            
+                            # Extract the most relevant content
+                            content_snippets = []
+                            page_refs = []
+                            
+                            for chunk in source_chunks[:2]:  # Top 2 most relevant chunks
+                                content = chunk["content"]
+                                # Clean up content for voice response
+                                if len(content) > 300:
+                                    content = content[:300] + "..."
+                                content_snippets.append(content)
+                            
+                            # Collect page references from visual citations
+                            for citation in visual_citations:
+                                page_refs.extend(citation.get("page_refs", []))
+                            
+                            # Build natural language response
+                            if is_temperature_query:
+                                response_intro = "Here are the temperature requirements for food safety:"
+                            else:
+                                response_intro = "Here are the safety guidelines:"
+                            
+                            response_parts = [response_intro]
+                            
+                            # Add actual document content
+                            for snippet in content_snippets:
+                                response_parts.append(snippet)
+                            
+                            # Add page references if available
+                            if page_refs:
+                                unique_pages = list(set(page_refs))
+                                unique_pages.sort()
+                                if len(unique_pages) <= 3:
+                                    response_parts.append(f"For complete details, see pages {', '.join(map(str, unique_pages))}.")
+                            
+                            return {
+                                "response": " ".join(response_parts),
+                                "source_content": content_snippets,
+                                "page_references": list(set(page_refs)),
+                                "visual_citations": visual_citations,
+                                "multimodal_enhanced": True,
+                                "context_maintained": True,
+                                "query_type": "temperature" if is_temperature_query else "safety",
+                                "content_source": "enhanced_retrieval"
+                            }
+                        else:
+                            # Fallback to entity-based response if no source content
+                            logger.warning("⚠️ No source content available, using entity metadata")
+                            
+                            response_parts = []
+                            page_refs = []
+                            
+                            if is_temperature_query:
+                                response_parts.append("Based on available information about temperature requirements:")
+                            else:
+                                response_parts.append("Based on available safety information:")
+                            
+                            # Use entity descriptions if available
+                            for item in items[:3]:
+                                item_desc = item.get("item_description", "")
+                                if item_desc and len(item_desc) > 20:
+                                    if len(item_desc) > 200:
+                                        item_desc = item_desc[:200] + "..."
+                                    response_parts.append(item_desc)
+                                
+                                # Collect page references
+                                item_pages = item.get("page_refs") or []
+                                page_refs.extend(item_pages)
+                            
+                            # Add page references
+                            if page_refs:
+                                unique_pages = list(set(page_refs))
+                                unique_pages.sort()
+                                response_parts.append(f"See pages {', '.join(map(str, unique_pages))} for complete details.")
+                            
+                            return {
+                                "response": " ".join(response_parts),
+                                "page_references": list(set(page_refs)),
+                                "multimodal_enhanced": True,
+                                "context_maintained": True,
+                                "query_type": "temperature" if is_temperature_query else "safety",
+                                "content_source": "entity_metadata"
+                            }
+                
+                # Fallback to original context-aware search across ALL documents
                 context_query = """
                 MATCH (n)
                 WHERE (
-                    toLower(n.name) CONTAINS $query_term OR 
-                    toLower(n.description) CONTAINS $query_term
+                    n.name CONTAINS $query_term OR 
+                    coalesce(n.description, "") CONTAINS $query_term
                 )
-                AND (
-                    $equipment_name IS NULL OR
-                    EXISTS {
-                        MATCH (n)-[*1..2]-(e:Equipment {name: $equipment_name})
-                    }
-                )
-                OPTIONAL MATCH (n)-[r]-(connected)
                 RETURN n.name as item_name, 
-                       labels(n) as item_types,
+                       n.type as item_type,
                        n.description as item_description,
-                       type(r) as relationship_type,
-                       connected.name as connected_item
-                LIMIT 10
+                       n.visual_refs as visual_refs,
+                       n.page_refs as page_refs,
+                       n.document_source as document_source
+                LIMIT 8
                 """
                 
                 # Extract key terms from query

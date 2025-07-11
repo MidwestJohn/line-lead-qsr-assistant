@@ -223,6 +223,62 @@ class Neo4jService:
             """, limit=limit)
             return [dict(record) for record in result]
     
+    async def get_graph_statistics(self) -> Dict[str, Any]:
+        """Get comprehensive graph statistics for optimization tracking."""
+        try:
+            if not self.connected:
+                self.connect()
+            
+            with self.driver.session() as session:
+                # Get total counts
+                node_result = session.run("MATCH (n) RETURN count(n) as total_nodes")
+                total_nodes = node_result.single()["total_nodes"]
+                
+                rel_result = session.run("MATCH ()-[r]->() RETURN count(r) as total_relationships")  
+                total_relationships = rel_result.single()["total_relationships"]
+                
+                # Get node types (labels)
+                type_result = session.run("""
+                    MATCH (n) 
+                    WITH labels(n) as labels 
+                    UNWIND labels as label
+                    RETURN label, count(*) as count
+                    ORDER BY count DESC
+                """)
+                
+                node_types = {}
+                for record in type_result:
+                    node_types[record["label"]] = record["count"]
+                
+                # Get relationship types
+                rel_type_result = session.run("""
+                    MATCH ()-[r]->()
+                    RETURN type(r) as relationship_type, count(*) as count
+                    ORDER BY count DESC
+                """)
+                
+                relationship_types = {}
+                for record in rel_type_result:
+                    relationship_types[record["relationship_type"]] = record["count"]
+                
+                return {
+                    "total_nodes": total_nodes,
+                    "total_relationships": total_relationships,
+                    "node_types": node_types,
+                    "relationship_types": relationship_types,
+                    "statistics_timestamp": "current"
+                }
+                
+        except Exception as e:
+            logger.error(f"❌ Error getting graph statistics: {e}")
+            return {
+                "total_nodes": 0,
+                "total_relationships": 0,
+                "node_types": {},
+                "relationship_types": {},
+                "error": str(e)
+            }
+    
     def __del__(self):
         """Cleanup on destruction"""
         self.disconnect()

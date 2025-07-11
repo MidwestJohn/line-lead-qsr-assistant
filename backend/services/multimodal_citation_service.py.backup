@@ -52,10 +52,8 @@ class VisualCitation:
         return {
             "citation_id": self.citation_id,
             "type": self.citation_type,
-            "source_document": self.source_document,
-            "page_number": self.page_number,  # Keep for backend compatibility
-            "page": self.page_number,         # Add for frontend compatibility
-            "source": self.source_document,   # Add for frontend compatibility
+            "source": self.source_document,
+            "page": self.page_number,
             "reference": self.reference_text,
             "timing": self.timing,
             "highlight_area": self.highlight_area,
@@ -124,20 +122,6 @@ class MultiModalCitationService:
         try:
             citations = []
             manual_references = []
-            
-            # Check if this is a direct diagram/image request
-            diagram_request_patterns = [
-                "show me a diagram", "show diagram", "diagram of", "image of", 
-                "picture of", "show me the", "visual of", "illustration"
-            ]
-            
-            is_diagram_request = any(pattern in voice_text.lower() for pattern in diagram_request_patterns)
-            
-            if is_diagram_request and current_equipment:
-                # Return available diagrams from cache for this equipment
-                equipment_citations = await self._get_equipment_diagrams(current_equipment)
-                citations.extend(equipment_citations)
-                logger.info(f"📸 Found {len(equipment_citations)} diagrams for equipment request: {current_equipment}")
             
             # Detect reference patterns in voice text
             references = self._detect_references_in_text(voice_text)
@@ -652,25 +636,15 @@ class MultiModalCitationService:
             xref = image_info[0]  # First element is xref
             pix = fitz.Pixmap(page.parent, xref)
             
-            # Handle colorspace conversion safely
-            try:
-                if pix.n <= 4:  # RGB, RGBA, or grayscale
-                    img_data = pix.tobytes("png")
-                else:  # CMYK or other colorspaces
-                    try:
-                        pix1 = fitz.Pixmap(fitz.csRGB, pix)
-                        img_data = pix1.tobytes("png")
-                        pix1 = None
-                    except Exception as cs_error:
-                        logger.warning(f"Colorspace conversion failed: {cs_error}, trying JPEG")
-                        img_data = pix.tobytes("jpeg")
-                
-                pix = None
-                return img_data
-            except Exception as conversion_error:
-                logger.warning(f"Image conversion failed: {conversion_error}")
-                pix = None
-                return None
+            if pix.n < 5:  # Not CMYK
+                img_data = pix.tobytes("png")
+            else:  # CMYK, convert to RGB
+                pix1 = fitz.Pixmap(fitz.csRGB, pix)
+                img_data = pix1.tobytes("png")
+                pix1 = None
+            
+            pix = None
+            return img_data
             
         except Exception as e:
             logger.error(f"Image extraction failed: {e}")
@@ -690,20 +664,8 @@ class MultiModalCitationService:
                 # Full page if no specific table area
                 pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
             
-            # Handle colorspace for table extraction
-            try:
-                if pix.n <= 4:  # RGB, RGBA, or grayscale
-                    img_data = pix.tobytes("png")
-                else:  # CMYK or other colorspaces
-                    pix_rgb = fitz.Pixmap(fitz.csRGB, pix)
-                    img_data = pix_rgb.tobytes("png")
-                    pix_rgb = None
-                pix = None
-                return img_data
-            except Exception as conversion_error:
-                logger.warning(f"Table image conversion failed: {conversion_error}")
-                pix = None
-                return None
+            img_data = pix.tobytes("png")
+            return img_data
             
         except Exception as e:
             logger.error(f"Table extraction failed: {e}")
@@ -717,21 +679,8 @@ class MultiModalCitationService:
             # For now, just return the full page
             # TODO: Implement text highlighting
             pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
-            
-            # Handle colorspace for page sections
-            try:
-                if pix.n <= 4:  # RGB, RGBA, or grayscale
-                    img_data = pix.tobytes("png")
-                else:  # CMYK or other colorspaces
-                    pix_rgb = fitz.Pixmap(fitz.csRGB, pix)
-                    img_data = pix_rgb.tobytes("png")
-                    pix_rgb = None
-                pix = None
-                return img_data
-            except Exception as conversion_error:
-                logger.warning(f"Page section conversion failed: {conversion_error}")
-                pix = None
-                return None
+            img_data = pix.tobytes("png")
+            return img_data
             
         except Exception as e:
             logger.error(f"Page section extraction failed: {e}")
@@ -739,110 +688,13 @@ class MultiModalCitationService:
     
     async def get_citation_content(self, citation_id: str) -> Optional[bytes]:
         """
-        Retrieve citation content by ID from cache, Neo4j, or extract on-demand
+        Retrieve citation content by ID
         """
-        # First check cached citations
+        # Search through cached citations
         for doc_citations in self.citation_cache.values():
             for citation in doc_citations:
                 if citation.citation_id == citation_id:
-                    if citation.content_data:
-                        return citation.content_data
-                    else:
-                        # Extract image on-demand
-                        return await self._extract_image_on_demand(citation)
-        
-        # Check Neo4j for citation metadata
-        try:
-            from services.neo4j_service import neo4j_service
-            
-            if neo4j_service and neo4j_service.connected:
-                query = """
-                MATCH (vc:VisualCitation {citation_id: $citation_id})
-                RETURN vc.doc_path as doc_path, vc.image_xref as image_xref, 
-                       vc.page_number as page_number, vc.type as type
-                """
-                
-                results = neo4j_service.execute_query(query, {"citation_id": citation_id})
-                
-                if results.get("success") and results.get("records"):
-                    record = results["records"][0]
-                    doc_path = record.get("doc_path")
-                    image_xref = record.get("image_xref")
-                    page_number = record.get("page_number", 1)
-                    
-                    if doc_path and Path(doc_path).exists():
-                        return await self._extract_image_from_pdf(doc_path, image_xref, page_number)
-                        
-        except Exception as e:
-            logger.warning(f"Neo4j citation lookup failed: {e}")
-        
-        return None
-    
-    async def _extract_image_on_demand(self, citation: VisualCitation) -> Optional[bytes]:
-        """
-        Extract image content on-demand from PDF
-        """
-        try:
-            if hasattr(citation, 'doc_path') and hasattr(citation, 'image_xref'):
-                return await self._extract_image_from_pdf(
-                    citation.doc_path, 
-                    citation.image_xref, 
-                    citation.page_number
-                )
-        except Exception as e:
-            logger.warning(f"On-demand image extraction failed: {e}")
-        
-        return None
-    
-    async def _extract_image_from_pdf(self, doc_path: str, image_xref: int, page_number: int = 1) -> Optional[bytes]:
-        """
-        Extract specific image from PDF using xref
-        """
-        try:
-            import fitz
-            
-            doc = fitz.open(doc_path)
-            
-            if image_xref:
-                # Extract specific image by xref
-                pix = fitz.Pixmap(doc, image_xref)
-                
-                # Handle colorspace conversion
-                if pix.n <= 4:  # RGB, RGBA, or grayscale
-                    img_data = pix.tobytes("png")
-                else:  # CMYK or other colorspaces
-                    pix_rgb = fitz.Pixmap(fitz.csRGB, pix)
-                    img_data = pix_rgb.tobytes("png")
-                    pix_rgb = None
-                
-                pix = None
-                doc.close()
-                return img_data
-            else:
-                # Fallback: extract first image from page
-                page = doc[page_number - 1]
-                image_list = page.get_images()
-                
-                if image_list:
-                    first_img = image_list[0]
-                    xref = first_img[0]
-                    pix = fitz.Pixmap(doc, xref)
-                    
-                    if pix.n <= 4:
-                        img_data = pix.tobytes("png")
-                    else:
-                        pix_rgb = fitz.Pixmap(fitz.csRGB, pix)
-                        img_data = pix_rgb.tobytes("png")
-                        pix_rgb = None
-                    
-                    pix = None
-                    doc.close()
-                    return img_data
-            
-            doc.close()
-            
-        except Exception as e:
-            logger.error(f"Image extraction from PDF failed: {e}")
+                    return citation.content_data
         
         return None
     
@@ -855,200 +707,6 @@ class MultiModalCitationService:
             self.citation_cache[doc_key] = []
         self.citation_cache[doc_key].append(citation)
         logger.info(f"Cached citation {citation.citation_id} for document {doc_key}")
-    
-    async def _get_equipment_diagrams(self, equipment_name: str) -> List[VisualCitation]:
-        """
-        Get available diagrams for specific equipment from Neo4j and cache
-        """
-        equipment_citations = []
-        
-        # Split equipment name into terms for flexible matching
-        equipment_terms = [term.strip().lower() for term in equipment_name.lower().split() if term.strip()]
-        
-        # First try to get from Neo4j for persistent storage
-        try:
-            from services.neo4j_service import neo4j_service
-            
-            if neo4j_service and neo4j_service.connected:
-                # Build flexible query that matches any of the equipment terms
-                term_conditions = []
-                params = {}
-                
-                for i, term in enumerate(equipment_terms):
-                    param_name = f"equipment_term_{i}"
-                    term_conditions.append(f"toLower(vc.source_document) CONTAINS ${param_name}")
-                    term_conditions.append(f"toLower(vc.reference_text) CONTAINS ${param_name}")
-                    params[param_name] = term
-                
-                # Combine conditions with OR
-                where_clause = " OR ".join(term_conditions)
-                
-                neo4j_query = f"""
-                MATCH (vc:VisualCitation)
-                WHERE {where_clause}
-                RETURN vc
-                ORDER BY vc.page_number
-                LIMIT 5
-                """
-                results = neo4j_service.execute_query(neo4j_query, params)
-                
-                if results.get("success") and results.get("records"):
-                    for record in results["records"]:
-                        vc_data = record["vc"]
-                        citation = VisualCitation(
-                            citation_type=vc_data.get("type", CitationType.DIAGRAM),
-                            source_document=vc_data.get("source_document", ""),
-                            page_number=vc_data.get("page_number", 1),
-                            reference_text=vc_data.get("reference_text", ""),
-                            timing="during_speech"
-                        )
-                        citation.citation_id = vc_data.get("citation_id")
-                        citation.doc_path = vc_data.get("doc_path")
-                        citation.image_xref = vc_data.get("image_xref")
-                        equipment_citations.append(citation)
-                
-                    if equipment_citations:
-                        logger.info(f"📸 Retrieved {len(equipment_citations)} visual citations from Neo4j")
-                        return equipment_citations
-                    
-        except Exception as e:
-            logger.warning(f"Neo4j visual citation retrieval failed: {e}")
-        
-        # Fallback to cache-based search
-        for doc_path, citations in self.citation_cache.items():
-            # Check if document is related to the equipment
-            doc_name_lower = doc_path.lower()
-            if any(term in doc_name_lower for term in [equipment_lower, "taylor", "c602"]):
-                # Return first 3 diagrams from this document
-                for citation in citations[:3]:
-                    if citation.citation_type == CitationType.DIAGRAM:
-                        equipment_citations.append(citation)
-        
-        return equipment_citations
-    
-    async def _process_document_for_citations(self, doc_path) -> None:
-        """
-        Process a document to extract and cache visual citations
-        """
-        try:
-            import fitz
-            
-            doc_key = str(doc_path)
-            if doc_key in self.citation_cache:
-                return  # Already processed
-            
-            logger.info(f"🔍 Processing {doc_path.name} for visual citations...")
-            
-            doc = fitz.open(str(doc_path))
-            citations = []
-            
-            # Process first 10 pages to find diagrams and images
-            for page_num in range(min(10, len(doc))):
-                page = doc[page_num]
-                
-                # Extract images
-                image_list = page.get_images()
-                for img_index, img in enumerate(image_list):
-                    try:
-                        # Get image data
-                        xref = img[0]
-                        pix = fitz.Pixmap(doc, xref)
-                        
-                        # Create visual citation with proper metadata
-                        citation = VisualCitation(
-                            citation_type=CitationType.DIAGRAM,
-                            source_document=doc_path.name,
-                            page_number=page_num + 1,
-                            reference_text=f"diagram on page {page_num + 1}",
-                            content_data=None,  # We'll extract this on demand
-                            timing="during_speech"
-                        )
-                        
-                        # Store metadata for later extraction
-                        citation.image_xref = xref
-                        citation.doc_path = str(doc_path)
-                        
-                        citations.append(citation)
-                        pix = None
-                        
-                        # Limit to 5 images per page for performance
-                        if img_index >= 4:
-                            break
-                            
-                    except Exception as img_error:
-                        logger.warning(f"Failed to process image {img_index} on page {page_num + 1}: {img_error}")
-                        continue
-            
-            # Cache citations
-            self.citation_cache[doc_key] = citations
-            logger.info(f"📸 Processed {len(citations)} visual citations from {doc_path.name}")
-            
-            # Store visual citations in Neo4j for persistence
-            await self._store_visual_citations_in_neo4j(citations, doc_path)
-            
-            doc.close()
-            
-        except Exception as e:
-            logger.error(f"Document processing failed for {doc_path}: {e}")
-            self.citation_cache[str(doc_path)] = []  # Cache empty list to avoid reprocessing
-    
-    async def _store_visual_citations_in_neo4j(self, citations: List[VisualCitation], doc_path) -> None:
-        """
-        Store visual citations in Neo4j for persistent access
-        """
-        try:
-            from services.neo4j_service import neo4j_service
-            
-            if not neo4j_service or not neo4j_service.connected:
-                logger.warning("Neo4j not available for visual citation storage")
-                return
-            
-            for citation in citations:
-                # Create visual citation node
-                citation_query = """
-                MERGE (vc:VisualCitation {citation_id: $citation_id})
-                SET vc.type = $type,
-                    vc.source_document = $source_document,
-                    vc.page_number = $page_number,
-                    vc.reference_text = $reference_text,
-                    vc.has_content = $has_content,
-                    vc.doc_path = $doc_path,
-                    vc.image_xref = $image_xref,
-                    vc.created_at = datetime()
-                RETURN vc
-                """
-                
-                params = {
-                    "citation_id": citation.citation_id,
-                    "type": citation.citation_type,
-                    "source_document": citation.source_document,
-                    "page_number": citation.page_number,
-                    "reference_text": citation.reference_text,
-                    "has_content": bool(citation.content_data),
-                    "doc_path": str(doc_path),
-                    "image_xref": getattr(citation, 'image_xref', None)
-                }
-                
-                neo4j_service.execute_query(citation_query, params)
-                
-                # Link to document if it exists
-                doc_link_query = """
-                MATCH (vc:VisualCitation {citation_id: $citation_id})
-                MATCH (d) WHERE d.name CONTAINS $doc_name OR d.source CONTAINS $doc_name
-                MERGE (d)-[:HAS_VISUAL_CITATION]->(vc)
-                """
-                
-                doc_params = {
-                    "citation_id": citation.citation_id,
-                    "doc_name": Path(doc_path).stem
-                }
-                
-                neo4j_service.execute_query(doc_link_query, doc_params)
-            
-            logger.info(f"📸 Stored {len(citations)} visual citations in Neo4j")
-            
-        except Exception as e:
-            logger.warning(f"Failed to store visual citations in Neo4j: {e}")
     
     async def synchronize_voice_with_visuals(self, voice_response: Dict[str, Any], 
                                            timing_markers: List[str] = None) -> Dict[str, Any]:
