@@ -821,6 +821,24 @@ async def serve_file(filename: str):
     else:
         raise HTTPException(status_code=404, detail="File not found")
 
+# Keep-alive endpoint for frontend
+@app.get("/keep-alive")
+async def keep_alive():
+    """Keep-alive endpoint for frontend connection management"""
+    return {
+        "uptime": (datetime.datetime.now() - app_start_time).total_seconds(),
+        "timestamp": datetime.datetime.now().isoformat()
+    }
+
+# Streaming chat endpoint
+@app.post("/chat/stream")
+async def chat_stream_endpoint(chat_message: ChatMessage):
+    """Streaming chat endpoint - currently falls back to regular chat"""
+    # For now, just redirect to regular chat
+    # TODO: Implement actual streaming in future
+    response = await chat_endpoint(chat_message)
+    return response
+
 # API endpoints listing
 @app.get("/")
 async def root():
@@ -831,9 +849,11 @@ async def root():
         "endpoints": {
             "health": "/health",
             "chat": "/chat",
+            "chat-stream": "/chat/stream",
             "upload": "/upload-simple",
             "documents": "/documents",
-            "warm-up": "/warm-up"
+            "warm-up": "/warm-up",
+            "keep-alive": "/keep-alive"
         }
     }
 
