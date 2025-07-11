@@ -37,12 +37,17 @@ class Config:
     MAX_SEARCH_RESULTS: int = int(os.getenv("MAX_SEARCH_RESULTS", "5"))
 
     # CORS Configuration
-    CORS_ORIGINS: list = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "https://localhost:3000",
-        "https://127.0.0.1:3000",
-    ]
+    CORS_ORIGINS: list = (
+        os.getenv("CORS_ORIGINS", "").split(",") if os.getenv("CORS_ORIGINS") else [
+            "https://app.linelead.io",
+            "https://linelead.io",
+            "https://line-lead-qsr-assistant.vercel.app",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "https://localhost:3000",
+            "https://127.0.0.1:3000",
+        ]
+    )
 
     # Database Configuration
     DOCUMENTS_DB: str = os.getenv("DOCUMENTS_DB", "../documents.json")
