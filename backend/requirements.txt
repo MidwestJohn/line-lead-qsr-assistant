@@ -10,7 +10,5 @@ numpy==2.0.2
 openai==1.91.0
 python-dotenv==1.1.1
 
-# RAG-Anything Integration - DO NOT modify existing entries above
-raganything>=0.1.0
-lightrag-hku>=0.1.0
-neo4j>=5.0.0
+# Clean Ragie Integration
+ragie>=1.9.0
