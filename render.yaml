@@ -12,7 +12,7 @@ services:
       - key: ELEVENLABS_API_KEY
         sync: false
       - key: CORS_ORIGINS
-        value: "https://linelead.io,http://localhost:3000"
+        value: "https://app.linelead.io,https://linelead.io,http://localhost:3000"
       - key: PYTHON_VERSION
         value: "3.11"
     healthCheckPath: "/health"
