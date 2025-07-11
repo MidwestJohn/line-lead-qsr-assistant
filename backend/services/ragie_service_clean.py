@@ -15,11 +15,14 @@ from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 import json
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Ragie SDK imports
 try:
     from ragie import Ragie
-    from ragie.types import DocumentMetadata
     RAGIE_AVAILABLE = True
 except ImportError:
     RAGIE_AVAILABLE = False
@@ -64,7 +67,7 @@ class CleanRagieService:
             return
             
         try:
-            self.client = Ragie(api_key=self.api_key)
+            self.client = Ragie(auth=self.api_key)
             logger.info("✅ Ragie client initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize Ragie client: {e}")
@@ -92,28 +95,30 @@ class CleanRagieService:
         try:
             logger.info(f"🔍 Searching Ragie: '{query}' (limit: {limit})")
             
-            # Search with QSR-specific filters
-            search_params = {
+            # Search using SDK pattern from reference app
+            search_request = {
                 "query": query,
+                "filter_": {
+                    "qsr_document_type": "manual"
+                },
+                "rerank": True,
                 "partition": self.partition,
-                "limit": limit,
-                "filters": {
-                    "document_type": "qsr_manual"
-                }
+                "limit": limit
             }
             
-            response = self.client.search(**search_params)
+            response = self.client.retrievals.retrieve(request=search_request)
             
             results = []
-            for hit in response.results:
-                result = RagieSearchResult(
-                    text=hit.text,
-                    score=hit.score,
-                    document_id=hit.document_id,
-                    chunk_id=hit.chunk_id,
-                    metadata=hit.metadata or {}
-                )
-                results.append(result)
+            if hasattr(response, 'scored_chunks') and response.scored_chunks:
+                for chunk in response.scored_chunks:
+                    result = RagieSearchResult(
+                        text=chunk.text,
+                        score=chunk.score,
+                        document_id=getattr(chunk, 'document_id', ''),
+                        chunk_id=getattr(chunk, 'chunk_id', ''),
+                        metadata=getattr(chunk, 'metadata', {})
+                    )
+                    results.append(result)
             
             logger.info(f"✅ Found {len(results)} results from Ragie")
             return results
@@ -139,29 +144,44 @@ class CleanRagieService:
         try:
             logger.info(f"📤 Uploading to Ragie: {file_path}")
             
-            # Prepare metadata for Ragie
+            # Prepare metadata for Ragie (exclude reserved keys)
             ragie_metadata = {
-                "partition": self.partition,
-                "document_type": "qsr_manual",
+                "equipment_type": metadata.get("equipment_type", "general"),
+                "qsr_document_type": "manual",  # Renamed to avoid 'document_type' reserved key
                 "upload_source": "line_lead_qsr",
-                **metadata
+                "original_filename": metadata.get("original_filename", ""),
+                "file_size": metadata.get("file_size", 0),
+                "pages_count": metadata.get("pages_count", 0)
             }
             
-            # Upload document
+            # Upload document using SDK pattern from reference app
             with open(file_path, 'rb') as f:
-                response = self.client.documents.create(
-                    file=f,
-                    metadata=ragie_metadata
+                create_request = {
+                    "file": {
+                        "file_name": Path(file_path).name,
+                        "content": f,
+                    },
+                    "metadata": ragie_metadata,
+                    "mode": "hi_res",  # Extract images and tables for QSR manuals
+                    "partition": self.partition
+                }
+                
+                response = self.client.documents.create(request=create_request)
+            
+            if response and response.id:
+                logger.info(f"✅ Document uploaded to Ragie: {response.id}")
+                logger.info(f"📊 Ragie processing stats: {getattr(response, 'chunk_count', 'unknown')} chunks, {getattr(response, 'page_count', 'unknown')} pages")
+                
+                return RagieUploadResult(
+                    success=True,
+                    document_id=response.id,
+                    filename=Path(file_path).name,
+                    chunk_count=getattr(response, 'chunk_count', None)
                 )
-            
-            logger.info(f"✅ Document uploaded to Ragie: {response.id}")
-            
-            return RagieUploadResult(
-                success=True,
-                document_id=response.id,
-                filename=Path(file_path).name,
-                chunk_count=getattr(response, 'chunk_count', None)
-            )
+            else:
+                logger.error("❌ Ragie upload returned invalid response")
+                return RagieUploadResult(success=False, error="Invalid response from Ragie")
+                
             
         except Exception as e:
             logger.error(f"Ragie upload failed: {e}")
