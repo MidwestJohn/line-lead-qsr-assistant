@@ -219,7 +219,8 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://linelead.io",                    # Your custom domain
+        "https://app.linelead.io",                # Your custom domain
+        "https://linelead.io",                    # Legacy domain (keeping for compatibility)
         "https://line-lead-qsr-assistant.vercel.app",  # Default Vercel URL
         "https://line-lead-qsr-assistant-qz7ni39d8-johninniger-projects.vercel.app",  # Preview deployment
         "http://localhost:3000",                  # Local development (default)
