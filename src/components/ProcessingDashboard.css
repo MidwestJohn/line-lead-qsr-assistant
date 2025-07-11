@@ -1,0 +1,221 @@
+.processing-dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.processing-dashboard.loading,
+.processing-dashboard.error {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.processing-dashboard h2 {
+  color: #2c3e50;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 10px;
+}
+
+.dashboard-section {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.dashboard-section h3 {
+  color: #34495e;
+  margin-bottom: 15px;
+  font-size: 1.2em;
+}
+
+/* Status Grid */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.status-card {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+  text-align: center;
+  border: 1px solid #dee2e6;
+}
+
+.status-label {
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 5px;
+}
+
+.status-value {
+  font-size: 1.4em;
+  font-weight: bold;
+}
+
+/* Progress Overview */
+.progress-overview {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+}
+
+.progress-item {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+  font-weight: 500;
+}
+
+/* Document Cards */
+.documents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.document-card {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 15px;
+  transition: box-shadow 0.2s;
+}
+
+.document-card:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.document-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.document-name {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 1.1em;
+}
+
+.document-status {
+  font-weight: bold;
+  font-size: 0.9em;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.7);
+}
+
+.document-details {
+  font-size: 0.9em;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  color: #555;
+}
+
+/* Graph Stats */
+.graph-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.stat-label {
+  color: #666;
+}
+
+.stat-value {
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+/* Equipment Preview */
+.equipment-preview {
+  margin-top: 15px;
+}
+
+.equipment-preview h4 {
+  color: #34495e;
+  margin-bottom: 10px;
+  font-size: 1em;
+}
+
+.equipment-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.equipment-tag {
+  background: #3498db;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  white-space: nowrap;
+}
+
+/* Files Summary */
+.files-summary {
+  display: flex;
+  justify-content: space-around;
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* Footer */
+.dashboard-footer {
+  text-align: center;
+  color: #888;
+  margin-top: 20px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .processing-dashboard {
+    padding: 10px;
+  }
+  
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .progress-item {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .detail-row {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .files-summary {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
