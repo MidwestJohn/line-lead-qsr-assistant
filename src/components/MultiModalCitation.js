@@ -162,7 +162,6 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
             role="dialog"
             aria-modal="true"
             onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.key === 'Escape' && setSelectedCitation(null)}
           >
             <div className="modal-header">
               <h3>{formatCitationReference(selectedCitation)}</h3>

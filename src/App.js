@@ -9,7 +9,7 @@ import ProgressiveLoader from './components/ProgressiveLoader';
 import MultiModalCitation from './components/MultiModalCitation';
 import ProcessingDashboard from './components/ProcessingDashboard';
 import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react";
-import { Send, Square, MessageCircle, WifiOff, Copy, RefreshCw, Check, BookOpen, Mic, MicOff, Volume2, VolumeX, Headphones, Activity } from 'lucide-react';
+import { Send, Square, MessageCircle, WifiOff, Copy, RefreshCw, Check, BookOpen, Mic, MicOff, Volume2, VolumeX, Headphones } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
