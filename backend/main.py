@@ -1834,6 +1834,19 @@ async def list_documents():
     try:
         docs_db = load_neo4j_verified_documents()
         
+        # Handle both dict and list formats
+        if isinstance(docs_db, list):
+            # Convert list to dict format for compatibility
+            docs_dict = {}
+            for i, doc in enumerate(docs_db):
+                if isinstance(doc, dict):
+                    doc_id = doc.get('id', f'doc_{i}')
+                    docs_dict[doc_id] = doc
+            docs_db = docs_dict
+        elif not isinstance(docs_db, dict):
+            logger.error(f"Unexpected docs_db type: {type(docs_db)}")
+            docs_db = {}
+        
         documents = []
         for doc_id, doc_info in docs_db.items():
             try:
