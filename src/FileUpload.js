@@ -93,13 +93,17 @@ function FileUpload({ onUploadSuccess, onDocumentsUpdate }) {
 
         setUploadMessage(`✅ ${fallbackResult.message} (${fallbackResult.pages_extracted} pages extracted) - Basic upload completed`);
         
-        // Notify parent components
+        // Notify parent components with small delay for Ragie processing
         if (onUploadSuccess) {
           onUploadSuccess(fallbackResult);
         }
-        if (onDocumentsUpdate) {
-          onDocumentsUpdate();
-        }
+        
+        // Wait a moment for Ragie processing before refreshing document list
+        setTimeout(() => {
+          if (onDocumentsUpdate) {
+            onDocumentsUpdate();
+          }
+        }, 2000); // 2 second delay for Ragie processing
 
         // Clear message after 3 seconds
         setTimeout(() => {
@@ -141,9 +145,13 @@ function FileUpload({ onUploadSuccess, onDocumentsUpdate }) {
         enhanced: true
       });
     }
-    if (onDocumentsUpdate) {
-      onDocumentsUpdate();
-    }
+    
+    // Wait for Ragie processing before refreshing document list
+    setTimeout(() => {
+      if (onDocumentsUpdate) {
+        onDocumentsUpdate();
+      }
+    }, 2000); // 2 second delay for Ragie processing
 
     // Hide progress and reset state after showing success
     setTimeout(() => {

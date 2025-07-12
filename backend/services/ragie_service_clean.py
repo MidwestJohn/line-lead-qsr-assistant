@@ -11,6 +11,8 @@ Author: Generated with Memex (https://memex.tech)
 
 import os
 import logging
+import time
+import datetime
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
 import json
@@ -68,8 +70,27 @@ class CleanRagieService:
             return
             
         try:
-            self.client = Ragie(auth=self.api_key)
-            logger.info("✅ Ragie client initialized successfully")
+            # Initialize with proper timeout and retry configuration
+            from ragie.utils import BackoffStrategy, RetryConfig
+            
+            # Configure retry strategy for better reliability
+            retry_config = RetryConfig(
+                strategy="backoff",
+                backoff=BackoffStrategy(
+                    initial_interval=1,    # Start with 1 second
+                    max_interval=30,       # Max 30 seconds between retries
+                    exponent=1.5,          # Exponential backoff
+                    max_elapsed_time=300   # Give up after 5 minutes total
+                ),
+                retry_connection_errors=True
+            )
+            
+            self.client = Ragie(
+                auth=self.api_key,
+                retry_config=retry_config,
+                debug_logger=logger  # Enable debug logging
+            )
+            logger.info("✅ Ragie client initialized with enhanced error handling")
         except Exception as e:
             logger.error(f"Failed to initialize Ragie client: {e}")
             self.client = None
@@ -281,7 +302,7 @@ class CleanRagieService:
 
     async def upload_document(self, file_path: str, metadata: Dict[str, Any]) -> RagieUploadResult:
         """
-        Upload document to Ragie
+        Upload document to Ragie with enhanced error handling and async support
         
         Args:
             file_path: Path to the document file
@@ -293,35 +314,44 @@ class CleanRagieService:
         if not self.client:
             return RagieUploadResult(success=False, error="Ragie client not available")
         
+        # Import error types for proper handling
+        from ragie import models
+        
         try:
-            logger.info(f"📤 Uploading to Ragie: {file_path}")
+            logger.info(f"📤 Starting Ragie upload: {file_path}")
+            start_time = time.time()
             
-            # Prepare metadata for Ragie (exclude reserved keys)
+            # Prepare enhanced metadata for Ragie
             ragie_metadata = {
                 "equipment_type": metadata.get("equipment_type", "general"),
-                "qsr_document_type": "manual",  # Renamed to avoid 'document_type' reserved key
+                "qsr_document_type": "manual",
                 "upload_source": "line_lead_qsr",
                 "original_filename": metadata.get("original_filename", ""),
                 "file_size": metadata.get("file_size", 0),
-                "pages_count": metadata.get("pages_count", 0)
+                "pages_count": metadata.get("pages_count", 0),
+                "upload_timestamp": datetime.datetime.now().isoformat()
             }
             
-            # Upload document using SDK pattern from reference app
-            with open(file_path, 'rb') as f:
-                create_request = {
-                    "file": {
-                        "file_name": Path(file_path).name,
-                        "content": f,
-                    },
-                    "metadata": ragie_metadata,
-                    "mode": "hi_res",  # Extract images and tables for QSR manuals
-                    "partition": self.partition
-                }
-                
-                response = self.client.documents.create(request=create_request)
+            # Use proper resource management with context manager
+            with self.client as ragie_client:
+                with open(file_path, 'rb') as f:
+                    create_request = {
+                        "file": {
+                            "file_name": Path(file_path).name,
+                            "content": f,
+                        },
+                        "metadata": ragie_metadata,
+                        "mode": "hi_res",  # Extract images and tables for QSR manuals
+                        "partition": self.partition
+                    }
+                    
+                    logger.info("🔄 Sending upload request to Ragie...")
+                    response = ragie_client.documents.create(request=create_request)
+            
+            upload_time = time.time() - start_time
             
             if response and response.id:
-                logger.info(f"✅ Document uploaded to Ragie: {response.id}")
+                logger.info(f"✅ Document uploaded to Ragie: {response.id} (took {upload_time:.2f}s)")
                 logger.info(f"📊 Ragie processing stats: {getattr(response, 'chunk_count', 'unknown')} chunks, {getattr(response, 'page_count', 'unknown')} pages")
                 
                 return RagieUploadResult(
@@ -333,14 +363,23 @@ class CleanRagieService:
             else:
                 logger.error("❌ Ragie upload returned invalid response")
                 return RagieUploadResult(success=False, error="Invalid response from Ragie")
-                
+        
+        # Enhanced error handling based on Ragie documentation
+        except models.HTTPValidationError as e:
+            logger.error(f"❌ Ragie validation error: {e.message}")
+            return RagieUploadResult(success=False, error=f"Validation error: {e.message}")
+        
+        except models.ErrorMessage as e:
+            logger.error(f"❌ Ragie API error: {e.message}")
+            return RagieUploadResult(success=False, error=f"API error: {e.message}")
+        
+        except models.SDKError as e:
+            logger.error(f"❌ Ragie SDK error: {e.message} (Status: {e.status_code})")
+            return RagieUploadResult(success=False, error=f"SDK error: {e.message}")
             
         except Exception as e:
-            logger.error(f"Ragie upload failed: {e}")
-            return RagieUploadResult(
-                success=False,
-                error=str(e)
-            )
+            logger.error(f"❌ Unexpected upload error: {e}")
+            return RagieUploadResult(success=False, error=f"Unexpected error: {str(e)}")
     
     async def delete_document(self, document_id: str) -> bool:
         """
