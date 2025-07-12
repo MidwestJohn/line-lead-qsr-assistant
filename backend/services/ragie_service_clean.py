@@ -359,7 +359,7 @@ class CleanRagieService:
         try:
             logger.info(f"🗑️ Deleting from Ragie: {document_id}")
             
-            self.client.documents.delete(document_id)
+            self.client.documents.delete(id=document_id)
             logger.info(f"✅ Document deleted from Ragie: {document_id}")
             return True
             
