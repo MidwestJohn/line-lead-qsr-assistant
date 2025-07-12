@@ -180,21 +180,28 @@ class ChatService {
         clearTimeout(timeoutId);
         const data = await response.json();
         
-        // Simulate streaming by chunking the response
+        // Simulate streaming by chunking the response incrementally
         if (onChunk && data.response) {
           const fullText = data.response;
           const words = fullText.split(' ');
           const chunkSize = Math.max(1, Math.floor(words.length / 8)); // ~8 chunks
           
-          let currentChunk = '';
-          for (let i = 0; i < words.length; i++) {
-            currentChunk += words[i] + ' ';
+          let sentWords = 0;
+          for (let i = 0; i < words.length; i += chunkSize) {
+            // Send only the NEW words in this chunk, not accumulative
+            const chunkWords = words.slice(sentWords, sentWords + chunkSize);
+            const incrementalChunk = chunkWords.join(' ') + ' ';
             
-            // Send chunk every chunkSize words or at the end
-            if ((i + 1) % chunkSize === 0 || i === words.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 50)); // 50ms delay between chunks
-              onChunk(currentChunk.trim());
-            }
+            await new Promise(resolve => setTimeout(resolve, 50)); // 50ms delay between chunks
+            onChunk(incrementalChunk);
+            
+            sentWords += chunkSize;
+          }
+          
+          // Send any remaining words
+          if (sentWords < words.length) {
+            const remainingWords = words.slice(sentWords);
+            onChunk(remainingWords.join(' '));
           }
         } else if (onChunk) {
           onChunk(data.response || 'No response received');
