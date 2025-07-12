@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import './FileUpload.css';
-import { Paperclip, Loader2 } from 'lucide-react';
+import { Paperclip, Loader2, CheckCircle } from 'lucide-react';
 import { apiService } from './services/api';
-import SimpleUploadProgress from './components/SimpleUploadProgress';
 
 function FileUpload({ onUploadSuccess, onDocumentsUpdate }) {
   const [dragActive, setDragActive] = useState(false);
@@ -215,10 +214,23 @@ function FileUpload({ onUploadSuccess, onDocumentsUpdate }) {
           )}
         </>
       ) : (
-        <SimpleUploadProgress 
-          processId={processId}
-          onComplete={handleProgressComplete}
-        />
+        <div className="upload-success-display">
+          <CheckCircle size={48} color="#4CAF50" />
+          <h3>Upload Successful!</h3>
+          <p>Your document has been uploaded and is being processed by Ragie.</p>
+          <p className="upload-note">Processing may take a few minutes for large documents with images.</p>
+          <button 
+            onClick={() => {
+              setShowProgress(false);
+              setProcessId(null);
+              setProgressCompleted(false);
+              setUploadMessage('');
+            }}
+            className="reset-upload-button"
+          >
+            Upload Another Document
+          </button>
+        </div>
       )}
     </div>
   );
