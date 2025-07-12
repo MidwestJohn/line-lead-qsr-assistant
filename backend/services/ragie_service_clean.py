@@ -78,6 +78,53 @@ class CleanRagieService:
         """Check if Ragie service is available"""
         return self.client is not None
     
+    def _preprocess_query(self, query: str) -> str:
+        """
+        Preprocess query to improve Ragie search results
+        Extract key terms and remove query patterns that don't match well
+        """
+        import re
+        
+        # Convert to lowercase for processing
+        processed = query.lower()
+        
+        # Remove common request patterns that don't help with document search
+        remove_patterns = [
+            r"show me (?:an? )?(image|picture|photo) of ",
+            r"can you show me ",
+            r"i want to see ",
+            r"display ",
+            r"what does .* look like",
+            r"how does .* look",
+        ]
+        
+        for pattern in remove_patterns:
+            processed = re.sub(pattern, "", processed)
+        
+        # Extract pizza types and key culinary terms
+        pizza_terms = ["canotto", "margherita", "napoli", "gourmet", "new york"]
+        culinary_terms = ["dough", "sauce", "cheese", "topping", "crust", "recipe"]
+        equipment_terms = ["fryer", "grill", "oven", "mixer", "temperature"]
+        
+        # If we find key terms, prioritize them
+        found_terms = []
+        for term in pizza_terms + culinary_terms + equipment_terms:
+            if term in processed:
+                found_terms.append(term)
+        
+        # If we found key terms, use them as the primary query
+        if found_terms:
+            processed = " ".join(found_terms)
+        
+        # Clean up extra spaces
+        processed = re.sub(r'\s+', ' ', processed).strip()
+        
+        # If query became too short, return original key parts
+        if len(processed) < 3:
+            processed = query
+        
+        return processed
+    
     async def search(self, query: str, limit: int = 5) -> List[RagieSearchResult]:
         """
         Search documents using Ragie
@@ -94,18 +141,20 @@ class CleanRagieService:
             return []
         
         try:
-            logger.info(f"🔍 Searching Ragie: '{query}' (limit: {limit})")
+            # Preprocess query to extract key terms for better Ragie matching
+            processed_query = self._preprocess_query(query)
+            logger.info(f"🔍 Searching Ragie: '{query}' → '{processed_query}' (limit: {limit})")
             
-            # Search using SDK pattern from reference app
+            # Search using Ragie SDK built-in retrieval method
             search_request = {
-                "query": query,
-                "filter_": {
-                    "qsr_document_type": "manual"
-                },
+                "query": processed_query,
                 "rerank": True,
                 "partition": self.partition,
                 "limit": limit
             }
+            
+            # Only add filters if we know they exist in our documents
+            # Removed potentially problematic custom filter
             
             response = self.client.retrievals.retrieve(request=search_request)
             
