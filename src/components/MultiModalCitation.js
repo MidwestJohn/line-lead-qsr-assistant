@@ -6,30 +6,46 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
   const [selectedCitation, setSelectedCitation] = useState(null);
   const [imageCache, setImageCache] = useState({});
 
-  // Citation type icons
+  // Enhanced citation type icons based on Ragie file_type metadata
   const getCitationIcon = (type) => {
     switch (type) {
       case 'image':
+        return <Image size={16} className="citation-icon image" />;
       case 'diagram':
-        return <Grid3x3 size={16} className="citation-icon" />;
+        return <Grid3x3 size={16} className="citation-icon diagram" />;
+      case 'video':
+        return <Eye size={16} className="citation-icon video" />;
       case 'table':
-        return <Table size={16} className="citation-icon" />;
+        return <Table size={16} className="citation-icon table" />;
       case 'safety_warning':
         return <AlertTriangle size={16} className="citation-icon safety" />;
       case 'procedure_step':
-        return <FileText size={16} className="citation-icon" />;
+        return <FileText size={16} className="citation-icon procedure" />;
+      case 'pdf_page':
+        return <Book size={16} className="citation-icon pdf" />;
+      case 'text':
+        return <FileText size={16} className="citation-icon text" />;
       default:
-        return <Image size={16} className="citation-icon" />;
+        return <Image size={16} className="citation-icon default" />;
     }
   };
 
   // Load citation image content
-  const loadCitationImage = async (citationId) => {
+  const loadCitationImage = async (citation) => {
+    const citationId = citation.citation_id || citation.url || citation.id;
+    
     if (imageCache[citationId]) {
       return imageCache[citationId];
     }
 
     try {
+      // If citation has a direct URL (from Ragie), use it
+      if (citation.url && citation.url.startsWith('http')) {
+        setImageCache(prev => ({ ...prev, [citationId]: citation.url }));
+        return citation.url;
+      }
+      
+      // Otherwise, try to fetch from our backend
       const response = await fetch(`/citation-content/${citationId}`);
       if (response.ok) {
         const blob = await response.blob();
@@ -47,8 +63,11 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
   const handleCitationClick = async (citation) => {
     setSelectedCitation(citation);
     
-    if (citation.has_content) {
-      await loadCitationImage(citation.citation_id);
+    // Check if citation has content (images, etc.)
+    const hasContent = citation.has_content || citation.url || citation.type === 'image';
+    
+    if (hasContent) {
+      await loadCitationImage(citation);
     }
 
     if (onCitationClick) {
@@ -56,18 +75,31 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
     }
   };
 
-  // Format citation reference for display
+  // Enhanced citation reference formatting using Ragie metadata
   const formatCitationReference = (citation) => {
-    const { type, reference, page, source } = citation;
+    const { type, reference, page, source, equipment_type, procedure, metadata = {} } = citation;
     
-    if (type === 'safety_warning') {
-      return `Safety Guidelines (${source}, p.${page})`;
-    } else if (type === 'table') {
-      return `${reference} (${source}, p.${page})`;
+    // Use enhanced metadata for better formatting
+    const pageStr = page ? `p.${page}` : 'page unknown';
+    const sourceStr = source || 'Unknown Source';
+    
+    if (type === 'image') {
+      return `Image: ${reference || 'Visual Content'} (${sourceStr}, ${pageStr})`;
+    } else if (type === 'video') {
+      return `Video: ${reference || 'Video Content'} (${sourceStr}, ${pageStr})`;
     } else if (type === 'diagram') {
-      return `${reference} (${source}, p.${page})`;
+      const equipmentStr = equipment_type ? ` - ${equipment_type.replace('_', ' ')}` : '';
+      return `Diagram${equipmentStr} (${sourceStr}, ${pageStr})`;
+    } else if (type === 'safety_warning') {
+      return `Safety Guidelines (${sourceStr}, ${pageStr})`;
+    } else if (type === 'table') {
+      return `${reference || 'Table'} (${sourceStr}, ${pageStr})`;
+    } else if (type === 'pdf_page') {
+      return `${reference || 'PDF Page'} (${sourceStr}, ${pageStr})`;
+    } else if (type === 'text') {
+      return `${reference || 'Text Reference'} (${sourceStr}, ${pageStr})`;
     } else {
-      return `${reference} (p.${page})`;
+      return `${reference || 'Content'} (${sourceStr}, ${pageStr})`;
     }
   };
 
@@ -103,17 +135,61 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
                   <p className="citation-reference">
                     {formatCitationReference(citation)}
                   </p>
+                  
+                  {/* Equipment and procedure badges for enhanced context */}
+                  {(citation.equipment_type || citation.procedure) && (
+                    <div className="citation-badges">
+                      {citation.equipment_type && (
+                        <span className="badge equipment">
+                          {citation.equipment_type.replace('_', ' ')}
+                        </span>
+                      )}
+                      {citation.procedure && (
+                        <span className="badge procedure">
+                          {citation.procedure}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Confidence score for QSR decision making */}
+                  {citation.confidence && citation.confidence > 0 && (
+                    <div className="confidence-score">
+                      <span className="confidence-label">Relevance:</span>
+                      <span className={`confidence-value ${citation.confidence > 0.8 ? 'high' : citation.confidence > 0.6 ? 'medium' : 'low'}`}>
+                        {Math.round(citation.confidence * 100)}%
+                      </span>
+                    </div>
+                  )}
+                  
                   {citation.highlight_area && (
                     <div className="highlight-area">
                       <span className="highlight-label">Focus:</span>
                       <span className="highlight-text">{citation.highlight_area}</span>
                     </div>
                   )}
+                  
+                  {/* Enhanced description for image/video content */}
+                  {citation.description && citation.type !== 'text' && (
+                    <div className="citation-description">
+                      <span className="description-text">{citation.description}</span>
+                    </div>
+                  )}
                 </div>
-                {citation.has_content && (
+                {(citation.has_content || citation.url || citation.media || ['image', 'video', 'diagram'].includes(citation.type)) && (
                   <div className="citation-preview">
-                    <Image size={14} />
-                    <span>View Content</span>
+                    {citation.type === 'image' && <Image size={14} />}
+                    {citation.type === 'video' && <Eye size={14} />}
+                    {citation.type === 'diagram' && <Grid3x3 size={14} />}
+                    {citation.type === 'pdf_page' && <Book size={14} />}
+                    {!['image', 'video', 'diagram', 'pdf_page'].includes(citation.type) && <FileText size={14} />}
+                    <span>
+                      {citation.type === 'image' ? 'View Image' :
+                       citation.type === 'video' ? 'View Video' :
+                       citation.type === 'diagram' ? 'View Diagram' :
+                       citation.type === 'pdf_page' ? 'View PDF' :
+                       'View Content'}
+                    </span>
                   </div>
                 )}
               </div>
@@ -148,8 +224,8 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
         </div>
       )}
 
-      {/* Selected Citation Modal */}
-      {selectedCitation && selectedCitation.has_content && (
+      {/* Enhanced Modal for Different Media Types */}
+      {selectedCitation && (selectedCitation.has_content || selectedCitation.url || selectedCitation.media || ['image', 'video', 'diagram', 'pdf_page'].includes(selectedCitation.type)) && (
         <div 
           className="citation-modal-overlay" 
           role="button"
@@ -164,7 +240,27 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
-              <h3>{formatCitationReference(selectedCitation)}</h3>
+              <div className="modal-title">
+                {getCitationIcon(selectedCitation.type)}
+                <h3>{formatCitationReference(selectedCitation)}</h3>
+              </div>
+              
+              {/* Equipment context in modal header */}
+              {(selectedCitation.equipment_type || selectedCitation.procedure) && (
+                <div className="modal-badges">
+                  {selectedCitation.equipment_type && (
+                    <span className="modal-badge equipment">
+                      {selectedCitation.equipment_type.replace('_', ' ')}
+                    </span>
+                  )}
+                  {selectedCitation.procedure && (
+                    <span className="modal-badge procedure">
+                      {selectedCitation.procedure}
+                    </span>
+                  )}
+                </div>
+              )}
+              
               <button 
                 className="close-button"
                 onClick={() => setSelectedCitation(null)}
@@ -172,19 +268,83 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
                 ×
               </button>
             </div>
+            
             <div className="modal-content">
-              {imageCache[selectedCitation.citation_id] ? (
-                <img 
-                  src={imageCache[selectedCitation.citation_id]}
-                  alt={selectedCitation.reference}
-                  className="citation-image"
-                />
-              ) : (
-                <div className="loading-placeholder">
-                  <div className="loader"></div>
-                  <p>Loading visual content...</p>
-                </div>
-              )}
+              {(() => {
+                // Handle different content types based on Ragie metadata
+                const citationId = selectedCitation.citation_id || selectedCitation.url || selectedCitation.id;
+                const mediaUrl = selectedCitation.media?.url || selectedCitation.url || imageCache[citationId];
+                const mediaType = selectedCitation.media?.type || selectedCitation.type;
+                
+                if (selectedCitation.type === 'pdf_page') {
+                  // PDF page viewer
+                  return (
+                    <div className="pdf-viewer">
+                      <div className="pdf-info">
+                        <Book size={24} />
+                        <div>
+                          <h4>PDF Reference</h4>
+                          <p>Page {selectedCitation.page} of {selectedCitation.source}</p>
+                          {selectedCitation.description && (
+                            <p className="pdf-description">{selectedCitation.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="pdf-actions">
+                        <button onClick={() => window.open(selectedCitation.pdf_url || '#', '_blank')}>
+                          <BookOpen size={16} />
+                          Open PDF
+                        </button>
+                      </div>
+                    </div>
+                  );
+                } else if (mediaType === 'video' && mediaUrl) {
+                  // Video content
+                  return (
+                    <div className="video-viewer">
+                      <video 
+                        src={mediaUrl}
+                        controls
+                        className="citation-video"
+                        alt={selectedCitation.description || selectedCitation.reference || 'QSR Manual Video'}
+                      >
+                        Your browser does not support video playback.
+                      </video>
+                      {selectedCitation.description && (
+                        <p className="media-description">{selectedCitation.description}</p>
+                      )}
+                    </div>
+                  );
+                } else if (mediaUrl) {
+                  // Image content (default)
+                  return (
+                    <div className="image-viewer">
+                      <img 
+                        src={mediaUrl}
+                        alt={selectedCitation.description || selectedCitation.reference || 'QSR Manual Image'}
+                        className="citation-image"
+                      />
+                      {selectedCitation.description && (
+                        <p className="media-description">{selectedCitation.description}</p>
+                      )}
+                    </div>
+                  );
+                } else {
+                  // Loading state or text-only content
+                  return (
+                    <div className="loading-placeholder">
+                      <div className="loader"></div>
+                      <p>Loading {mediaType || 'visual'} content...</p>
+                      {selectedCitation.description && (
+                        <div className="text-content">
+                          <h4>Content Description:</h4>
+                          <p>{selectedCitation.description}</p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+              })()}
             </div>
           </div>
         </div>

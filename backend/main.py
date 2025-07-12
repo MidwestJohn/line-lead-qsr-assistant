@@ -29,30 +29,11 @@ from openai_integration import qsr_assistant
 from voice_service import voice_service
 from voice_agent import voice_orchestrator, VoiceState, ConversationIntent
 
-# Add these imports for RAG-Anything integration
-from services.rag_service import rag_service
-from services.neo4j_service import neo4j_service
-from services.true_rag_service import true_rag_service
-from services.search_strategy import ExistingSearchStrategy, RAGAnythingStrategy, HybridSearchStrategy
-from services.document_processor import document_processor, ProcessedContent
-from services.voice_graph_service import voice_graph_service
-from services.neo4j_service import neo4j_service
-from services.neo4j_relationship_generator import Neo4jRelationshipGenerator
-from services.rag_anything_neo4j_hook import RAGAnythingNeo4jHook
-from services.voice_graph_query_service import VoiceGraphQueryService
-from services.multimodal_citation_service import multimodal_citation_service
-from services.document_context_service import document_context_service
-from shared_neo4j_service import unified_neo4j
-from populate_extracted_data import data_populator
-from services.optimized_rag_service import optimized_qsr_rag_service
+# Clean Ragie integration
+from services.ragie_service_clean import clean_ragie_service
+
 import uuid
 from dotenv import load_dotenv
-
-# Load RAG environment
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env.rag'))
-
-# Import QSR optimization endpoint
-from qsr_optimization_endpoint import router as qsr_router
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -503,7 +484,7 @@ async def simple_background_process(process_id: str, file_path: str, filename: s
             with open(file_path, 'rb') as f:
                 file_content = f.read()
             
-            # Try to add to document search (real integration with documents_db)
+            # Process with Ragie integration
             try:
                 # Extract text from PDF if it's a PDF
                 if filename.lower().endswith('.pdf'):
@@ -520,6 +501,30 @@ async def simple_background_process(process_id: str, file_path: str, filename: s
                 # Generate document ID from file_path
                 doc_id = simple_progress_store[process_id]["file_id"]
                 
+                # Upload to Ragie if available
+                ragie_document_id = None
+                if clean_ragie_service.is_available():
+                    logger.info(f"📤 Uploading {filename} to Ragie...")
+                    
+                    # Prepare metadata
+                    metadata = {
+                        "original_filename": filename,
+                        "file_size": len(file_content),
+                        "pages_count": pages_count,
+                        "upload_timestamp": datetime.datetime.now().isoformat(),
+                        "equipment_type": "general",  # Could be enhanced with AI detection
+                        "document_type": "qsr_manual"
+                    }
+                    
+                    # Upload to Ragie
+                    ragie_result = await clean_ragie_service.upload_document(file_path, metadata)
+                    
+                    if ragie_result.success:
+                        ragie_document_id = ragie_result.document_id
+                        logger.info(f"✅ Successfully uploaded to Ragie: {ragie_document_id}")
+                    else:
+                        logger.warning(f"⚠️ Ragie upload failed: {ragie_result.error}")
+                
                 # Add to documents database
                 docs_db = load_documents_db()
                 docs_db[doc_id] = {
@@ -530,14 +535,16 @@ async def simple_background_process(process_id: str, file_path: str, filename: s
                     "file_size": len(file_content),
                     "pages_count": pages_count,
                     "text_content": text_content,
-                    "text_preview": text_content[:200] + "..." if len(text_content) > 200 else text_content
+                    "text_preview": text_content[:200] + "..." if len(text_content) > 200 else text_content,
+                    "ragie_document_id": ragie_document_id,
+                    "processing_source": "ragie" if ragie_document_id else "local"
                 }
                 
                 # Save updated database
                 if save_documents_db(docs_db):
                     logger.info(f"✅ Added {filename} to documents database")
                     
-                    # Add to search engine
+                    # Add to search engine as fallback
                     search_engine.add_document(
                         doc_id=doc_id,
                         text=text_content,
@@ -611,9 +618,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add reliability infrastructure startup event
+# Simple startup event for clean Ragie implementation
 @app.on_event("startup")
-async def startup_reliability_infrastructure():
+async def startup_clean_ragie():
     """Initialize reliability infrastructure first"""
     try:
         from reliability_infrastructure import circuit_breaker, transaction_manager, dead_letter_queue
@@ -1185,178 +1192,114 @@ async def chat_endpoint(chat_message: ChatMessage):
         
         logger.info(f"Received chat message: {user_message}")
         
-        # Enhanced hybrid retrieval with document context
+        # Enhanced search with Ragie integration
+        relevant_content = []
+        search_method = "fallback"
+        
+        # Try Ragie search first (if available)
+        if clean_ragie_service.is_available():
+            try:
+                logger.info("🔍 Using Ragie for enhanced search...")
+                ragie_results = await clean_ragie_service.search(user_message, limit=5)
+                
+                if ragie_results:
+                    search_method = "ragie"
+                    for result in ragie_results:
+                        relevant_content.append({
+                            "content": result.text,
+                            "score": result.score,
+                            "source": result.metadata.get("original_filename", "Unknown"),
+                            "document_id": result.document_id
+                        })
+                    logger.info(f"✅ Found {len(relevant_content)} results from Ragie")
+                else:
+                    logger.info("ℹ️ No results from Ragie, falling back to local search")
+            except Exception as e:
+                logger.warning(f"⚠️ Ragie search failed: {e}, falling back to local search")
+        
+        # Fallback to local search engine if Ragie not available or no results
+        if not relevant_content:
+            try:
+                logger.info("🔍 Using local search engine...")
+                search_results = search_engine.search(user_message, top_k=5)
+                search_method = "local"
+                
+                for result in search_results:
+                    relevant_content.append({
+                        "content": result.get("text", ""),
+                        "score": result.get("score", 0.0),
+                        "source": result.get("filename", "Unknown"),
+                        "document_id": result.get("doc_id", "unknown")
+                    })
+                logger.info(f"✅ Found {len(relevant_content)} results from local search")
+            except Exception as e:
+                logger.warning(f"⚠️ Local search failed: {e}")
+        
+        # Generate context-aware prompt
+        context_text = ""
+        if relevant_content:
+            context_text = "\n\n".join([
+                f"From {item['source']}: {item['content']}" 
+                for item in relevant_content[:3]  # Use top 3 results
+            ])
+        
+        enhanced_prompt = f"""You are Line Lead, a QSR (Quick Service Restaurant) assistant specialized in restaurant operations, equipment, and procedures.
+
+User Question: {user_message}
+
+Relevant Context:
+{context_text if context_text else "No specific context found - provide general QSR guidance."}
+
+Instructions:
+- Provide practical, actionable advice for QSR operations
+- Focus on safety, efficiency, and compliance
+- Include specific steps when applicable
+- If equipment is mentioned, provide operational guidance
+- Be concise but comprehensive
+
+Response:"""
+        
+        # Generate AI response using OpenAI
         try:
-            from services.document_context_service import document_context_service
+            logger.info("🤖 Generating AI response...")
             
-            # Perform hybrid retrieval combining granular entities and document context
-            hybrid_results = await document_context_service.hybrid_retrieval(user_message, top_k=5)
-            
-            # Extract entities for context-aware prompting
-            granular_entities = hybrid_results.get("granular_entities", [])
-            document_summaries = hybrid_results.get("document_summaries", [])
-            
-            # Generate context-aware prompt
-            enhanced_prompt = await document_context_service.generate_context_aware_prompt(
-                user_message, granular_entities, user_context="line_lead"
+            # Use OpenAI directly with the enhanced prompt
+            ai_response = await qsr_assistant.get_response(
+                enhanced_prompt,
+                relevant_context=relevant_content
             )
             
-            logger.info(f"🎯 Enhanced prompt with {len(granular_entities)} entities and {len(document_summaries)} document contexts")
+            response_text = ai_response.get("response", "I apologize, but I encountered an issue processing your request.")
             
-            # Combine with traditional search for fallback
-            relevant_chunks = search_engine.search(user_message, top_k=3)
+            logger.info(f"✅ Generated AI response ({len(response_text)} characters)")
             
-            # Add context information to relevant chunks
-            for chunk in relevant_chunks:
-                chunk["context_enhanced"] = True
-                if document_summaries:
-                    chunk["document_context"] = document_summaries[0].get("summary", {})
-            
-        except Exception as context_error:
-            logger.warning(f"Document context enhancement failed, using traditional search: {context_error}")
-            # Fallback to traditional search
-            relevant_chunks = search_engine.search(user_message, top_k=3)
-            enhanced_prompt = user_message
-        
-        # Use enhanced prompt or fallback to original message
-        processing_message = enhanced_prompt if 'enhanced_prompt' in locals() else user_message
-        
-        # CRITICAL FIX: Use PydanticAI voice orchestrator for intelligent conversation management
-        # with timeout protection
-        try:
-            import asyncio
-            orchestrated_response = await asyncio.wait_for(
-                voice_orchestrator.process_voice_message(
-                    message=processing_message,  # Use enhanced prompt
-                    relevant_docs=relevant_chunks,
-                    session_id=chat_message.conversation_id
-                ),
-                timeout=25.0  # 25 second timeout
-            )
-        except asyncio.TimeoutError:
-            logger.warning(f"Voice orchestrator timeout for: {user_message[:50]}...")
-            # Fallback to simple response generation
-            orchestrated_response = await _generate_fallback_response(user_message, relevant_chunks)
-        
-        response_text = orchestrated_response.text_response
-        
-        # Natural speech conversion is already applied in the orchestrator
-        # No need to apply fix_numbered_lists_for_speech again
+        except Exception as ai_error:
+            logger.error(f"AI response generation failed: {ai_error}")
+            response_text = "I apologize, but I'm experiencing technical difficulties. Please try again in a moment."
         
         # Add source information if available
-        if relevant_chunks:
+        if relevant_content:
             source_info = "\n\n📚 Sources consulted: " + ", ".join([
-                f"{chunk.get('source', 'unknown')} ({chunk.get('similarity', 0.0):.2f})" 
-                for chunk in relevant_chunks
+                f"{item['source']} ({item['score']:.2f})" 
+                for item in relevant_content[:3]
             ])
             response_text += source_info
         
-        # Log orchestration info
-        logger.info(f"Sending orchestrated response with intent: {orchestrated_response.detected_intent}, confidence: {orchestrated_response.confidence_score}")
+        # Log response info
+        logger.info(f"Sending response using {search_method} search method")
         
-        # Include parsed steps for future Playbooks UX (always include field)
-        parsed_steps_dict = None
-        if orchestrated_response.parsed_steps:
-            parsed_steps_dict = orchestrated_response.parsed_steps.model_dump()
-            logger.info(f"📋 Including parsed steps: {orchestrated_response.parsed_steps.total_steps} steps found")
-        else:
-            logger.info("📋 No parsed steps found in response")
-        
-        # Extract multimodal citations
+        # Simple citation extraction from relevant content
         visual_citations = []
         manual_references = []
         
-        try:
-            # Get equipment context from orchestrated response
-            equipment_context = orchestrated_response.equipment_mentioned
-            if not equipment_context:
-                # Try to extract from user message
-                equipment_keywords = ["taylor", "c602", "fryer", "grill", "ice machine", "oven", "freezer"]
-                for keyword in equipment_keywords:
-                    if keyword.lower() in user_message.lower():
-                        equipment_context = keyword
-                        break
-            
-            if equipment_context:
-                logger.info(f"🎯 Extracting citations for equipment: {equipment_context}")
-                
-                # Try full multimodal citation extraction first
-                try:
-                    # First ensure the citation service has processed uploaded documents
-                    await _ensure_documents_processed(equipment_context)
-                    
-                    logger.info(f"🔧 Calling citation extraction with: user_message='{user_message[:50]}...', equipment='{equipment_context}'")
-                    citation_result = await multimodal_citation_service.extract_citations_from_response(
-                        user_message, equipment_context  # Use user message instead of AI response
-                    )
-                    # Process visual citations to ensure proper format
-                    raw_visual_citations = citation_result.get("visual_citations", [])
-                    visual_citations = []
-                    
-                    for citation in raw_visual_citations:
-                        if isinstance(citation, dict):
-                            visual_citations.append(citation)
-                        else:
-                            # Convert VisualCitation object to dict
-                            visual_citations.append(citation.to_dict())
-                    
-                    manual_references = citation_result.get("manual_references", [])
-                    
-                    logger.info(f"📸 Multimodal extraction result: {len(visual_citations)} visual, {len(manual_references)} manual")
-                    if visual_citations:
-                        logger.info(f"🎯 First citation: {visual_citations[0] if visual_citations else 'None'}")
-                except Exception as citation_error:
-                    logger.warning(f"Full citation extraction failed: {citation_error}")
-                    # Fallback to simple text-based citations
-                    visual_citations = []
-                    manual_references = []
-                
-                # If no citations found, create fallback text-based references
-                if not visual_citations and not manual_references and relevant_chunks:
-                    logger.info("📚 Creating fallback text-based citations from search results")
-                    for i, chunk in enumerate(relevant_chunks[:2], 1):
-                        manual_ref = {
-                            "document": chunk.get("source", "QSR Manual"),
-                            "page": i,  # Use index as page for now
-                            "section": f"{equipment_context} Information",
-                            "content_preview": chunk.get("content", "")[:100] + "..." if chunk.get("content") else "",
-                            "relevance": chunk.get("similarity", 0.0)
-                        }
-                        manual_references.append(manual_ref)
-                    
-                    logger.info(f"📚 Created {len(manual_references)} fallback references")
-                
-                if visual_citations:
-                    logger.info(f"📸 Found {len(visual_citations)} visual citations")
-                if manual_references:
-                    logger.info(f"📚 Found {len(manual_references)} manual references")
-            else:
-                logger.info("🔍 No equipment context found, skipping citation extraction")
-                
-        except Exception as e:
-            logger.warning(f"Citation extraction failed: {str(e)}")
-            # Continue without citations rather than failing the whole request
-        
-        # Extract document context information for response
-        document_context_info = None
-        hierarchical_path_info = None
-        contextual_recommendations_info = None
-        retrieval_method_used = "traditional"
-        
-        try:
-            if 'hybrid_results' in locals() and hybrid_results:
-                # Extract document context from hybrid results
-                if document_summaries:
-                    first_doc = document_summaries[0].get("summary")
-                    if first_doc:
-                        document_context_info = {
-                            "document_type": first_doc.document_type.value,
-                            "qsr_category": first_doc.qsr_category.value,
-                            "brand_context": first_doc.brand_context,
-                            "target_audience": first_doc.target_audience,
-                            "equipment_focus": first_doc.equipment_focus[:3],  # Limit to top 3
-                            "purpose": first_doc.purpose[:200] + "..." if len(first_doc.purpose) > 200 else first_doc.purpose
-                        }
+        # Extract manual references from relevant content
+        for item in relevant_content:
+            if item.get('source') != 'Unknown':
+                manual_references.append({
+                    "title": item['source'],
+                    "relevance_score": item['score'],
+                    "content_preview": item['content'][:200] + "..." if len(item['content']) > 200 else item['content']
+                })
                 
                 # Extract hierarchical paths
                 hierarchy_results = hybrid_results.get("hierarchical_paths", [])
@@ -1367,25 +1310,17 @@ async def chat_endpoint(chat_message: ChatMessage):
                         first_hierarchy.get("section", ""),
                         first_hierarchy.get("entity", "")
                     ]
-                
-                # Extract contextual recommendations
-                contextual_recommendations_info = hybrid_results.get("contextual_recommendations", [])
-                
-                retrieval_method_used = "hybrid_context_aware"
-                
-        except Exception as context_extraction_error:
-            logger.warning(f"Failed to extract context for response: {context_extraction_error}")
-        
+        # Create clean response
         response = ChatResponse(
             response=response_text,
             timestamp=datetime.datetime.now().isoformat(),
-            parsed_steps=parsed_steps_dict,
+            parsed_steps=None,  # Can be enhanced later
             visual_citations=visual_citations if visual_citations else None,
             manual_references=manual_references if manual_references else None,
-            document_context=document_context_info,
-            hierarchical_path=hierarchical_path_info,
-            contextual_recommendations=contextual_recommendations_info,
-            retrieval_method=retrieval_method_used
+            document_context=None,  # Simplified for now
+            hierarchical_path=None,  # Simplified for now
+            contextual_recommendations=None,  # Simplified for now
+            retrieval_method=search_method
         )
         
         return response
@@ -1890,9 +1825,10 @@ async def upload_file_original(file: UploadFile = File(...)):
 # List documents endpoint
 @app.get("/documents", response_model=DocumentListResponse)
 async def list_documents():
-    """Get list of Neo4j-verified documents only (data integrity enforced)"""
+    """Get list of documents from the main document database"""
     try:
-        docs_db = load_neo4j_verified_documents()
+        # Use the main document database (single source of truth)
+        docs_db = load_documents_db()
         
         # Handle both dict and list formats
         if isinstance(docs_db, list):

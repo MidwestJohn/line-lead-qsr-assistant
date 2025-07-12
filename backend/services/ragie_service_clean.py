@@ -38,6 +38,7 @@ class RagieSearchResult:
     document_id: str
     chunk_id: str
     metadata: Dict[str, Any]
+    images: Optional[List[Dict[str, Any]]] = None  # Image references from chunk
 
 @dataclass
 class RagieUploadResult:
@@ -111,12 +112,93 @@ class CleanRagieService:
             results = []
             if hasattr(response, 'scored_chunks') and response.scored_chunks:
                 for chunk in response.scored_chunks:
+                    chunk_metadata = getattr(chunk, 'metadata', {})
+                    chunk_text = getattr(chunk, 'text', '')
+                    
+                    # Enhanced metadata parsing based on Ragie documentation
+                    # Check for file_type in metadata to identify content type
+                    file_type = chunk_metadata.get('file_type', 'pdf')  # Default to pdf for text chunks
+                    
+                    # Debug enhanced metadata structure
+                    logger.info(f"🔍 Chunk metadata: file_type={file_type}, keys={list(chunk_metadata.keys())}")
+                    
+                    # Enhanced content type detection from text patterns
+                    image_keywords = ['figure', 'diagram', 'image', 'see illustration', 'pictured', 'photo', 'picture', 'visual', 'shown below', 'see below', 'example shown', 'gourmet', 'display']
+                    video_keywords = ['video', 'demonstration', 'tutorial', 'watch', 'play']
+                    
+                    if file_type == 'pdf':
+                        if any(keyword in chunk_text.lower() for keyword in image_keywords):
+                            # This text chunk refers to visual content - mark as image type
+                            file_type = 'image'
+                            chunk_metadata['file_type'] = 'image'
+                            logger.info(f"🖼️ Detected image reference in text: {chunk_text[:100]}...")
+                        elif any(keyword in chunk_text.lower() for keyword in video_keywords):
+                            # This text chunk refers to video content
+                            file_type = 'video'
+                            chunk_metadata['file_type'] = 'video'
+                            logger.info(f"🎥 Detected video reference in text: {chunk_text[:100]}...")
+                    
+                    # Extract source and page information
+                    source = chunk_metadata.get('source') or chunk_metadata.get('original_filename') or getattr(chunk, 'document_name', 'Unknown')
+                    page_number = chunk_metadata.get('page_number', None)
+                    
+                    # Extract image information based on content type
+                    images = []
+                    url = None
+                    
+                    # Check for direct image URLs in various metadata fields
+                    if 'images' in chunk_metadata:
+                        images = chunk_metadata['images']
+                        logger.info(f"🖼️ Found images in metadata: {len(images)}")
+                    elif 'image_urls' in chunk_metadata:
+                        images = [{'url': url} for url in chunk_metadata['image_urls']]
+                        logger.info(f"🖼️ Found image_urls in metadata: {len(images)}")
+                    elif 'url' in chunk_metadata:
+                        url = chunk_metadata['url']
+                        images = [{'url': url, 'caption': chunk_text[:100]}]
+                        logger.info(f"🖼️ Found direct URL in metadata: {url}")
+                    elif hasattr(chunk, 'images') and chunk.images:
+                        images = chunk.images
+                        logger.info(f"🖼️ Found images in chunk attributes: {len(images)}")
+                    elif hasattr(chunk, 'links') and chunk.links:
+                        # Check if links contain image references
+                        links = chunk.links
+                        if isinstance(links, list):
+                            for link in links:
+                                if hasattr(link, 'url') and any(ext in link.url.lower() for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
+                                    images.append({
+                                        'url': link.url,
+                                        'caption': getattr(link, 'text', chunk_text[:100]),
+                                        'type': 'image'
+                                    })
+                        logger.info(f"🖼️ Found images in links: {len(images)}")
+                    
+                    # Enhance metadata with parsed information
+                    enhanced_metadata = {
+                        **chunk_metadata,
+                        'file_type': file_type,
+                        'source': source,
+                        'page_number': page_number,
+                        'content_type': file_type,
+                        'has_images': len(images) > 0,
+                        'image_count': len(images)
+                    }
+                    
+                    # Add equipment-specific metadata if detected
+                    if any(equip in chunk_text.lower() for equip in ['fryer', 'grill', 'oven', 'freezer', 'equipment']):
+                        enhanced_metadata['equipment_type'] = 'kitchen_equipment'
+                        if 'cleaning' in chunk_text.lower() or 'maintenance' in chunk_text.lower():
+                            enhanced_metadata['procedure'] = 'maintenance'
+                        elif 'cooking' in chunk_text.lower() or 'operating' in chunk_text.lower():
+                            enhanced_metadata['procedure'] = 'operation'
+                    
                     result = RagieSearchResult(
-                        text=chunk.text,
+                        text=chunk_text,
                         score=chunk.score,
                         document_id=getattr(chunk, 'document_id', ''),
                         chunk_id=getattr(chunk, 'chunk_id', ''),
-                        metadata=getattr(chunk, 'metadata', {})
+                        metadata=enhanced_metadata,
+                        images=images if images else None
                     )
                     results.append(result)
             
@@ -127,6 +209,27 @@ class CleanRagieService:
             logger.error(f"Ragie search failed: {e}")
             return []
     
+    async def get_document_images(self, document_id: str) -> List[Dict[str, Any]]:
+        """
+        Try to get images from a Ragie document
+        This is experimental - checking if Ragie provides image access
+        """
+        if not self.client:
+            return []
+        
+        try:
+            # This might not exist in the current Ragie API
+            # But let's try different approaches
+            logger.info(f"🖼️ Attempting to retrieve images for document: {document_id}")
+            
+            # Check if there's a way to get document details including images
+            # This is exploratory - the actual API might be different
+            return []
+            
+        except Exception as e:
+            logger.debug(f"Image retrieval not supported or failed: {e}")
+            return []
+
     async def upload_document(self, file_path: str, metadata: Dict[str, Any]) -> RagieUploadResult:
         """
         Upload document to Ragie

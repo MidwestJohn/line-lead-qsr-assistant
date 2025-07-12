@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frontend API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .result { margin: 10px 0; padding: 10px; background: #f5f5f5; }
+        .error { background: #ffe6e6; }
+        .success { background: #e6ffe6; }
+        button { padding: 10px 20px; margin: 5px; }
+        textarea { width: 100%; height: 100px; }
+    </style>
+</head>
+<body>
+    <h1>Frontend API Test</h1>
+    
+    <div class="test-section">
+        <h3>Test 1: Health Check</h3>
+        <button onclick="testHealth()">Test Health</button>
+        <div id="health-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 2: Regular Chat</h3>
+        <input type="text" id="chat-message" placeholder="Enter message" value="How do I start the grill?">
+        <button onclick="testChat()">Send Chat</button>
+        <div id="chat-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 3: Streaming Chat</h3>
+        <input type="text" id="stream-message" placeholder="Enter message" value="What are grill maintenance steps?">
+        <button onclick="testStreamChat()">Send Stream Chat</button>
+        <div id="stream-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success">✅ Health check passed<br>Status: ${data.status}<br>Document count: ${data.document_count}</div>`;
+                resultDiv.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Health check failed: ${error.message}</div>`;
+            }
+        }
+        
+        async function testChat() {
+            const resultDiv = document.getElementById('chat-result');
+            const message = document.getElementById('chat-message').value;
+            resultDiv.innerHTML = 'Testing chat...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success">✅ Chat response received</div>`;
+                resultDiv.innerHTML += `<div><strong>Response:</strong> ${data.response}</div>`;
+                resultDiv.innerHTML += `<div><strong>Method:</strong> ${data.retrieval_method}</div>`;
+                resultDiv.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Chat failed: ${error.message}</div>`;
+            }
+        }
+        
+        async function testStreamChat() {
+            const resultDiv = document.getElementById('stream-result');
+            const message = document.getElementById('stream-message').value;
+            resultDiv.innerHTML = 'Testing streaming chat...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/chat/stream`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success">✅ Stream chat response received</div>`;
+                resultDiv.innerHTML += `<div><strong>Response:</strong> ${data.response}</div>`;
+                resultDiv.innerHTML += `<div><strong>Method:</strong> ${data.retrieval_method}</div>`;
+                resultDiv.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Stream chat failed: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -31,6 +31,9 @@ from io import BytesIO
 # Load environment variables
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
 
+# Fix tokenizer parallelism issue that causes server crashes
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 # Import core services
 from document_search import search_engine, load_documents_into_search_engine
 
@@ -55,17 +58,20 @@ openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 async def simple_openai_response(prompt: str, relevant_context: List[Dict] = None) -> Dict[str, Any]:
     """Simple OpenAI response generation with timeout"""
     try:
-        # Use faster model and add timeout
-        response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",  # Faster than GPT-4
-            messages=[
-                {"role": "system", "content": "You are Line Lead, a helpful QSR (Quick Service Restaurant) assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=500,  # Reduced for faster responses
-            temperature=0.7,
-            timeout=15  # 15 second timeout
-        )
+        # Use faster model with asyncio timeout
+        async def openai_call():
+            return openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",  # Faster than GPT-4
+                messages=[
+                    {"role": "system", "content": "You are Line Lead, a helpful QSR (Quick Service Restaurant) assistant."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=500,  # Reduced for faster responses
+                temperature=0.7
+            )
+        
+        # Apply timeout using asyncio
+        response = await asyncio.wait_for(openai_call(), timeout=10.0)
         
         return {
             "response": response.choices[0].message.content,
@@ -161,10 +167,11 @@ logger.info(f"CORS origins configured: {CORS_ORIGINS}")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=["*"],  # Temporarily allow all origins for debugging
+    allow_credentials=False,  # Must be False when allow_origins=["*"]
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Clean startup event
@@ -629,12 +636,35 @@ async def chat_endpoint(chat_message: ChatMessage):
                 if ragie_results:
                     search_method = "ragie"
                     for result in ragie_results:
-                        relevant_content.append({
+                        # Try multiple metadata keys for source name
+                        source_name = (
+                            result.metadata.get("original_filename") or 
+                            result.metadata.get("filename") or 
+                            result.metadata.get("file_name") or
+                            result.metadata.get("name") or
+                            "Pizza Guide Manual"  # Fallback with more context
+                        )
+                        
+                        # Debug metadata structure
+                        logger.info(f"🔍 Ragie metadata keys: {list(result.metadata.keys())}")
+                        logger.info(f"📝 Using source name: {source_name}")
+                        logger.info(f"🖼️ Images found: {len(result.images) if result.images else 0}")
+                        logger.info(f"🔍 Full metadata: {result.metadata}")
+                        logger.info(f"🖼️ Images data: {result.images}")
+                        
+                        content_item = {
                             "content": result.text,
                             "score": result.score,
-                            "source": result.metadata.get("original_filename", "Unknown"),
-                            "document_id": result.document_id
-                        })
+                            "source": source_name,
+                            "document_id": result.document_id,
+                            "metadata": result.metadata  # Include full metadata for citation parsing
+                        }
+                        
+                        # Add image information if available
+                        if result.images:
+                            content_item["images"] = result.images
+                            
+                        relevant_content.append(content_item)
                     logger.info(f"✅ Found {len(relevant_content)} results from Ragie")
                 else:
                     logger.info("ℹ️ No results from Ragie, falling back to local search")
@@ -695,17 +725,21 @@ Provide practical restaurant operations advice. Be concise."""
         
         # Generate AI response using OpenAI
         try:
-            logger.info("🤖 Generating AI response...")
+            logger.info(f"🤖 Generating AI response... (prompt length: {len(enhanced_prompt)} chars)")
             
-            ai_response = await simple_openai_response(
-                enhanced_prompt,
-                relevant_context=relevant_content
+            # Add timeout for the entire AI response generation
+            ai_response = await asyncio.wait_for(
+                simple_openai_response(enhanced_prompt, relevant_context=relevant_content),
+                timeout=15.0  # 15 second total timeout
             )
             
             response_text = ai_response.get("response", "I apologize, but I encountered an issue processing your request.")
             
             logger.info(f"✅ Generated AI response ({len(response_text)} characters)")
             
+        except asyncio.TimeoutError:
+            logger.error("⏰ AI response generation timed out (15 seconds)")
+            response_text = "I apologize, but the response is taking too long to generate. Please try a simpler question or try again in a moment."
         except Exception as ai_error:
             logger.error(f"AI response generation failed: {ai_error}")
             response_text = "I apologize, but I'm experiencing technical difficulties. Please try again in a moment."
@@ -721,18 +755,146 @@ Provide practical restaurant operations advice. Be concise."""
         # Log response info
         logger.info(f"Sending response using {search_method} search method")
         
-        # Simple citation extraction from relevant content
+        # Enhanced citation extraction with visual and page references
         visual_citations = []
         manual_references = []
         
-        # Extract manual references from relevant content
+        # Parse Ragie responses using metadata structure for image citations
+        def parse_ragie_citation(item):
+            """Parse Ragie response item into appropriate citation structure"""
+            metadata = item.get('metadata', {})
+            file_type = metadata.get('file_type', 'text')
+            source = item.get('source', 'Unknown')
+            page_number = metadata.get('page_number', None)
+            
+            # Base citation structure
+            citation = {
+                "source": source,
+                "page_number": page_number,
+                "relevance_score": item.get('score', 0.0),
+                "metadata": metadata
+            }
+            
+            # Parse based on file_type metadata
+            if file_type == 'image':
+                return {
+                    **citation,
+                    "type": "image",
+                    "text": item.get('content', ''),
+                    "description": item.get('content', 'Image from document'),
+                    "media": {
+                        "type": "image",
+                        "url": item.get('url', ''),  # Ragie image URL if available
+                        "description": item.get('content', ''),
+                        "source_page": page_number
+                    }
+                }
+            elif file_type == 'video':
+                return {
+                    **citation,
+                    "type": "video", 
+                    "text": item.get('content', ''),
+                    "media": {
+                        "type": "video",
+                        "url": item.get('url', ''),
+                        "description": item.get('content', ''),
+                        "timestamp": metadata.get('timestamp', None)
+                    }
+                }
+            elif 'equipment_type' in metadata:
+                # Equipment-specific content with potential diagrams
+                return {
+                    **citation,
+                    "type": "diagram",
+                    "text": item.get('content', ''),
+                    "equipment_type": metadata.get('equipment_type'),
+                    "procedure": metadata.get('procedure', 'general')
+                }
+            else:
+                # Regular text content
+                return {
+                    **citation,
+                    "type": "text",
+                    "text": item.get('content', ''),
+                    "content_preview": item.get('content', '')[:200] + ("..." if len(item.get('content', '')) > 200 else "")
+                }
+        
+        # Extract citations and add page references for visual content
         for item in relevant_content:
             if item.get('source') != 'Unknown':
-                manual_references.append({
-                    "title": item['source'],
-                    "relevance_score": item['score'],
-                    "content_preview": item['content'][:200] + "..." if len(item['content']) > 200 else item['content']
-                })
+                citation = parse_ragie_citation(item)
+                
+                # Add to manual references for all content types
+                manual_ref = {
+                    "title": citation["source"],
+                    "relevance_score": citation["relevance_score"],
+                    "content_preview": citation.get("content_preview", citation.get("text", "")[:200]),
+                    "page_number": citation.get("page_number"),
+                    "type": citation["type"]
+                }
+                
+                # Add visual citations for image/video/diagram content
+                if citation["type"] in ["image", "video", "diagram"]:
+                    visual_citation = {
+                        "citation_id": f"{citation['source']}_{citation.get('page_number', 'unknown')}_{citation['type']}",
+                        "type": citation["type"],
+                        "reference": f"{citation['source']} - {citation['type'].title()}",
+                        "source": citation["source"],
+                        "page": citation.get("page_number", "unknown"),
+                        "confidence": citation["relevance_score"],
+                        "description": citation.get("text", ""),
+                        "metadata": citation.get("metadata", {})
+                    }
+                    
+                    # Add media information if available
+                    if "media" in citation:
+                        visual_citation["media"] = citation["media"]
+                        visual_citation["url"] = citation["media"].get("url", "")
+                        visual_citation["has_content"] = bool(citation["media"].get("url"))
+                    
+                    # Add equipment context for diagrams
+                    if citation["type"] == "diagram" and "equipment_type" in citation:
+                        visual_citation["equipment_type"] = citation["equipment_type"]
+                        visual_citation["procedure"] = citation.get("procedure", "general")
+                    
+                    visual_citations.append(visual_citation)
+                
+                # Legacy support: Add images if available from Ragie
+                if 'images' in item and item['images']:
+                    manual_ref["images"] = item['images']
+                    
+                    # Also add to visual citations for image display
+                    for img in item['images']:
+                        visual_citations.append({
+                            "citation_id": f"{item['source']}_legacy_image_{len(visual_citations)}",
+                            "type": "image",
+                            "source": item['source'],
+                            "url": img.get('url', ''),
+                            "caption": img.get('caption', f"Image from {item['source']}"),
+                            "page": img.get('page', None),
+                            "relevance_score": item['score']
+                        })
+                
+                # Add visual page references for PDF content that likely contains images
+                source_name = item['source'].lower()
+                content_text = item['content'].lower()
+                
+                # Detect visual content mentions in pizza guide
+                if ('pizza guide' in source_name or 'italicatessen' in source_name) and \
+                   ('gourmet' in content_text or 'image' in user_message.lower() or 'picture' in user_message.lower() or 'look like' in user_message.lower()):
+                    
+                    # Add PDF page reference for visual content
+                    visual_citations.append({
+                        "type": "pdf_page",
+                        "source": item['source'],
+                        "caption": "Visual examples and images available in PDF",
+                        "page": 19,  # Pizza Gourmet section
+                        "pdf_url": f"/files/{item.get('document_id', 'pizza-guide')}.pdf",
+                        "relevance_score": item['score'],
+                        "has_content": True
+                    })
+                
+                manual_references.append(manual_ref)
         
         # Create clean response
         response = ChatResponse(
@@ -833,6 +995,23 @@ async def serve_file(filename: str):
     else:
         raise HTTPException(status_code=404, detail="File not found")
 
+# Image serving from Ragie
+@app.get("/images/ragie/{document_id}/{image_id}")
+async def serve_ragie_image(document_id: str, image_id: str):
+    """Serve images extracted by Ragie"""
+    try:
+        # This would need to be implemented based on Ragie's image serving API
+        # For now, return a placeholder or proxy to Ragie's image URL
+        if clean_ragie_service.is_available():
+            # TODO: Implement actual Ragie image retrieval
+            # This is a placeholder - Ragie may provide direct image URLs
+            raise HTTPException(status_code=501, detail="Ragie image serving not yet implemented")
+        else:
+            raise HTTPException(status_code=503, detail="Ragie service not available")
+    except Exception as e:
+        logger.error(f"Error serving Ragie image: {e}")
+        raise HTTPException(status_code=500, detail="Failed to serve image")
+
 # Keep-alive endpoint for frontend
 @app.get("/keep-alive")
 async def keep_alive():
@@ -845,11 +1024,52 @@ async def keep_alive():
 # Streaming chat endpoint
 @app.post("/chat/stream")
 async def chat_stream_endpoint(chat_message: ChatMessage):
-    """Streaming chat endpoint - currently falls back to regular chat"""
-    # For now, just redirect to regular chat
-    # TODO: Implement actual streaming in future
-    response = await chat_endpoint(chat_message)
-    return response
+    """Streaming chat endpoint - falls back to regular chat for now"""
+    
+    # Since the frontend expects a streaming response but we're returning JSON,
+    # we need to handle this properly to avoid hanging the frontend
+    
+    try:
+        # Get the regular chat response
+        response = await chat_endpoint(chat_message)
+        
+        # Convert ChatResponse to dict for JSON serialization
+        response_dict = {
+            "response": response.response,
+            "timestamp": response.timestamp,
+            "parsed_steps": response.parsed_steps,
+            "visual_citations": response.visual_citations,
+            "manual_references": response.manual_references,
+            "document_context": response.document_context,
+            "hierarchical_path": response.hierarchical_path,
+            "contextual_recommendations": response.contextual_recommendations,
+            "retrieval_method": response.retrieval_method
+        }
+        
+        return response_dict
+        
+    except Exception as e:
+        logger.error(f"Streaming chat endpoint error: {e}")
+        return {
+            "response": "I apologize, but I'm experiencing technical difficulties. Please try again.",
+            "timestamp": datetime.datetime.now().isoformat(),
+            "retrieval_method": "error",
+            "error": str(e)
+        }
+
+# CORS preflight handler
+@app.options("/{full_path:path}")
+async def options_handler(request: Request):
+    """Handle CORS preflight requests"""
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Max-Age": "86400",
+        }
+    )
 
 # API endpoints listing
 @app.get("/")

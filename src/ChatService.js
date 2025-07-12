@@ -172,6 +172,42 @@ class ChatService {
         throw new Error(`Streaming request failed: ${response.status} ${response.statusText}`);
       }
 
+      // Check if response is actually a streaming response or regular JSON
+      const contentType = response.headers.get('content-type');
+      
+      if (contentType && contentType.includes('application/json')) {
+        // Response is regular JSON, not streaming - simulate streaming animation
+        clearTimeout(timeoutId);
+        const data = await response.json();
+        
+        // Simulate streaming by chunking the response
+        if (onChunk && data.response) {
+          const fullText = data.response;
+          const words = fullText.split(' ');
+          const chunkSize = Math.max(1, Math.floor(words.length / 8)); // ~8 chunks
+          
+          let currentChunk = '';
+          for (let i = 0; i < words.length; i++) {
+            currentChunk += words[i] + ' ';
+            
+            // Send chunk every chunkSize words or at the end
+            if ((i + 1) % chunkSize === 0 || i === words.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 50)); // 50ms delay between chunks
+              onChunk(currentChunk.trim());
+            }
+          }
+        } else if (onChunk) {
+          onChunk(data.response || 'No response received');
+        }
+        
+        if (onComplete) {
+          onComplete(data);
+        }
+        
+        return { success: true, data };
+      }
+
+      // Handle actual streaming response
       reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';

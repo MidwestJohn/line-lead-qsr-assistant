@@ -1,0 +1,19 @@
+Test Manual for Ragie Integration
+
+Fryer Safety Protocol:
+1. Ensure fryer is turned off
+2. Wait for oil temperature to drop below 150°F
+3. Use proper protective equipment
+4. Drain oil slowly into designated container
+5. Clean fryer basket thoroughly
+6. Wipe down all surfaces
+7. Check heating elements for damage
+8. Refill with fresh oil when ready
+
+Grill Maintenance:
+1. Turn off grill and allow to cool
+2. Remove and clean grates
+3. Scrape cooking surface
+4. Clean grease trap
+5. Inspect gas connections
+6. Test ignition system
