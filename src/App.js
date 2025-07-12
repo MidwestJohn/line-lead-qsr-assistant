@@ -1309,6 +1309,14 @@ function App() {
         const visualCitations = result.data.visual_citations || [];
         const manualReferences = result.data.manual_references || [];
         const equipmentContext = result.data.equipment_context;
+        
+        // Debug logging for citations
+        console.log('🔍 Response data:', {
+          responseText: responseText?.length + ' chars',
+          visualCitations: visualCitations?.length || 0,
+          manualReferences: manualReferences?.length || 0,
+          fullData: result.data
+        });
 
         // Update current equipment context if provided
         if (equipmentContext && equipmentContext !== currentEquipment) {

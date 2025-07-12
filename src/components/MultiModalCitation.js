@@ -1,10 +1,19 @@
 import { useState } from 'react';
-import { Image, Eye, Book, AlertTriangle, FileText, Grid3x3, Table } from 'lucide-react';
+import { Image, Eye, Book, AlertTriangle, FileText, Grid3x3, Table, BookOpen } from 'lucide-react';
 import './MultiModalCitation.css';
 
 const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onCitationClick }) => {
   const [selectedCitation, setSelectedCitation] = useState(null);
   const [imageCache, setImageCache] = useState({});
+  
+  // Debug logging for citation props
+  console.log('🎯 MultiModalCitation received:', {
+    citations: citations?.length || 0,
+    manualReferences: manualReferences?.length || 0,
+    isVisible,
+    citationsData: citations,
+    manualData: manualReferences
+  });
 
   // Enhanced citation type icons based on Ragie file_type metadata
   const getCitationIcon = (type) => {
@@ -77,7 +86,7 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
 
   // Enhanced citation reference formatting using Ragie metadata
   const formatCitationReference = (citation) => {
-    const { type, reference, page, source, equipment_type, procedure, metadata = {} } = citation;
+    const { type, reference, page, source, equipment_type } = citation;
     
     // Use enhanced metadata for better formatting
     const pageStr = page ? `p.${page}` : 'page unknown';
@@ -231,7 +240,11 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
           role="button"
           tabIndex={0}
           onClick={() => setSelectedCitation(null)}
-          onKeyDown={(e) => e.key === 'Escape' && setSelectedCitation(null)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+              setSelectedCitation(null);
+            }
+          }}
         >
           <div 
             className="citation-modal" 
@@ -306,8 +319,9 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
                         src={mediaUrl}
                         controls
                         className="citation-video"
-                        alt={selectedCitation.description || selectedCitation.reference || 'QSR Manual Video'}
+                        aria-label={selectedCitation.description || selectedCitation.reference || 'QSR Manual Video'}
                       >
+                        <track kind="captions" src="" label="No captions available" default />
                         Your browser does not support video playback.
                       </video>
                       {selectedCitation.description && (
