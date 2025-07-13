@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Citations</title>
+</head>
+<body>
+    <h1>Visual Citations Test</h1>
+    <button onclick="testCitations()">Test Citations API</button>
+    <div id="results"></div>
+
+    <script>
+        async function testCitations() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:8000/chat/stream', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: 'Show me an image of Pizza Canotto'
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    console.log('🔍 Full API response:', data);
+                    console.log('📊 Visual citations:', data.visual_citations);
+                    console.log('📚 Manual references:', data.manual_references);
+                    
+                    // Simulate frontend extraction
+                    const responseText = data.response;
+                    const visualCitations = data.visual_citations || [];
+                    const manualReferences = data.manual_references || [];
+                    
+                    console.log('🔄 Frontend would extract:');
+                    console.log('   responseText:', responseText?.length, 'chars');
+                    console.log('   visualCitations:', visualCitations.length);
+                    console.log('   manualReferences:', manualReferences.length);
+                    
+                    // Display results
+                    resultsDiv.innerHTML = `
+                        <h2>Results:</h2>
+                        <p><strong>Response:</strong> ${responseText?.length || 0} characters</p>
+                        <p><strong>Visual Citations:</strong> ${visualCitations.length}</p>
+                        <p><strong>Manual References:</strong> ${manualReferences.length}</p>
+                        
+                        ${visualCitations.length > 0 ? `
+                            <h3>Visual Citations:</h3>
+                            <ul>
+                                ${visualCitations.map(citation => `
+                                    <li>
+                                        <strong>Type:</strong> ${citation.type}<br>
+                                        <strong>Source:</strong> ${citation.source}<br>
+                                        <strong>Page:</strong> ${citation.page || 'N/A'}<br>
+                                        ${citation.description ? `<strong>Description:</strong> ${citation.description.substring(0, 100)}...` : ''}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        ` : '<p>No visual citations found</p>'}
+                        
+                        <h3>Raw Data (check console for full details):</h3>
+                        <pre>${JSON.stringify({
+                            keys: Object.keys(data),
+                            visualCitationsLength: visualCitations.length,
+                            manualReferencesLength: manualReferences.length
+                        }, null, 2)}</pre>
+                    `;
+                    
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+            } catch (error) {
+                console.error('❌ Test failed:', error);
+                resultsDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

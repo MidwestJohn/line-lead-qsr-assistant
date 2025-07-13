@@ -1310,13 +1310,23 @@ function App() {
         const manualReferences = result.data.manual_references || [];
         const equipmentContext = result.data.equipment_context;
         
-        // Debug logging for citations
+        // Enhanced debug logging for citations
         console.log('🔍 Response data:', {
           responseText: responseText?.length + ' chars',
           visualCitations: visualCitations?.length || 0,
           manualReferences: manualReferences?.length || 0,
           fullData: result.data
         });
+
+        // Debug: Log visual citations in detail
+        if (visualCitations && visualCitations.length > 0) {
+          console.log('📊 Visual citations detailed:');
+          visualCitations.forEach((citation, index) => {
+            console.log(`   Visual Citation ${index + 1}:`, citation);
+          });
+        } else {
+          console.log('⚠️ No visual citations in API response');
+        }
 
         // Update current equipment context if provided
         if (equipmentContext && equipmentContext !== currentEquipment) {
@@ -1345,6 +1355,7 @@ function App() {
                 }
               : msg
           ));
+          console.log('🔄 Updated existing message with visual citations:', visualCitations?.length || 0);
         } else {
           // Create new message
           const fallbackMessage = {
@@ -1358,6 +1369,8 @@ function App() {
             equipmentContext: equipmentContext
           };
           setMessages(prev => [...prev, fallbackMessage]);
+          console.log('✨ Created new message with visual citations:', visualCitations?.length || 0);
+          console.log('📋 Full message object:', fallbackMessage);
         }
       } else {
         throw new Error(result.error.userMessage);
@@ -2048,6 +2061,18 @@ function App() {
                           }}
                         />
                       )}
+                      
+                      {/* Debug: Log when citation component should render */}
+                      {message.sender === 'assistant' && (() => {
+                        const shouldRender = !!(message.visualCitations || message.manualReferences);
+                        console.log(`🎯 Message ${message.id} citation render check:`, {
+                          shouldRender,
+                          visualCitations: message.visualCitations?.length || 0,
+                          manualReferences: message.manualReferences?.length || 0,
+                          messageObject: message
+                        });
+                        return null;
+                      })()}
                       
                       <div className="message-time">{formatTime(message.timestamp)}</div>
                       {message.isError && message.retryFunction && (

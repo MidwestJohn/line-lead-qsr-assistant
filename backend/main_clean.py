@@ -762,6 +762,8 @@ Provide practical restaurant operations advice. Be concise."""
         visual_citations = []
         manual_references = []
         
+        logger.info(f"🔍 Starting citation extraction for {len(relevant_content)} content items")
+        
         # Parse Ragie responses using metadata structure for image citations
         def parse_ragie_citation(item):
             """Parse Ragie response item into appropriate citation structure"""
@@ -900,13 +902,15 @@ Provide practical restaurant operations advice. Be concise."""
                 
                 manual_references.append(manual_ref)
         
+        logger.info(f"📊 Citation extraction complete: {len(visual_citations)} visual, {len(manual_references)} manual")
+        
         # Create clean response
         response = ChatResponse(
             response=response_text,
             timestamp=datetime.datetime.now().isoformat(),
             parsed_steps=None,  # Can be enhanced later
-            visual_citations=visual_citations if visual_citations else None,
-            manual_references=manual_references if manual_references else None,
+            visual_citations=visual_citations or None,
+            manual_references=manual_references or None,
             document_context=None,  # Simplified for now
             hierarchical_path=None,  # Simplified for now
             contextual_recommendations=None,  # Simplified for now

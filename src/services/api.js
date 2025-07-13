@@ -73,7 +73,8 @@ class APIService {
 
     // Specific API endpoints with error handling
     async sendChatMessage(message) {
-        const result = await this.post('/chat', { message });
+        // Use the stream endpoint which has visual citations
+        const result = await this.post('/chat/stream', { message });
         if (!result.success) {
             throw new Error(`Chat failed: ${result.error}`);
         }

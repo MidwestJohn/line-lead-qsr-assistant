@@ -10,9 +10,7 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
   console.log('🎯 MultiModalCitation received:', {
     citations: citations?.length || 0,
     manualReferences: manualReferences?.length || 0,
-    isVisible,
-    citationsData: citations,
-    manualData: manualReferences
+    isVisible
   });
 
   // Enhanced citation type icons based on Ragie file_type metadata
@@ -112,8 +110,25 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
     }
   };
 
-  if (!isVisible || (!citations?.length && !manualReferences?.length)) {
+  // Force visibility for debugging if citations exist
+  const shouldShow = citations?.length > 0 || manualReferences?.length > 0;
+  
+  console.log('🔍 MultiModalCitation render decision:', {
+    isVisible,
+    citationsLength: citations?.length || 0,
+    manualReferencesLength: manualReferences?.length || 0,
+    shouldShow,
+    willRender: isVisible && shouldShow
+  });
+
+  if (!isVisible || !shouldShow) {
+    console.log('❌ MultiModalCitation not rendering:', { isVisible, shouldShow });
     return null;
+  }
+  
+  // Add alert for debugging (remove in production)
+  if (citations?.length > 0) {
+    console.log('🚨 ALERT: Citations exist, component should render!', citations);
   }
 
   return (
