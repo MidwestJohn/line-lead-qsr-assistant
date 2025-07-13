@@ -183,6 +183,9 @@ async def startup_clean_ragie():
     # Initialize Ragie service
     if clean_ragie_service.is_available():
         logger.info("✅ Ragie service available and ready")
+        
+        # Setup QSR-specific instructions for better content extraction
+        await clean_ragie_service.setup_qsr_instructions()
     else:
         logger.warning("⚠️ Ragie service not available - falling back to local search")
     
@@ -843,7 +846,8 @@ Provide practical restaurant operations advice. Be concise."""
                         "page": citation.get("page_number", "unknown"),
                         "confidence": citation["relevance_score"],
                         "description": citation.get("text", ""),
-                        "metadata": citation.get("metadata", {})
+                        "metadata": citation.get("metadata", {}),
+                        "enhanced_extraction": True  # Mark as using enhanced instruction-based extraction
                     }
                     
                     # Add media information if available

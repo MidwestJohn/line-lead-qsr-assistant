@@ -99,6 +99,101 @@ class CleanRagieService:
         """Check if Ragie service is available"""
         return self.client is not None
     
+    async def setup_qsr_instructions(self) -> bool:
+        """
+        Setup QSR-specific instructions for better content extraction
+        This tells Ragie how to identify and extract pizza images and QSR content
+        """
+        if not self.client:
+            logger.error("Cannot setup instructions: Ragie client not available")
+            return False
+        
+        try:
+            logger.info("🎯 Setting up QSR instructions for enhanced content extraction...")
+            
+            # Instruction for identifying pizza images and visual content
+            pizza_instruction = {
+                "name": "pizza_visual_content",
+                "description": "Identify and extract pizza images, diagrams, and visual content from QSR manuals",
+                "prompt": """Extract visual content related to pizzas from restaurant manuals. Look for:
+- Pizza images showing different styles (Margherita, Romana, Canotto, etc.)
+- Equipment diagrams for pizza ovens and kitchen tools
+- Recipe cards with visual elements
+- Step-by-step preparation images
+- Temperature and timing charts
+- Ingredient photos and portions
+
+Tag content with pizza style, equipment type, and procedure context.""",
+                "entity_schema": {
+                    "type": "object",
+                    "properties": {
+                        "pizza_style": {"type": "string", "description": "Type of pizza (Margherita, Romana, Canotto, etc.)"},
+                        "content_type": {"type": "string", "description": "Type of visual content (image, diagram, recipe_card, etc.)"},
+                        "equipment_type": {"type": "string", "description": "Related equipment (oven, tools, etc.)"},
+                        "procedure": {"type": "string", "description": "Related procedure (preparation, cooking, etc.)"},
+                        "has_visual": {"type": "boolean", "description": "Whether this content contains visual elements"}
+                    },
+                    "required": ["content_type", "has_visual"]
+                },
+                "partition": self.partition
+            }
+            
+            # Instruction for QSR equipment identification
+            equipment_instruction = {
+                "name": "qsr_equipment_content", 
+                "description": "Identify equipment-related visual content in QSR manuals",
+                "prompt": """Extract equipment-related visual content including:
+- Fryer operation diagrams and maintenance images
+- Grill setup and cleaning procedures
+- Oven temperature controls and settings
+- Safety equipment and PPE images
+- Equipment troubleshooting diagrams
+- Maintenance schedule charts
+
+Tag with equipment type (fryer, grill, oven) and procedure type (operation, maintenance, safety).""",
+                "entity_schema": {
+                    "type": "object", 
+                    "properties": {
+                        "equipment_type": {"type": "string", "description": "Type of equipment (fryer, grill, oven, etc.)"},
+                        "procedure_type": {"type": "string", "description": "Type of procedure (operation, maintenance, safety, cleaning)"},
+                        "content_type": {"type": "string", "description": "Type of content (diagram, image, chart, procedure)"},
+                        "safety_level": {"type": "string", "description": "Safety importance (critical, standard, informational)"},
+                        "has_visual": {"type": "boolean", "description": "Whether this content contains visual elements"}
+                    },
+                    "required": ["equipment_type", "procedure_type", "has_visual"]
+                },
+                "partition": self.partition
+            }
+            
+            # Check existing instructions first
+            existing_instructions = self.client.entities.list_instructions()
+            existing_names = [inst.name for inst in existing_instructions.instructions] if hasattr(existing_instructions, 'instructions') else []
+            
+            instructions_created = []
+            
+            # Create pizza instruction if it doesn't exist
+            if "pizza_visual_content" not in existing_names:
+                result = self.client.entities.create_instruction(request=pizza_instruction)
+                instructions_created.append("pizza_visual_content")
+                logger.info(f"✅ Created pizza visual content instruction: {result.id}")
+            
+            # Create equipment instruction if it doesn't exist  
+            if "qsr_equipment_content" not in existing_names:
+                result = self.client.entities.create_instruction(request=equipment_instruction)
+                instructions_created.append("qsr_equipment_content")
+                logger.info(f"✅ Created QSR equipment instruction: {result.id}")
+            
+            if instructions_created:
+                logger.info(f"🎯 Setup complete: Created {len(instructions_created)} instructions")
+            else:
+                logger.info("🎯 Instructions already exist, skipping creation")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to setup QSR instructions: {e}")
+            return False
+    
     def _preprocess_query(self, query: str) -> str:
         """
         Preprocess query to improve Ragie search results
@@ -279,25 +374,82 @@ class CleanRagieService:
             logger.error(f"Ragie search failed: {e}")
             return []
     
-    async def get_document_images(self, document_id: str) -> List[Dict[str, Any]]:
+    async def get_document_entities(self, document_id: str) -> List[Dict[str, Any]]:
         """
-        Try to get images from a Ragie document
-        This is experimental - checking if Ragie provides image access
+        Get entities extracted from a document using instructions
+        This should include visual content identified by our QSR instructions
         """
         if not self.client:
             return []
         
         try:
-            # This might not exist in the current Ragie API
-            # But let's try different approaches
+            logger.info(f"🎯 Getting entities for document: {document_id}")
+            
+            # Get entities extracted by our instructions
+            entities = self.client.entities.list_by_document(document_id=document_id)
+            
+            visual_entities = []
+            if hasattr(entities, 'entities') and entities.entities:
+                for entity in entities.entities:
+                    # Look for visual content entities
+                    if hasattr(entity, 'instruction_name'):
+                        if entity.instruction_name in ['pizza_visual_content', 'qsr_equipment_content']:
+                            visual_entities.append({
+                                'id': getattr(entity, 'id', ''),
+                                'instruction': entity.instruction_name,
+                                'content': getattr(entity, 'content', ''),
+                                'metadata': getattr(entity, 'metadata', {}),
+                                'confidence': getattr(entity, 'confidence', 0.0)
+                            })
+                            
+            logger.info(f"🖼️ Found {len(visual_entities)} visual entities in document")
+            return visual_entities
+            
+        except Exception as e:
+            logger.debug(f"Entity retrieval failed: {e}")
+            return []
+    
+    async def get_document_images(self, document_id: str) -> List[Dict[str, Any]]:
+        """
+        Try to get images from a Ragie document using multiple methods
+        """
+        if not self.client:
+            return []
+        
+        try:
             logger.info(f"🖼️ Attempting to retrieve images for document: {document_id}")
             
-            # Check if there's a way to get document details including images
-            # This is exploratory - the actual API might be different
+            # Method 1: Check entities for visual content
+            entities = await self.get_document_entities(document_id)
+            if entities:
+                logger.info(f"Found {len(entities)} visual entities")
+                return entities
+            
+            # Method 2: Check document chunks for image content
+            try:
+                chunks = self.client.documents.get_chunks(document_id=document_id)
+                image_chunks = []
+                
+                if hasattr(chunks, 'chunks') and chunks.chunks:
+                    for chunk in chunks.chunks:
+                        chunk_metadata = getattr(chunk, 'metadata', {})
+                        if chunk_metadata.get('content_type') == 'image' or 'image' in chunk_metadata.get('file_type', ''):
+                            image_chunks.append({
+                                'chunk_id': getattr(chunk, 'id', ''),
+                                'content': getattr(chunk, 'content', ''),
+                                'metadata': chunk_metadata
+                            })
+                
+                logger.info(f"Found {len(image_chunks)} image chunks")
+                return image_chunks
+                
+            except Exception as chunk_error:
+                logger.debug(f"Chunk retrieval failed: {chunk_error}")
+            
             return []
             
         except Exception as e:
-            logger.debug(f"Image retrieval not supported or failed: {e}")
+            logger.debug(f"Image retrieval failed: {e}")
             return []
 
     async def upload_document(self, file_path: str, metadata: Dict[str, Any]) -> RagieUploadResult:
