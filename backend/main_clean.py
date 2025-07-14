@@ -726,22 +726,71 @@ Provide practical QSR advice with specific steps. Be concise."""
 
 Provide practical restaurant operations advice. Be concise."""
         
-        # Generate AI response using OpenAI
+        # ===============================================================================
+        # ENHANCED AI RESPONSE WITH MULTI-AGENT ORCHESTRATION
+        # ===============================================================================
+        
         try:
-            logger.info(f"🤖 Generating AI response... (prompt length: {len(enhanced_prompt)} chars)")
+            logger.info(f"🤖 Generating AI response with multi-agent orchestration...")
             
-            # Add timeout for the entire AI response generation
-            ai_response = await asyncio.wait_for(
-                simple_openai_response(enhanced_prompt, relevant_context=relevant_content),
-                timeout=15.0  # 15 second total timeout
-            )
-            
-            response_text = ai_response.get("response", "I apologize, but I encountered an issue processing your request.")
-            
-            logger.info(f"✅ Generated AI response ({len(response_text)} characters)")
+            # Try multi-agent processing first (if available)
+            if VOICE_AVAILABLE and voice_orchestrator:
+                logger.info("🎭 Using multi-agent PydanticAI orchestration")
+                
+                # Convert relevant_content to format expected by voice orchestrator
+                relevant_docs = []
+                for item in relevant_content:
+                    relevant_docs.append({
+                        "content": item["content"],
+                        "source": item["source"], 
+                        "score": item["score"],
+                        "document_id": item.get("document_id", "unknown"),
+                        "metadata": item.get("metadata", {})
+                    })
+                
+                # Use enhanced multi-agent processing
+                voice_response = await asyncio.wait_for(
+                    voice_orchestrator.process_message(
+                        message=user_message,
+                        relevant_docs=relevant_docs,
+                        session_id=chat_message.conversation_id,
+                        message_type="text"  # Specify this is text chat, not voice
+                    ),
+                    timeout=20.0  # Slightly longer timeout for multi-agent processing
+                )
+                
+                response_text = voice_response.text_response
+                
+                # Extract additional multi-agent insights
+                agent_info = ""
+                if hasattr(voice_response, 'primary_agent'):
+                    agent_info = f" (via {voice_response.primary_agent.value} agent"
+                    if hasattr(voice_response, 'contributing_agents') and len(voice_response.contributing_agents) > 1:
+                        contributing = [a.value for a in voice_response.contributing_agents if a != voice_response.primary_agent]
+                        if contributing:
+                            agent_info += f" + {', '.join(contributing)}"
+                    agent_info += ")"
+                
+                logger.info(f"✅ Generated multi-agent response ({len(response_text)} characters){agent_info}")
+                
+                # Include safety priority information
+                if hasattr(voice_response, 'safety_priority') and voice_response.safety_priority:
+                    logger.info("⚠️ Safety-priority response generated")
+                
+            else:
+                # Fallback to simple OpenAI if multi-agent not available
+                logger.info("🔄 Falling back to simple OpenAI response")
+                
+                ai_response = await asyncio.wait_for(
+                    simple_openai_response(enhanced_prompt, relevant_context=relevant_content),
+                    timeout=15.0
+                )
+                
+                response_text = ai_response.get("response", "I apologize, but I encountered an issue processing your request.")
+                logger.info(f"✅ Generated fallback response ({len(response_text)} characters)")
             
         except asyncio.TimeoutError:
-            logger.error("⏰ AI response generation timed out (15 seconds)")
+            logger.error("⏰ AI response generation timed out")
             response_text = "I apologize, but the response is taking too long to generate. Please try a simpler question or try again in a moment."
         except Exception as ai_error:
             logger.error(f"AI response generation failed: {ai_error}")
