@@ -17,6 +17,21 @@ import asyncio
 import hashlib
 from step_parser import parse_ai_response_steps, ParsedStepsResponse
 
+# Import enhanced QSR models
+try:
+    from models.enhanced_qsr_models import (
+        EnhancedQSRResponse, EquipmentResponse, ProcedureResponse, 
+        SafetyResponse, MaintenanceResponse, EnhancedVisualCitation,
+        VisualCitationCollection, EquipmentContext, QSRResponseFactory,
+        EnhancedConversationContext, AgentPerformanceTracker,
+        VisualCitationType, VisualCitationSource
+    )
+    ENHANCED_MODELS_AVAILABLE = True
+    logger.info("✅ Enhanced QSR models imported successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Enhanced QSR models not available: {e}")
+    ENHANCED_MODELS_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 class VoiceState(str, Enum):
@@ -129,15 +144,78 @@ class VoiceResponse(BaseModel):
     specialized_insights: Dict[str, str] = Field(default_factory=dict)  # Agent-specific insights
 
 class SpecializedAgentResponse(BaseModel):
-    """Response from a specialized QSR agent"""
+    """Response from a specialized QSR agent with enhanced visual integration"""
     agent_type: AgentType
     confidence_score: float = Field(ge=0.0, le=1.0)
     response_text: str
     specialized_insights: Dict[str, Any] = Field(default_factory=dict)
+    
+    # Enhanced visual citations
     visual_citations: List[Dict[str, Any]] = Field(default_factory=list)
+    enhanced_citations: Optional[List[Any]] = None  # Will be EnhancedVisualCitation if available
+    
+    # QSR domain context
     safety_alerts: List[str] = Field(default_factory=list)
     equipment_context: List[str] = Field(default_factory=list)
     procedure_steps: List[str] = Field(default_factory=list)
+    
+    # Performance and quality metrics
+    generation_time_ms: Optional[float] = None
+    relevance_score: Optional[float] = None
+    
+    def to_enhanced_response(self, base_response_data: Dict[str, Any] = None) -> 'EnhancedQSRResponse':
+        """Convert to enhanced QSR response if models available"""
+        if not ENHANCED_MODELS_AVAILABLE:
+            return None
+            
+        # Prepare base response data
+        if not base_response_data:
+            base_response_data = {
+                "text_response": self.response_text,
+                "confidence_score": self.confidence_score,
+                "safety_priority": self.agent_type == AgentType.SAFETY,
+                "detected_intent": ConversationIntent.NEW_TOPIC  # Default intent
+            }
+        
+        # Convert enhanced citations if available
+        enhanced_citations = None
+        if self.enhanced_citations:
+            enhanced_citations = self.enhanced_citations
+        elif self.visual_citations:
+            # Convert legacy citations to enhanced format
+            enhanced_citations = []
+            for i, citation in enumerate(self.visual_citations):
+                enhanced_citation = EnhancedVisualCitation(
+                    citation_id=citation.get('citation_id', f"{self.agent_type.value}_{i}"),
+                    type=VisualCitationType.DIAGRAM,  # Default type
+                    source=VisualCitationSource.AGENT_GENERATED,
+                    title=citation.get('source', 'Agent Generated Citation'),
+                    description=citation.get('description', ''),
+                    contributing_agent=self.agent_type,
+                    agent_confidence=self.confidence_score,
+                    relevance_score=citation.get('confidence', self.confidence_score),
+                    equipment_context=self.equipment_context,
+                    procedure_steps=self.procedure_steps
+                )
+                enhanced_citations.append(enhanced_citation)
+        
+        # Create equipment context if mentioned
+        equipment_ctx = None
+        if self.equipment_context:
+            equipment_ctx = EquipmentContext(
+                equipment_id=self.equipment_context[0],
+                equipment_name=self.equipment_context[0],
+                equipment_type="qsr_equipment",
+                associated_citations=[c.citation_id for c in enhanced_citations] if enhanced_citations else []
+            )
+        
+        # Use factory to create appropriate response type
+        return QSRResponseFactory.create_response(
+            agent_type=self.agent_type,
+            base_response_data=base_response_data,
+            visual_citations=enhanced_citations,
+            equipment_context=equipment_ctx
+        )
     
 class AgentQueryClassification(BaseModel):
     """Classification result for agent routing"""
@@ -758,8 +836,8 @@ class VoiceOrchestrator:
         responses: List[SpecializedAgentResponse], 
         classification: AgentQueryClassification,
         context: ConversationContext
-    ) -> VoiceResponse:
-        """Synthesize multiple agent responses into a coherent response"""
+    ) -> Union[VoiceResponse, 'EnhancedQSRResponse']:
+        """Synthesize multiple agent responses into a coherent enhanced response"""
         
         # Prioritize safety responses
         safety_responses = [r for r in responses if r.agent_type == AgentType.SAFETY]
@@ -779,6 +857,7 @@ class VoiceOrchestrator:
         all_equipment_context = []
         all_procedure_steps = []
         all_visual_citations = []
+        all_enhanced_citations = []
         
         for response in responses:
             combined_insights[response.agent_type.value] = response.specialized_insights
@@ -786,6 +865,10 @@ class VoiceOrchestrator:
             all_equipment_context.extend(response.equipment_context)
             all_procedure_steps.extend(response.procedure_steps)
             all_visual_citations.extend(response.visual_citations)
+            
+            # Collect enhanced citations if available
+            if ENHANCED_MODELS_AVAILABLE and response.enhanced_citations:
+                all_enhanced_citations.extend(response.enhanced_citations)
         
         # Create synthesized response
         synthesized_text = primary_response.response_text
@@ -801,12 +884,55 @@ class VoiceOrchestrator:
             if additional_insights:
                 synthesized_text += "\n\nAdditional considerations:\n" + "\n".join(additional_insights)
         
-        # Convert to VoiceResponse format
+        # Try to create enhanced response if models available
+        if ENHANCED_MODELS_AVAILABLE:
+            try:
+                # Prepare enhanced base response data
+                base_response_data = {
+                    "text_response": synthesized_text,
+                    "detected_intent": self._infer_intent_from_classification(classification),
+                    "confidence_score": primary_response.confidence_score,
+                    "should_continue_listening": not safety_priority,
+                    "safety_priority": safety_priority,
+                    "response_type": "safety" if safety_priority else "factual",
+                    "primary_agent": classification.primary_agent,
+                    "contributing_agents": [r.agent_type for r in responses],
+                    "coordination_strategy": AgentCoordinationStrategy.PARALLEL_CONSULTATION,
+                    "agent_confidence_scores": {r.agent_type.value: r.confidence_score for r in responses},
+                    "specialized_insights": combined_insights,
+                    "safety_warnings": all_safety_alerts
+                }
+                
+                # Create equipment context if available
+                equipment_ctx = None
+                if all_equipment_context:
+                    equipment_ctx = EquipmentContext(
+                        equipment_id=all_equipment_context[0],
+                        equipment_name=all_equipment_context[0],
+                        equipment_type="qsr_equipment",
+                        associated_citations=[c.citation_id for c in all_enhanced_citations] if all_enhanced_citations else []
+                    )
+                
+                # Create enhanced response using factory
+                enhanced_response = QSRResponseFactory.create_response(
+                    agent_type=primary_response.agent_type,
+                    base_response_data=base_response_data,
+                    visual_citations=all_enhanced_citations,
+                    equipment_context=equipment_ctx
+                )
+                
+                logger.info(f"✨ Created enhanced {primary_response.agent_type.value} response with {len(all_enhanced_citations)} enhanced citations")
+                return enhanced_response.to_voice_response()
+                
+            except Exception as e:
+                logger.warning(f"Failed to create enhanced response, falling back to standard: {e}")
+        
+        # Fallback to standard VoiceResponse
         return VoiceResponse(
             text_response=synthesized_text,
             detected_intent=self._infer_intent_from_classification(classification),
             confidence_score=primary_response.confidence_score,
-            should_continue_listening=not safety_priority,  # Safety responses should pause for questions
+            should_continue_listening=not safety_priority,
             safety_priority=safety_priority,
             equipment_mentioned=all_equipment_context[0] if all_equipment_context else None,
             response_type="safety" if safety_priority else "factual",

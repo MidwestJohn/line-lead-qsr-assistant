@@ -43,11 +43,22 @@ from services.ragie_service_clean import clean_ragie_service
 # Try to import optional services (graceful fallback if not available)
 try:
     from voice_service import voice_service
-    from voice_agent import voice_orchestrator, VoiceState, ConversationIntent
+    from voice_agent import voice_orchestrator, VoiceState, ConversationIntent, AgentType
     VOICE_AVAILABLE = True
 except ImportError:
     logger.warning("Voice services not available")
     VOICE_AVAILABLE = False
+
+# Try to import enhanced citation service
+try:
+    from services.enhanced_citation_service import (
+        enhance_existing_visual_citations, create_enhanced_citation_collection
+    )
+    ENHANCED_CITATIONS_AVAILABLE = True
+    logger.info("✅ Enhanced citation service available")
+except ImportError:
+    logger.warning("Enhanced citation service not available")
+    ENHANCED_CITATIONS_AVAILABLE = False
 
 # Simple OpenAI integration fallback
 import openai
@@ -952,6 +963,44 @@ Provide practical restaurant operations advice. Be concise."""
                 manual_references.append(manual_ref)
         
         logger.info(f"📊 Citation extraction complete: {len(visual_citations)} visual, {len(manual_references)} manual")
+        
+        # ===============================================================================
+        # ENHANCED VISUAL CITATION PROCESSING
+        # ===============================================================================
+        
+        enhanced_visual_citations = None
+        if ENHANCED_CITATIONS_AVAILABLE and visual_citations:
+            try:
+                # Determine agent type from multi-agent processing if available
+                agent_type = AgentType.GENERAL
+                if VOICE_AVAILABLE and hasattr(locals().get('voice_response'), 'primary_agent'):
+                    agent_type = voice_response.primary_agent
+                
+                # Extract equipment context
+                equipment_context = None
+                for item in relevant_content:
+                    if item.get('metadata', {}).get('equipment_type'):
+                        equipment_context = item['metadata']['equipment_type']
+                        break
+                
+                # Enhance existing visual citations
+                enhanced_visual_citations = await enhance_existing_visual_citations(
+                    visual_citations=visual_citations,
+                    agent_type=agent_type,
+                    equipment_context=equipment_context
+                )
+                
+                if enhanced_visual_citations:
+                    logger.info(f"✨ Enhanced {len(enhanced_visual_citations)} visual citations with {agent_type.value} agent context")
+                    
+                    # Create enhanced citation collection
+                    enhanced_collection = await create_enhanced_citation_collection(enhanced_visual_citations)
+                    if enhanced_collection:
+                        logger.info(f"📚 Created enhanced citation collection with {enhanced_collection.total_relevance_score:.2f} avg relevance")
+                
+            except Exception as e:
+                logger.warning(f"Enhanced citation processing failed, using standard citations: {e}")
+                enhanced_visual_citations = None
         
         # Create clean response
         response = ChatResponse(
