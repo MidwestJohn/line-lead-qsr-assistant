@@ -2062,17 +2062,7 @@ function App() {
                         />
                       )}
                       
-                      {/* Debug: Log when citation component should render */}
-                      {message.sender === 'assistant' && (() => {
-                        const shouldRender = !!(message.visualCitations || message.manualReferences);
-                        console.log(`🎯 Message ${message.id} citation render check:`, {
-                          shouldRender,
-                          visualCitations: message.visualCitations?.length || 0,
-                          manualReferences: message.manualReferences?.length || 0,
-                          messageObject: message
-                        });
-                        return null;
-                      })()}
+
                       
                       <div className="message-time">{formatTime(message.timestamp)}</div>
                       {message.isError && message.retryFunction && (
