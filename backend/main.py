@@ -6725,6 +6725,114 @@ async def test_ragie_with_query(request: dict):
             "timestamp": datetime.datetime.now().isoformat()
         }
 
+# ================================================================================================
+# RAGIE ENTITY MANAGEMENT ENDPOINTS
+# ================================================================================================
+
+@app.get("/ragie/entities/instructions")
+async def list_ragie_instructions():
+    """List all Ragie entity extraction instructions"""
+    try:
+        from services.ragie_entity_manager import ragie_entity_manager
+        
+        instructions = await ragie_entity_manager.list_instructions()
+        
+        return {
+            "status": "success",
+            "instructions": instructions,
+            "count": len(instructions),
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to list Ragie instructions: {e}")
+        return {
+            "status": "error",
+            "message": f"Failed to list instructions: {str(e)}",
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+
+@app.post("/ragie/entities/setup")
+async def setup_ragie_entity_extraction():
+    """Setup Ragie entity extraction instructions for equipment searchability"""
+    try:
+        from services.ragie_entity_manager import ragie_entity_manager
+        
+        logger.info("🔧 Setting up Ragie entity extraction for equipment searchability...")
+        
+        results = await ragie_entity_manager.setup_equipment_searchability()
+        
+        return {
+            "status": "success" if results["success"] else "error",
+            "message": results["message"],
+            "equipment_instruction_id": results["equipment_instruction_id"],
+            "general_instruction_id": results["general_instruction_id"],
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to setup Ragie entity extraction: {e}")
+        return {
+            "status": "error",
+            "message": f"Setup failed: {str(e)}",
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+
+@app.post("/ragie/entities/reprocess/{document_id}")
+async def reprocess_document_for_entities(document_id: str):
+    """Trigger reprocessing of a specific document to extract entities"""
+    try:
+        from services.ragie_entity_manager import ragie_entity_manager
+        
+        logger.info(f"🔄 Triggering entity extraction for document: {document_id}")
+        
+        success = await ragie_entity_manager.trigger_document_reprocessing(document_id)
+        
+        if success:
+            return {
+                "status": "success",
+                "message": f"Document {document_id} queued for entity extraction",
+                "document_id": document_id,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"Failed to queue document {document_id} for reprocessing",
+                "document_id": document_id,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+    except Exception as e:
+        logger.error(f"Failed to reprocess document {document_id}: {e}")
+        return {
+            "status": "error",
+            "message": f"Reprocessing failed: {str(e)}",
+            "document_id": document_id,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+
+@app.get("/ragie/entities/document/{document_id}")
+async def get_document_entities(document_id: str):
+    """Get all extracted entities for a specific document"""
+    try:
+        from services.ragie_entity_manager import ragie_entity_manager
+        
+        entities = await ragie_entity_manager.get_document_entities(document_id)
+        
+        return {
+            "status": "success",
+            "document_id": document_id,
+            "entities": entities,
+            "entity_count": len(entities),
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get entities for document {document_id}: {e}")
+        return {
+            "status": "error",
+            "message": f"Failed to get entities: {str(e)}",
+            "document_id": document_id,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
