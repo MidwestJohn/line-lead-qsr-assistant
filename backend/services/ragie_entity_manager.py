@@ -228,31 +228,31 @@ class RagieEntityManager:
             return None
     
     async def trigger_document_reprocessing(self, document_id: str) -> bool:
-        """Trigger reprocessing of a document to apply new instructions"""
+        """Trigger reprocessing of a document to apply new instructions
+        
+        Uses the patch_metadata endpoint to update metadata, which should trigger
+        entity extraction for active instructions.
+        """
         if not self.is_available():
             return False
         
         try:
-            # The standard way to trigger reprocessing is to update the document
-            # This will cause all active instructions to be applied
+            import datetime
+            
+            # Use PATCH metadata to trigger reprocessing with updated metadata
+            # This is the correct approach for triggering entity extraction
             async with httpx.AsyncClient() as client:
-                # First get the document info
-                doc_response = await client.get(
-                    f"{self.base_url}/documents/{document_id}",
-                    headers={"Authorization": f"Bearer {self.api_key}"}
-                )
-                doc_response.raise_for_status()
-                
-                # Update with a small metadata change to trigger reprocessing
                 update_data = {
                     "metadata": {
-                        "reprocessed_at": "2025-07-15",
-                        "entity_extraction_enabled": True
+                        "entity_extraction_triggered": datetime.datetime.now().isoformat(),
+                        "reprocessing_requested": True,
+                        "instructions_version": "v2025.1"
                     }
                 }
                 
+                # Use the correct PATCH metadata endpoint
                 update_response = await client.patch(
-                    f"{self.base_url}/documents/{document_id}",
+                    f"{self.base_url}/documents/{document_id}/metadata",
                     headers={
                         "Authorization": f"Bearer {self.api_key}",
                         "Content-Type": "application/json"
@@ -260,11 +260,43 @@ class RagieEntityManager:
                     json=update_data
                 )
                 update_response.raise_for_status()
-                logger.info(f"✅ Triggered reprocessing for document: {document_id}")
+                logger.info(f"✅ Triggered metadata update for document: {document_id}")
                 return True
                 
         except Exception as e:
             logger.error(f"Failed to trigger document reprocessing: {e}")
+            return False
+    
+    async def trigger_file_reprocessing(self, document_id: str, file_path: str) -> bool:
+        """Trigger full document reprocessing by updating the file
+        
+        This is the most reliable way to trigger entity extraction as it 
+        completely reprocesses the document through the full pipeline.
+        """
+        if not self.is_available():
+            return False
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                # Read the file
+                with open(file_path, 'rb') as f:
+                    files = {
+                        "file": (os.path.basename(file_path), f, "application/octet-stream")
+                    }
+                    
+                    # Use the update_file endpoint to trigger full reprocessing
+                    update_response = await client.put(
+                        f"{self.base_url}/documents/{document_id}/file",
+                        headers={"Authorization": f"Bearer {self.api_key}"},
+                        files=files
+                    )
+                    update_response.raise_for_status()
+                    
+                logger.info(f"✅ Triggered file reprocessing for document: {document_id}")
+                return True
+                
+        except Exception as e:
+            logger.error(f"Failed to trigger file reprocessing: {e}")
             return False
     
     async def get_document_entities(self, document_id: str) -> List[Dict[str, Any]]:
@@ -283,6 +315,83 @@ class RagieEntityManager:
                 return result.get("entities", [])
         except Exception as e:
             logger.error(f"Failed to get document entities: {e}")
+            return []
+    
+    async def get_document_details(self, document_id: str) -> Optional[Dict[str, Any]]:
+        """Get complete document details including status and metadata"""
+        if not self.is_available():
+            return None
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{self.base_url}/documents/{document_id}",
+                    headers={"Authorization": f"Bearer {self.api_key}"}
+                )
+                response.raise_for_status()
+                return response.json()
+        except Exception as e:
+            logger.error(f"Failed to get document details: {e}")
+            return None
+    
+    async def get_document_content(self, document_id: str, as_json: bool = True) -> Optional[Dict[str, Any]]:
+        """Get document content with metadata"""
+        if not self.is_available():
+            return None
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                params = {}
+                if as_json:
+                    params["media_type"] = "application/json"
+                
+                response = await client.get(
+                    f"{self.base_url}/documents/{document_id}/content",
+                    headers={"Authorization": f"Bearer {self.api_key}"},
+                    params=params
+                )
+                response.raise_for_status()
+                return response.json() if as_json else response.content
+        except Exception as e:
+            logger.error(f"Failed to get document content: {e}")
+            return None
+    
+    async def get_document_summary(self, document_id: str) -> Optional[str]:
+        """Get LLM-generated summary of the document"""
+        if not self.is_available():
+            return None
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{self.base_url}/documents/{document_id}/summary",
+                    headers={"Authorization": f"Bearer {self.api_key}"}
+                )
+                response.raise_for_status()
+                result = response.json()
+                return result.get("summary", "")
+        except Exception as e:
+            logger.error(f"Failed to get document summary: {e}")
+            return None
+    
+    async def get_document_chunks(self, document_id: str, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get document chunks with pagination"""
+        if not self.is_available():
+            return []
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                params = {"limit": limit}
+                response = await client.get(
+                    f"{self.base_url}/documents/{document_id}/chunks",
+                    headers={"Authorization": f"Bearer {self.api_key}"},
+                    params=params
+                )
+                response.raise_for_status()
+                result = response.json()
+                return result.get("chunks", [])
+        except Exception as e:
+            logger.error(f"Failed to get document chunks: {e}")
             return []
     
     async def setup_equipment_searchability(self) -> Dict[str, Any]:

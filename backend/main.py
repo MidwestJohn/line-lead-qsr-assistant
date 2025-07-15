@@ -6833,6 +6833,123 @@ async def get_document_entities(document_id: str):
             "timestamp": datetime.datetime.now().isoformat()
         }
 
+@app.get("/ragie/documents/{document_id}")
+async def get_ragie_document_details(document_id: str):
+    """Get complete document details including status and metadata"""
+    try:
+        from services.ragie_entity_manager import ragie_entity_manager
+        
+        details = await ragie_entity_manager.get_document_details(document_id)
+        
+        if details:
+            return {
+                "status": "success",
+                "document": details,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"Document {document_id} not found",
+                "document_id": document_id,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+    except Exception as e:
+        logger.error(f"Failed to get document details for {document_id}: {e}")
+        return {
+            "status": "error",
+            "message": f"Failed to get document details: {str(e)}",
+            "document_id": document_id,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+
+@app.get("/ragie/documents/{document_id}/content")
+async def get_ragie_document_content(document_id: str):
+    """Get document content with metadata"""
+    try:
+        from services.ragie_entity_manager import ragie_entity_manager
+        
+        content = await ragie_entity_manager.get_document_content(document_id)
+        
+        if content:
+            return {
+                "status": "success",
+                "document_id": document_id,
+                "content": content,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"Content for document {document_id} not found",
+                "document_id": document_id,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+    except Exception as e:
+        logger.error(f"Failed to get document content for {document_id}: {e}")
+        return {
+            "status": "error",
+            "message": f"Failed to get document content: {str(e)}",
+            "document_id": document_id,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+
+@app.get("/ragie/documents/{document_id}/summary")
+async def get_ragie_document_summary(document_id: str):
+    """Get LLM-generated summary of the document"""
+    try:
+        from services.ragie_entity_manager import ragie_entity_manager
+        
+        summary = await ragie_entity_manager.get_document_summary(document_id)
+        
+        if summary:
+            return {
+                "status": "success",
+                "document_id": document_id,
+                "summary": summary,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"Summary for document {document_id} not available",
+                "document_id": document_id,
+                "timestamp": datetime.datetime.now().isoformat()
+            }
+    except Exception as e:
+        logger.error(f"Failed to get document summary for {document_id}: {e}")
+        return {
+            "status": "error",
+            "message": f"Failed to get document summary: {str(e)}",
+            "document_id": document_id,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+
+@app.get("/ragie/documents/{document_id}/chunks")
+async def get_ragie_document_chunks(document_id: str, limit: int = 10):
+    """Get document chunks with pagination"""
+    try:
+        from services.ragie_entity_manager import ragie_entity_manager
+        
+        chunks = await ragie_entity_manager.get_document_chunks(document_id, limit)
+        
+        return {
+            "status": "success",
+            "document_id": document_id,
+            "chunks": chunks,
+            "chunk_count": len(chunks),
+            "limit": limit,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get document chunks for {document_id}: {e}")
+        return {
+            "status": "error",
+            "message": f"Failed to get document chunks: {str(e)}",
+            "document_id": document_id,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
