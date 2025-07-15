@@ -1,0 +1,133 @@
+{
+  "test_suite": "Enhanced Health Monitoring",
+  "timestamp": "2025-07-14T16:00:04.448404",
+  "monitoring_system_tests": {
+    "timestamp": "2025-07-14T15:59:40.488853",
+    "tests_run": 10,
+    "tests_passed": 10,
+    "tests_failed": 0,
+    "test_details": [
+      {
+        "test": "Initialize Enhanced Health Monitoring",
+        "status": "PASSED",
+        "message": "Enhanced health monitoring system initialized successfully"
+      },
+      {
+        "test": "Start Enhanced Monitoring",
+        "status": "PASSED",
+        "message": "Enhanced monitoring started successfully"
+      },
+      {
+        "test": "Intelligence Health Summary",
+        "status": "PASSED",
+        "message": "Health summary generated: warning"
+      },
+      {
+        "test": "Performance Dashboard",
+        "status": "PASSED",
+        "message": "Performance dashboard data generated successfully"
+      },
+      {
+        "test": "Record Interaction Performance",
+        "status": "PASSED",
+        "message": "Interaction performance recorded successfully"
+      },
+      {
+        "test": "Metric Collection",
+        "status": "PASSED",
+        "message": "Collected 11 metrics"
+      },
+      {
+        "test": "Real-time Metrics",
+        "status": "PASSED",
+        "message": "Real-time metrics available: ['agent_coordination_success', 'agent_selection_accuracy', 'universal_intelligence_health', 'cross_modal_performance', 'context_preservation_rate', 'voice_text_sync', 'citation_extraction_rate', 'response_quality', 'ragie_response_time', 'ragie_search_accuracy', 'ragie_visual_citations']"
+      },
+      {
+        "test": "Historical Trends",
+        "status": "PASSED",
+        "message": "Historical trends structure available: 11 trend series"
+      },
+      {
+        "test": "User Satisfaction Metrics",
+        "status": "PASSED",
+        "message": "User satisfaction metrics available: 0.9"
+      },
+      {
+        "test": "Stop Enhanced Monitoring",
+        "status": "PASSED",
+        "message": "Enhanced monitoring stopped successfully"
+      }
+    ],
+    "success_rate": 100.0,
+    "overall_status": "PASSED"
+  },
+  "api_endpoint_tests": {
+    "total_endpoints": 11,
+    "successful_endpoints": 0,
+    "failed_endpoints": 11,
+    "results": [
+      {
+        "endpoint": "/health/intelligence",
+        "status": "ERROR",
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /health/intelligence (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x1135290d0>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+      },
+      {
+        "endpoint": "/health/dashboard",
+        "status": "ERROR",
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /health/dashboard (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x1135299d0>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+      },
+      {
+        "endpoint": "/health/monitoring-status",
+        "status": "ERROR",
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /health/monitoring-status (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x11347ed30>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+      },
+      {
+        "endpoint": "/health/ragie-service",
+        "status": "ERROR",
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /health/ragie-service (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x1135294c0>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+      },
+      {
+        "endpoint": "/health/agent-coordination",
+        "status": "ERROR",
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /health/agent-coordination (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x11353b310>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+      },
+      {
+        "endpoint": "/health/context-preservation",
+        "status": "ERROR",
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /health/context-preservation (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x11353bc10>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+      },
+      {
+        "endpoint": "/health/real-time-metrics",
+        "status": "ERROR",
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /health/real-time-metrics (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x113549550>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+      },
+      {
+        "endpoint": "/health/historical-trends",
+        "status": "ERROR",
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /health/historical-trends (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x113549e50>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+      },
+      {
+        "endpoint": "/health/user-satisfaction",
+        "status": "ERROR",
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /health/user-satisfaction (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x113549160>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+      },
+      {
+        "endpoint": "/health/start-monitoring",
+        "status": "ERROR",
+        "method": "POST",
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /health/start-monitoring (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x11353b310>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+      },
+      {
+        "endpoint": "/health/stop-monitoring",
+        "status": "ERROR",
+        "method": "POST",
+        "error": "HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded with url: /health/stop-monitoring (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x11353bc10>: Failed to establish a new connection: [Errno 61] Connection refused'))"
+      }
+    ]
+  },
+  "summary": {
+    "monitoring_system_success": true,
+    "api_endpoints_success": false,
+    "overall_success": true
+  }
+}

@@ -24,6 +24,28 @@ class AgentType(str, Enum):
     SAFETY = "safety"
     OPERATIONS = "operations"
     TRAINING = "training"
+    # Legacy voice_agent compatibility
+    PROCEDURE = "procedure"
+    MAINTENANCE = "maintenance"
+    GENERAL = "general"
+
+
+class AgentCoordinationStrategy(str, Enum):
+    """Agent coordination strategies"""
+    SINGLE_AGENT = "single_agent"          # Use one specialized agent
+    PARALLEL_CONSULTATION = "parallel"     # Multiple agents, synthesize
+    SEQUENTIAL_HANDOFF = "sequential"      # Pass between agents
+    HIERARCHICAL = "hierarchical"          # Primary agent with specialist backup
+
+
+class ConversationIntent(str, Enum):
+    """Detected user intents for better response handling"""
+    EQUIPMENT_QUESTION = "equipment_question"
+    FOLLOW_UP = "follow_up"
+    NEW_TOPIC = "new_topic"
+    CLARIFICATION = "clarification"
+    COMPLETION = "completion"
+    EMERGENCY = "emergency"
 
 
 class QueryClassification(BaseModel):
@@ -49,7 +71,8 @@ class OrchestratorResponse(BaseModel):
 # Export all types
 __all__ = [
     "AgentType",
+    "AgentCoordinationStrategy",
+    "ConversationIntent",
     "QueryClassification", 
-    "AgentPerformanceMetrics",
     "OrchestratorResponse"
 ]

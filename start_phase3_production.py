@@ -23,6 +23,8 @@ import signal
 import asyncio
 import logging
 import time
+import json
+import io
 from datetime import datetime
 from contextlib import asynccontextmanager
 from typing import Dict, Any, Optional
@@ -38,7 +40,7 @@ BACKEND_DIR = os.path.join(PROJECT_ROOT, 'backend')
 sys.path.insert(0, PROJECT_ROOT)
 sys.path.insert(0, BACKEND_DIR)
 
-from fastapi import FastAPI, Request, HTTPException, Depends, BackgroundTasks
+from fastapi import FastAPI, Request, HTTPException, Depends, BackgroundTasks, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -188,6 +190,7 @@ async def health_check(request: Request):
             "error_count": error_count,
             "error_rate": error_count / max(request_count, 1),
             "phase2_orchestration": "available",
+            "search_ready": True,  # Frontend expects this field
             "production_features": [
                 "Rate Limiting",
                 "Security Headers", 
@@ -344,6 +347,192 @@ async def classify_query(request: Dict[str, str]):
     except Exception as e:
         logger.error(f"Classification failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# Missing endpoints that frontend expects
+@app.get("/documents")
+async def list_documents():
+    """List all uploaded documents"""
+    try:
+        docs_db_path = os.path.join(PROJECT_ROOT, "documents.json")
+        docs_db = {}
+        
+        if os.path.exists(docs_db_path):
+            try:
+                with open(docs_db_path, 'r') as f:
+                    docs_db = json.load(f)
+            except Exception:
+                docs_db = {}
+        
+        documents = []
+        for doc_id, doc_info in docs_db.items():
+            documents.append({
+                "id": doc_id,
+                "filename": doc_info.get("filename", ""),
+                "original_filename": doc_info.get("original_filename", ""),
+                "upload_timestamp": doc_info.get("upload_timestamp", ""),
+                "file_size": doc_info.get("file_size", 0),
+                "pages_count": doc_info.get("pages_count", 0),
+                "url": f"/files/{doc_info.get('filename', '')}",
+                "file_type": "application/pdf"
+            })
+        
+        # Sort by upload timestamp (newest first)
+        documents.sort(key=lambda x: x.get("upload_timestamp", ""), reverse=True)
+        
+        return {
+            "documents": documents,
+            "total_count": len(documents)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error listing documents: {e}")
+        return {"documents": [], "total_count": 0}
+
+@app.get("/keep-alive")
+async def keep_alive():
+    """Keep-alive endpoint for frontend compatibility"""
+    return {
+        "status": "alive",
+        "timestamp": datetime.now().isoformat(),
+        "uptime_seconds": (datetime.now() - server_start_time).total_seconds()
+    }
+
+@app.post("/chat/stream")
+async def chat_stream(request: Dict[str, Any]):
+    """Chat streaming endpoint for frontend compatibility"""
+    try:
+        message = request.get("message", "")
+        if not message:
+            raise HTTPException(status_code=400, detail="Message required")
+        
+        # Use the production chat logic but return in stream format
+        from backend.agents.qsr_orchestrator import QSROrchestrator
+        
+        orchestrator = QSROrchestrator()
+        await orchestrator.initialize()
+        
+        orchestrator_response = await orchestrator.handle_query(
+            query=message,
+            conversation_id="frontend_chat",
+            context={}
+        )
+        
+        # Return in the format the frontend expects
+        return {
+            "response": orchestrator_response.response,
+            "agent_used": orchestrator_response.agent_used.value,
+            "confidence": orchestrator_response.classification.confidence,
+            "timestamp": datetime.now().isoformat(),
+            "success": True
+        }
+        
+    except Exception as e:
+        logger.error(f"Chat stream failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/upload-simple")
+async def upload_simple(file: UploadFile = File(...)):
+    """Simple file upload endpoint with real processing"""
+    try:
+        # Generate unique file ID
+        import uuid
+        import time
+        import os
+        import io
+        
+        file_id = str(uuid.uuid4())
+        timestamp = int(time.time())
+        process_id = f"simple_proc_{file_id}_{timestamp}"
+        
+        # Save file immediately
+        safe_filename = f"{file_id}_{file.filename}"
+        upload_dir = os.path.join(PROJECT_ROOT, "uploaded_docs")
+        os.makedirs(upload_dir, exist_ok=True)
+        file_path = os.path.join(upload_dir, safe_filename)
+        
+        # Read and save file content
+        content = await file.read()
+        
+        with open(file_path, "wb") as f:
+            f.write(content)
+        
+        # Process the file immediately (simplified version)
+        await process_uploaded_file(file_path, file.filename, file_id)
+        
+        return {
+            "success": True,
+            "process_id": process_id,
+            "filename": file.filename,
+            "message": f"File {file.filename} uploaded and processed successfully",
+            "status": "uploaded"
+        }
+        
+    except Exception as e:
+        logger.error(f"Simple upload failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+async def process_uploaded_file(file_path: str, filename: str, file_id: str):
+    """Process uploaded file - save to database and integrate with services"""
+    try:
+        # Read file content
+        with open(file_path, 'rb') as f:
+            file_content = f.read()
+        
+        # Extract text from PDF
+        text_content = ""
+        pages_count = 1
+        
+        if filename.lower().endswith('.pdf'):
+            try:
+                import PyPDF2
+                pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_content))
+                text_content = ""
+                for page in pdf_reader.pages:
+                    text_content += page.extract_text()
+                pages_count = len(pdf_reader.pages)
+            except Exception as e:
+                logger.warning(f"PDF extraction failed, treating as text: {e}")
+                text_content = file_content.decode('utf-8', errors='ignore')
+        else:
+            text_content = file_content.decode('utf-8', errors='ignore')
+        
+        # Load documents database
+        docs_db_path = os.path.join(PROJECT_ROOT, "documents.json")
+        docs_db = {}
+        if os.path.exists(docs_db_path):
+            try:
+                with open(docs_db_path, 'r') as f:
+                    docs_db = json.load(f)
+            except Exception:
+                docs_db = {}
+        
+        # Add to documents database
+        docs_db[file_id] = {
+            "id": file_id,
+            "filename": os.path.basename(file_path),
+            "original_filename": filename,
+            "upload_timestamp": datetime.now().isoformat(),
+            "file_size": len(file_content),
+            "pages_count": pages_count,
+            "text_content": text_content,
+            "text_preview": text_content[:200] + "..." if len(text_content) > 200 else text_content,
+            "processing_source": "phase3_production"
+        }
+        
+        # Save updated database
+        with open(docs_db_path, 'w') as f:
+            json.dump(docs_db, f, indent=2)
+        
+        logger.info(f"✅ Added {filename} to documents database")
+        
+    except Exception as e:
+        logger.error(f"Failed to process uploaded file: {e}")
+        raise
+
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    """Regular file upload endpoint - same as upload-simple"""
+    return await upload_simple(file)
 
 # Production info endpoint
 @app.get("/info")

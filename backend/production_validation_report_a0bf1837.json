@@ -1,0 +1,492 @@
+{
+  "validation_summary": {
+    "validation_id": "a0bf1837-bfcc-4fda-86ce-981b6bceabcf",
+    "overall_score": 66.83945048160973,
+    "success_rate": 0.6,
+    "total_tests": 25,
+    "tests_passed": 15,
+    "tests_failed": 10,
+    "tests_warnings": 0,
+    "tests_skipped": 0,
+    "duration": 41.580772
+  },
+  "detailed_results": {
+    "validation_id": "a0bf1837-bfcc-4fda-86ce-981b6bceabcf",
+    "start_time": "2025-07-14T16:20:52.983312",
+    "scenarios": [
+      {
+        "scenario_id": "text_chat_001",
+        "name": "Text Chat Intelligence Validation",
+        "description": "Validate PydanticAI + Ragie processing in text chat mode",
+        "overall_score": 80.0,
+        "success_rate": 0.6,
+        "tests": [
+          {
+            "test_id": "text_001",
+            "name": "Basic Text Query Processing",
+            "category": "text_chat",
+            "description": "Test basic text query processing with PydanticAI + Ragie",
+            "result": "PASSED",
+            "score": 100.0,
+            "execution_time": 1.2574012279510498,
+            "timestamp": "2025-07-14T16:20:52.983328",
+            "details": {
+              "query_1": {
+                "query": "How do I improve customer service?",
+                "response_time": 0.17694306373596191,
+                "response_length": 52,
+                "has_citations": true
+              },
+              "query_2": {
+                "query": "What are the best practices for inventory management?",
+                "response_time": 0.21622085571289062,
+                "response_length": 71,
+                "has_citations": true
+              },
+              "query_3": {
+                "query": "How do I handle customer complaints?",
+                "response_time": 0.443889856338501,
+                "response_length": 54,
+                "has_citations": true
+              },
+              "query_4": {
+                "query": "What's the procedure for cash handling?",
+                "response_time": 0.420166015625,
+                "response_length": 57,
+                "has_citations": true
+              },
+              "success_rate": 1.0,
+              "avg_response_time": 0.3143049478530884,
+              "total_queries": 4,
+              "successful_queries": 4
+            }
+          },
+          {
+            "test_id": "text_002",
+            "name": "Equipment Recognition",
+            "category": "text_chat",
+            "description": "Test equipment recognition with Ragie documentation",
+            "result": "PASSED",
+            "score": 100.0,
+            "execution_time": 1.0153510570526123,
+            "timestamp": "2025-07-14T16:20:52.983330",
+            "details": {
+              "success_rate": 1.0,
+              "total_queries": 4,
+              "successful_recognitions": 4
+            }
+          },
+          {
+            "test_id": "text_003",
+            "name": "Visual Citations in Text",
+            "category": "text_chat",
+            "description": "Test visual citation extraction in text responses",
+            "result": "PASSED",
+            "score": 100.0,
+            "execution_time": 2.472938060760498,
+            "timestamp": "2025-07-14T16:20:52.983331",
+            "details": {
+              "citation_rate": 1.0,
+              "total_queries": 8,
+              "citations_found": 8
+            }
+          },
+          {
+            "test_id": "text_004",
+            "name": "Procedure Guidance",
+            "category": "text_chat",
+            "description": "Test procedure guidance using Ragie knowledge",
+            "result": "FAILED",
+            "score": 50.0,
+            "execution_time": 1.5501952171325684,
+            "timestamp": "2025-07-14T16:20:52.983332",
+            "details": {
+              "success_rate": 0.5,
+              "total_queries": 4,
+              "successful_guidance": 2
+            }
+          },
+          {
+            "test_id": "text_005",
+            "name": "Safety Response Intelligence",
+            "category": "text_chat",
+            "description": "Test safety response intelligence with Ragie documentation",
+            "result": "FAILED",
+            "score": 50.0,
+            "execution_time": 0.808189868927002,
+            "timestamp": "2025-07-14T16:20:52.983333",
+            "details": {
+              "success_rate": 0.5,
+              "total_queries": 4,
+              "intelligent_responses": 2
+            }
+          }
+        ]
+      },
+      {
+        "scenario_id": "voice_001",
+        "name": "Voice Intelligence Validation",
+        "description": "Validate voice queries enhanced with Ragie",
+        "overall_score": 70.0,
+        "success_rate": 0.6,
+        "tests": [
+          {
+            "test_id": "voice_001",
+            "name": "Voice Query Enhancement",
+            "category": "voice",
+            "description": "Test voice queries enhanced with Ragie",
+            "result": "PASSED",
+            "score": 100.0,
+            "execution_time": 2.2025389671325684,
+            "timestamp": "2025-07-14T16:20:52.983335",
+            "details": {
+              "success_rate": 1.0,
+              "total_queries": 4,
+              "enhanced_responses": 4
+            }
+          },
+          {
+            "test_id": "voice_002",
+            "name": "Equipment Context from Voice",
+            "category": "voice",
+            "description": "Test equipment context extraction from voice using Ragie docs",
+            "result": "FAILED",
+            "score": 0.0,
+            "execution_time": 1.7808680534362793,
+            "timestamp": "2025-07-14T16:20:52.983335",
+            "details": {
+              "success_rate": 0.0,
+              "total_queries": 4,
+              "context_extractions": 0
+            }
+          },
+          {
+            "test_id": "voice_003",
+            "name": "Voice Visual Citations",
+            "category": "voice",
+            "description": "Test visual citations coordinated with voice responses",
+            "result": "PASSED",
+            "score": 100.0,
+            "execution_time": 2.1008219718933105,
+            "timestamp": "2025-07-14T16:20:52.983336",
+            "details": {
+              "citation_rate": 1.0,
+              "total_queries": 4,
+              "voice_citations": 4
+            }
+          },
+          {
+            "test_id": "voice_004",
+            "name": "Safety Voice Responses",
+            "category": "voice",
+            "description": "Test safety responses using Ragie in voice mode",
+            "result": "FAILED",
+            "score": 50.0,
+            "execution_time": 1.8556699752807617,
+            "timestamp": "2025-07-14T16:20:52.983337",
+            "details": {
+              "success_rate": 0.5,
+              "total_queries": 4,
+              "safe_responses": 2
+            }
+          },
+          {
+            "test_id": "voice_005",
+            "name": "Voice Response Quality",
+            "category": "voice",
+            "description": "Test voice response quality with Ragie enhancement",
+            "result": "PASSED",
+            "score": 100.0,
+            "execution_time": 1.69181489944458,
+            "timestamp": "2025-07-14T16:20:52.983338",
+            "details": {
+              "success_rate": 1.0,
+              "avg_quality": 1.0,
+              "total_queries": 4,
+              "quality_responses": 4
+            }
+          }
+        ]
+      },
+      {
+        "scenario_id": "cross_modal_001",
+        "name": "Cross-Modal Intelligence Validation",
+        "description": "Validate context preservation and consistency across modes",
+        "overall_score": 56.31984103121157,
+        "success_rate": 0.6,
+        "tests": [
+          {
+            "test_id": "cross_001",
+            "name": "Context Preservation Text to Voice",
+            "category": "cross_modal",
+            "description": "Test context preservation from text to voice",
+            "result": "FAILED",
+            "score": 0.0,
+            "execution_time": 4.264133930206299,
+            "timestamp": "2025-07-14T16:20:52.983339",
+            "details": {
+              "preservation_rate": 0.0,
+              "test_sessions": 5
+            }
+          },
+          {
+            "test_id": "cross_002",
+            "name": "Context Preservation Voice to Text",
+            "category": "cross_modal",
+            "description": "Test context preservation from voice to text",
+            "result": "FAILED",
+            "score": 0.0,
+            "execution_time": 4.715112209320068,
+            "timestamp": "2025-07-14T16:20:52.983340",
+            "details": {
+              "preservation_rate": 0.0,
+              "test_sessions": 5
+            }
+          },
+          {
+            "test_id": "cross_003",
+            "name": "Ragie Knowledge Consistency",
+            "category": "cross_modal",
+            "description": "Test Ragie knowledge consistency across modes",
+            "result": "PASSED",
+            "score": 100.0,
+            "execution_time": 2.9112558364868164,
+            "timestamp": "2025-07-14T16:20:52.983341",
+            "details": {
+              "consistency_rate": 1.0,
+              "total_queries": 4
+            }
+          },
+          {
+            "test_id": "cross_004",
+            "name": "Visual Citation Consistency",
+            "category": "cross_modal",
+            "description": "Test visual citation consistency across modes",
+            "result": "PASSED",
+            "score": 100.0,
+            "execution_time": 3.633869171142578,
+            "timestamp": "2025-07-14T16:20:52.983342",
+            "details": {
+              "consistency_rate": 1.0,
+              "total_queries": 4
+            }
+          },
+          {
+            "test_id": "cross_005",
+            "name": "Cross-Modal Performance",
+            "category": "cross_modal",
+            "description": "Test performance across different interaction modes",
+            "result": "PASSED",
+            "score": 81.59920515605786,
+            "execution_time": 3.448845863342285,
+            "timestamp": "2025-07-14T16:20:52.983343",
+            "details": {
+              "avg_text_time": 0.31824350357055664,
+              "avg_voice_time": 0.5437456369400024,
+              "performance_score": 0.8159920515605786
+            }
+          }
+        ]
+      },
+      {
+        "scenario_id": "integration_001",
+        "name": "Integration Validation",
+        "description": "Validate all integration points and error handling",
+        "overall_score": 70.0,
+        "success_rate": 0.6,
+        "tests": [
+          {
+            "test_id": "integration_001",
+            "name": "Ragie Service Connectivity",
+            "category": "integration",
+            "description": "Test Ragie service connectivity and availability",
+            "result": "PASSED",
+            "score": 100.0,
+            "execution_time": 5.412101745605469e-05,
+            "timestamp": "2025-07-14T16:20:52.983344",
+            "details": {
+              "health_response": {
+                "status": "healthy",
+                "ragie_available": true,
+                "pydantic_ai_available": true,
+                "timestamp": "2025-07-14T16:21:28.702904"
+              },
+              "connectivity_score": 1.0
+            }
+          },
+          {
+            "test_id": "integration_002",
+            "name": "Visual Citation Extraction",
+            "category": "integration",
+            "description": "Test visual citation extraction functionality",
+            "result": "PASSED",
+            "score": 100.0,
+            "execution_time": 0.9565668106079102,
+            "timestamp": "2025-07-14T16:20:52.983345",
+            "details": {
+              "extraction_rate": 1.0,
+              "total_queries": 4,
+              "extracted_citations": 4
+            }
+          },
+          {
+            "test_id": "integration_003",
+            "name": "Agent Coordination",
+            "category": "integration",
+            "description": "Test PydanticAI agent coordination",
+            "result": "FAILED",
+            "score": 50.0,
+            "execution_time": 1.014545202255249,
+            "timestamp": "2025-07-14T16:20:52.983346",
+            "details": {
+              "coordination_score": 0.5
+            }
+          },
+          {
+            "test_id": "integration_004",
+            "name": "Error Handling",
+            "category": "integration",
+            "description": "Test error handling and graceful degradation",
+            "result": "FAILED",
+            "score": 0.0,
+            "execution_time": 1.512681007385254,
+            "timestamp": "2025-07-14T16:20:52.983347",
+            "details": {
+              "handling_rate": 0.0,
+              "total_scenarios": 4,
+              "graceful_handles": 0
+            }
+          },
+          {
+            "test_id": "integration_005",
+            "name": "Service Health Monitoring",
+            "category": "integration",
+            "description": "Test service health monitoring functionality",
+            "result": "PASSED",
+            "score": 100.0,
+            "execution_time": 8.96453857421875e-05,
+            "timestamp": "2025-07-14T16:20:52.983348",
+            "details": {
+              "health_rate": 1.0,
+              "total_endpoints": 4,
+              "healthy_endpoints": 4
+            }
+          }
+        ]
+      },
+      {
+        "scenario_id": "performance_001",
+        "name": "Performance Validation",
+        "description": "Validate performance across all intelligence services",
+        "overall_score": 57.87741137683704,
+        "success_rate": 0.6,
+        "tests": [
+          {
+            "test_id": "performance_001",
+            "name": "Response Time Performance",
+            "category": "performance",
+            "description": "Test response time performance across services",
+            "result": "PASSED",
+            "score": 94.20367960214341,
+            "execution_time": 1.230830192565918,
+            "timestamp": "2025-07-14T16:20:52.983349",
+            "details": {
+              "avg_response_time": 0.30764830112457275,
+              "max_response_time": 0.43253493309020996,
+              "min_response_time": 0.11548805236816406,
+              "performance_score": 0.9420367960214341
+            }
+          },
+          {
+            "test_id": "performance_002",
+            "name": "Throughput Performance",
+            "category": "performance",
+            "description": "Test throughput performance under load",
+            "result": "PASSED",
+            "score": 100.0,
+            "execution_time": 0.3933298587799072,
+            "timestamp": "2025-07-14T16:20:52.983350",
+            "details": {
+              "throughput": 10.171986018777037,
+              "successful_requests": 4,
+              "total_requests": 5,
+              "total_time": 0.3932368755340576,
+              "throughput_score": 1.0
+            }
+          },
+          {
+            "test_id": "performance_003",
+            "name": "Resource Utilization",
+            "category": "performance",
+            "description": "Test resource utilization efficiency",
+            "result": "FAILED",
+            "score": 0.0,
+            "execution_time": 0.00013184547424316406,
+            "timestamp": "2025-07-14T16:20:52.983355",
+            "details": {},
+            "error_message": "name 'psutil' is not defined"
+          },
+          {
+            "test_id": "performance_004",
+            "name": "Concurrent User Performance",
+            "category": "performance",
+            "description": "Test performance with concurrent users",
+            "result": "PASSED",
+            "score": 95.18337728204177,
+            "execution_time": 0.7488439083099365,
+            "timestamp": "2025-07-14T16:20:52.983356",
+            "details": {
+              "concurrent_users": 3,
+              "queries_per_user": 2,
+              "avg_response_time": 0.253018061319987,
+              "total_time": 0.74853515625,
+              "performance_score": 0.9518337728204177
+            }
+          },
+          {
+            "test_id": "performance_005",
+            "name": "Memory Usage Stability",
+            "category": "performance",
+            "description": "Test memory usage stability over time",
+            "result": "FAILED",
+            "score": 0.0,
+            "execution_time": 4.100799560546875e-05,
+            "timestamp": "2025-07-14T16:20:52.983357",
+            "details": {},
+            "error_message": "name 'psutil' is not defined"
+          }
+        ]
+      }
+    ],
+    "overall_score": 66.83945048160973,
+    "success_rate": 0.6,
+    "total_tests": 25,
+    "tests_passed": 15,
+    "tests_failed": 10,
+    "tests_warnings": 0,
+    "tests_skipped": 0,
+    "end_time": "2025-07-14T16:21:34.564068",
+    "duration": 41.580772
+  },
+  "recommendations": [
+    {
+      "priority": "HIGH",
+      "category": "Overall Performance",
+      "recommendation": "Overall success rate is below 80%. Review failed tests and implement improvements.",
+      "impact": "Critical for production readiness"
+    },
+    {
+      "priority": "HIGH",
+      "category": "Cross Modal",
+      "recommendation": "Average score for cross_modal is 56.3%. Focus on improving this area.",
+      "impact": "Significant impact on user experience"
+    },
+    {
+      "priority": "HIGH",
+      "category": "Performance",
+      "recommendation": "Average score for performance is 57.9%. Focus on improving this area.",
+      "impact": "Significant impact on user experience"
+    }
+  ],
+  "generated_at": "2025-07-14T16:21:34.565640"
+}

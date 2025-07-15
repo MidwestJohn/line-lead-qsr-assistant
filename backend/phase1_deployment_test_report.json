@@ -1,0 +1,71 @@
+{
+  "timestamp": "2025-07-14T17:02:22.530578",
+  "success_rate": 83.33333333333334,
+  "passed_tests": 5,
+  "total_tests": 6,
+  "results": [
+    {
+      "test": "Backend Health",
+      "status": "PASSED",
+      "details": {
+        "status": "healthy",
+        "timestamp": "2025-07-14T17:02:19.871840",
+        "version": "2.0.0-phase1",
+        "phase": "Phase 1 - PydanticAI Integration"
+      }
+    },
+    {
+      "test": "Frontend Availability",
+      "status": "PASSED",
+      "details": {
+        "status_code": 200
+      }
+    },
+    {
+      "test": "Phase 1 Agent Health",
+      "status": "PASSED",
+      "details": {
+        "status": "unhealthy",
+        "agent_id": "qsr_base_agent",
+        "model": "OpenAIModel()",
+        "test_successful": false,
+        "error": "status_code: 401, model_name: gpt-4o, body: {'message': 'Incorrect API key provided: test-key. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}",
+        "performance_metrics": {
+          "agent_id": "qsr_base_agent",
+          "version": "1.0.0",
+          "query_count": 0,
+          "error_count": 0,
+          "error_rate": 0,
+          "average_response_time": 0,
+          "uptime": 203.467794,
+          "model": "OpenAIModel()"
+        },
+        "timestamp": "2025-07-14T17:02:20.129637"
+      }
+    },
+    {
+      "test": "Phase 1 Chat Endpoint",
+      "status": "PASSED",
+      "details": {
+        "status_code": 200
+      }
+    },
+    {
+      "test": "Legacy Compatibility",
+      "status": "PASSED",
+      "details": {
+        "response": "Legacy response to: Legacy test message",
+        "timestamp": "2025-07-14T17:02:22.284140",
+        "conversation_id": "default",
+        "note": "This is a legacy endpoint. Use /chat/pydantic for Phase 1 features."
+      }
+    },
+    {
+      "test": "Database Operations",
+      "status": "FAILED",
+      "details": {
+        "issue": "message retrieval"
+      }
+    }
+  ]
+}

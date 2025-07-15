@@ -63,16 +63,17 @@ def load_documents_db():
             return {}
     return {}
 
-def load_documents():
-    """Load documents from documents.json"""
+def load_neo4j_verified_documents():
+    """Load only documents that are verified to be in Neo4j"""
     try:
-        documents_file = os.path.join(os.path.dirname(__file__), '..', 'documents.json')
-        if os.path.exists(documents_file):
-            with open(documents_file, 'r') as f:
-                return json.load(f)
+        verified_file = os.path.join(os.path.dirname(__file__), 'neo4j_verified_documents.json')
+        with open(verified_file, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        logger.warning("Neo4j verified documents file not found, falling back to all documents")
         return load_documents_db()
     except json.JSONDecodeError:
-        logger.error("Error decoding documents.json")
+        logger.error("Error decoding neo4j_verified_documents.json")
         return {}
 
 def save_documents_db(db):
@@ -287,13 +288,13 @@ except Exception as e:
 
 # Include QSR optimization router
 try:
-    from qsr_optimization_endpoint import router as qsr_router
+    from qsr_optimization_endpoint import qsr_router
     app.include_router(qsr_router, tags=["QSR Optimization"])
-    logger.info("✅ QSR optimization endpoints enabled")
+    logger.info("✅ QSR optimization router enabled")
 except ImportError as e:
     logger.warning(f"QSR optimization router not available: {e}")
 except Exception as e:
-    logger.error(f"Failed to load QSR optimization endpoints: {e}")
+    logger.error(f"Failed to load QSR optimization router: {e}")
 
 # Include reliability infrastructure router
 try:
@@ -651,9 +652,134 @@ async def startup_clean_ragie():
         logger.error(f"❌ Reliability infrastructure initialization failed: {e}")
         # Don't fail startup - fallback to existing services
 
-# Removed RAG-Anything startup event
+# Enhanced monitoring startup event
+@app.on_event("startup")
+async def startup_enhanced_monitoring():
+    """Initialize enhanced health monitoring for intelligence services"""
+    try:
+        if ENHANCED_MONITORING_AVAILABLE:
+            logger.info("🧠 Initializing enhanced health monitoring...")
+            
+            # Start monitoring in background
+            enhanced_health_monitoring.start_monitoring()
+            
+            logger.info("✅ Enhanced health monitoring started")
+        else:
+            logger.warning("⚠️ Enhanced monitoring not available - intelligence services will not be monitored")
+            
+    except Exception as e:
+        logger.error(f"❌ Enhanced monitoring initialization failed: {e}")
+        # Don't fail startup - continue without enhanced monitoring
 
-# Removed document context service Neo4j startup
+# Enhanced monitoring shutdown event
+@app.on_event("shutdown")
+async def shutdown_enhanced_monitoring():
+    """Shutdown enhanced health monitoring gracefully"""
+    try:
+        if ENHANCED_MONITORING_AVAILABLE:
+            logger.info("🛑 Shutting down enhanced health monitoring...")
+            
+            enhanced_health_monitoring.stop_monitoring()
+            
+            logger.info("✅ Enhanced health monitoring stopped")
+            
+    except Exception as e:
+        logger.error(f"❌ Enhanced monitoring shutdown failed: {e}")
+
+# Add RAG-Anything startup event
+@app.on_event("startup")
+async def startup_event():
+    """Initialize services with proper Neo4j integration."""
+    
+    logger.info("🚀 Starting Line Lead backend...")
+    
+    # Test Neo4j connection first (try enhanced service, fallback to original)
+    neo4j_connected = False
+    try:
+        from enhanced_neo4j_service import enhanced_neo4j_service
+        neo4j_connected = await enhanced_neo4j_service.connect()
+        if neo4j_connected:
+            logger.info("✅ Enhanced Neo4j connection verified")
+    except Exception as e:
+        logger.warning(f"Enhanced Neo4j failed, falling back to original: {e}")
+        if not neo4j_service.test_connection():
+            logger.error("❌ Neo4j connection failed")
+            raise RuntimeError("Neo4j connection required for startup")
+        neo4j_connected = True
+        logger.info("✅ Original Neo4j connection verified")
+    
+    # Initialize RAG service with Neo4j storage
+    rag_success = await rag_service.initialize()
+    if not rag_success:
+        logger.error("❌ RAG service initialization failed")
+        raise RuntimeError("RAG service initialization required for startup")
+    
+    # Start Neo4j keep-alive for Enterprise Bridge reliability
+    if neo4j_connected and neo4j_service:
+        try:
+            await neo4j_service.start_keep_alive()
+            logger.info("🔗 Neo4j keep-alive started for Enterprise Bridge")
+        except Exception as e:
+            logger.warning(f"⚠️ Neo4j keep-alive startup failed: {e}")
+    
+    logger.info("✅ Line Lead backend ready")
+
+@app.on_event("startup")
+async def startup_document_context_service():
+    """Initialize document context service with Neo4j connection."""
+    try:
+        document_context_service.neo4j_service = neo4j_service
+        logger.info("✅ Document context service initialized with Neo4j connection")
+    except Exception as e:
+        logger.error(f"❌ Document context service initialization failed: {e}")
+
+@app.on_event("startup")
+async def startup_unified_neo4j():
+    """Initialize unified Neo4j service on startup."""
+    logger.info("🚀 Initializing unified Neo4j service...")
+    success = unified_neo4j.initialize_from_backend_config()
+    if success:
+        logger.info("✅ Unified Neo4j service ready")
+    else:
+        logger.error("❌ Unified Neo4j service failed to initialize")
+
+# Initialize voice service with RAG dependency
+@app.on_event("startup")
+async def startup_event_voice():
+    """Initialize voice service with RAG dependency."""
+    voice_graph_service.set_rag_service(rag_service)
+
+# Initialize Neo4j semantic relationship system
+neo4j_relationship_generator = None
+rag_anything_neo4j_hook = None
+voice_graph_query_service = None
+
+@app.on_event("startup")
+async def startup_event_neo4j_semantic():
+    """Initialize Neo4j semantic relationship generator and RAG-Anything hook."""
+    global neo4j_relationship_generator, rag_anything_neo4j_hook, voice_graph_query_service
+    try:
+        neo4j_relationship_generator = Neo4jRelationshipGenerator(neo4j_service)
+        rag_anything_neo4j_hook = RAGAnythingNeo4jHook(true_rag_service, neo4j_relationship_generator)
+        
+        # Initialize the semantic interceptor in the true RAG service
+        semantic_interceptor_initialized = true_rag_service.initialize_semantic_interceptor(neo4j_relationship_generator)
+        
+        # Initialize voice graph query service
+        voice_graph_query_service = VoiceGraphQueryService(neo4j_service)
+        
+        # Connect voice graph service to voice orchestrator
+        voice_orchestrator.set_voice_graph_service(voice_graph_query_service)
+        
+        if semantic_interceptor_initialized:
+            logger.info("✅ Neo4j semantic relationship system with LightRAG interceptor and voice graph integration initialized")
+        else:
+            logger.warning("⚠️ Neo4j semantic system initialized but LightRAG interceptor failed")
+            
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize Neo4j semantic system: {e}")
+
+# File serving will be handled by dedicated endpoint below
 
 # Initialize search engine with existing documents on startup
 @app.on_event("startup")
@@ -790,6 +916,13 @@ class ChatVoiceWithAudioResponse(BaseModel):
     conversation_complete: bool = False
     suggested_follow_ups: List[str] = []
 
+# Import enhanced health monitoring
+try:
+    from health_monitoring_enhanced import enhanced_health_monitoring
+    ENHANCED_MONITORING_AVAILABLE = True
+except ImportError:
+    ENHANCED_MONITORING_AVAILABLE = False
+
 # Enhanced Health Check with Connection Management
 @app.get("/debug/cors")
 async def debug_cors():
@@ -803,7 +936,7 @@ async def debug_cors():
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check(request: Request):
-    """Comprehensive health check with connection monitoring and keep-alive"""
+    """Comprehensive health check with enhanced intelligence monitoring"""
     try:
         start_time = datetime.datetime.now()
         
@@ -817,12 +950,52 @@ async def health_check(request: Request):
             logger.info(f"Health check requested by session {session_id[:12]}... (type: {health_check_type})")
         
         # Basic service checks - only count Neo4j-verified documents for data integrity
-        documents_db = load_documents()
+        documents_db = load_neo4j_verified_documents()
         doc_count = len(documents_db)
         
-        # Clean document status check
-        if doc_count > 0:
-            logger.info(f"📋 Document Status: {doc_count} documents available")
+        # Neo4j Entity Status Check & Console Heartbeat (Enterprise Bridge Integration)
+        neo4j_entity_count = 0
+        neo4j_relationship_count = 0
+        neo4j_status = "disconnected"
+        
+        try:
+            # Try to get neo4j_service from various sources
+            neo4j_service = None
+            try:
+                from enhanced_neo4j_service import enhanced_neo4j_service
+                neo4j_service = enhanced_neo4j_service
+            except ImportError:
+                try:
+                    from shared_neo4j_service import neo4j_service
+                except ImportError:
+                    pass
+            
+            if neo4j_service and hasattr(neo4j_service, 'connected') and neo4j_service.connected:
+                # Use enterprise Neo4j service methods
+                neo4j_entity_count = neo4j_service.get_node_count()
+                neo4j_relationship_count = neo4j_service.get_relationship_count()
+                neo4j_status = "connected" if neo4j_entity_count >= 0 else "error"
+            elif neo4j_service and hasattr(neo4j_service, 'connect'):
+                # Try to establish connection if not connected
+                if neo4j_service.connect():
+                    neo4j_entity_count = neo4j_service.get_node_count()
+                    neo4j_relationship_count = neo4j_service.get_relationship_count()
+                    neo4j_status = "connected"
+                else:
+                    neo4j_status = "connection_failed"
+        except Exception as e:
+            logger.warning(f"Neo4j enterprise bridge status check failed: {e}")
+            neo4j_status = "error"
+        
+        # Console heartbeat for Neo4j entities (every health check)
+        if neo4j_entity_count > 0:
+            logger.info(f"🔗 Neo4j Heartbeat: {neo4j_entity_count} entities, {neo4j_relationship_count} relationships")
+        elif doc_count == 0 and neo4j_entity_count == 0:
+            # Check raw documents vs verified documents
+            raw_docs = load_documents_db()
+            raw_count = len(raw_docs) if isinstance(raw_docs, dict) else 0
+            if raw_count > 0:
+                logger.warning(f"📋 Document Status: {raw_count} uploaded documents, {doc_count} Neo4j-verified, {neo4j_entity_count} entities in graph")
         
         # Enhanced search engine check
         search_ready = search_engine is not None and hasattr(search_engine, 'model')
@@ -858,6 +1031,24 @@ async def health_check(request: Request):
             logger.warning(f"AI health check failed: {e}")
             ai_status = "error"
         
+        # Check intelligence services health
+        intelligence_status = "unavailable"
+        intelligence_details = {}
+        
+        if ENHANCED_MONITORING_AVAILABLE:
+            try:
+                intelligence_health = enhanced_health_monitoring.get_intelligence_health_summary()
+                intelligence_status = intelligence_health.get("overall_intelligence_health", "unknown")
+                intelligence_details = {
+                    "ragie_service": intelligence_health.get("ragie_service_health", {}),
+                    "agent_coordination": intelligence_health.get("agent_coordination_health", {}),
+                    "context_preservation": intelligence_health.get("context_preservation_health", {}),
+                    "active_alerts": intelligence_health.get("active_intelligence_alerts", 0)
+                }
+            except Exception as e:
+                logger.warning(f"Intelligence health check failed: {e}")
+                intelligence_status = "error"
+        
         # File system checks
         file_upload_status = "ready" if os.path.exists(UPLOAD_DIR) else "error"
         disk_usage = get_disk_usage() if health_check_type == 'full' else None
@@ -886,7 +1077,8 @@ async def health_check(request: Request):
             "file_upload": file_upload_status,
             "neo4j": neo4j_status,
             "neo4j_entities": str(neo4j_entity_count),
-            "neo4j_relationships": str(neo4j_relationship_count)
+            "neo4j_relationships": str(neo4j_relationship_count),
+            "intelligence_services": intelligence_status
         }
         
         # Add performance metrics for full health check
@@ -898,17 +1090,21 @@ async def health_check(request: Request):
                 "db_response_time_ms": round(db_response_time, 2) if db_response_time else None,
                 "ai_response_time_ms": round(ai_response_time, 2) if ai_response_time else None,
                 "memory_usage": memory_usage,
-                "disk_usage": disk_usage
+                "disk_usage": disk_usage,
+                "intelligence_details": intelligence_details
             }
         
         # Determine overall status
         critical_services = ["database", "search_engine"]
         critical_healthy = all(services[s] in ["ready", "initializing"] for s in critical_services)
-        all_healthy = all(s in ["ready", "initializing"] for s in services.values())
+        all_healthy = all(s in ["ready", "initializing", "unavailable"] for s in services.values())
         
-        if not critical_healthy:
+        # Factor in intelligence services for overall health
+        intelligence_critical = intelligence_status in ["critical", "error"]
+        
+        if not critical_healthy or intelligence_critical:
             overall_status = "critical"
-        elif not all_healthy:
+        elif not all_healthy or intelligence_status == "warning":
             overall_status = "degraded"
         else:
             overall_status = "healthy"
@@ -916,7 +1112,7 @@ async def health_check(request: Request):
         response_data = {
             "status": overall_status,
             "timestamp": datetime.datetime.now().isoformat(),
-            "version": "1.0.0",
+            "version": "2.0.0",  # Updated version for intelligence integration
             "services": services,
             "document_count": doc_count,
             "search_ready": search_ready
@@ -937,7 +1133,7 @@ async def health_check(request: Request):
         return HealthResponse(
             status="error",
             timestamp=datetime.datetime.now().isoformat(),
-            version="1.0.0",
+            version="2.0.0",
             services={"error": str(e)},
             document_count=0,
             search_ready=False
@@ -1024,7 +1220,7 @@ async def warm_up():
         logger.info("Warm-up request received")
         
         # Pre-load critical services - only count Neo4j-verified documents
-        documents_db = load_documents()
+        documents_db = load_neo4j_verified_documents()
         doc_count = len(documents_db)
         
         # Initialize search engine if needed
@@ -1845,7 +2041,7 @@ async def delete_document(document_id: str):
         
         # Also remove from Neo4j verification file
         try:
-            neo4j_verified_docs = load_documents()
+            neo4j_verified_docs = load_neo4j_verified_documents()
             if document_id in neo4j_verified_docs:
                 del neo4j_verified_docs[document_id]
                 verification_file = os.path.join(os.path.dirname(__file__), "neo4j_verified_documents.json")
@@ -3452,7 +3648,8 @@ async def root():
     """Root endpoint with API information"""
     return {
         "message": "Line Lead QSR Assistant API",
-        "version": "1.0.0",
+        "version": "2.0.0",
+        "description": "Enhanced QSR Assistant with PydanticAI + Ragie Intelligence",
         "endpoints": {
             "health": "/health",
             "chat": "/chat",
@@ -3467,6 +3664,26 @@ async def root():
             "ai-status": "/ai-status",
             "docs": "/docs",
             "websocket-test": "/ws/test"
+        },
+        "health_monitoring": {
+            "intelligence_health": "/health/intelligence",
+            "performance_dashboard": "/health/dashboard",
+            "monitoring_status": "/health/monitoring-status",
+            "start_monitoring": "/health/start-monitoring",
+            "stop_monitoring": "/health/stop-monitoring",
+            "ragie_service_health": "/health/ragie-service",
+            "agent_coordination": "/health/agent-coordination",
+            "context_preservation": "/health/context-preservation",
+            "real_time_metrics": "/health/real-time-metrics",
+            "historical_trends": "/health/historical-trends",
+            "user_satisfaction": "/health/user-satisfaction"
+        },
+        "features": {
+            "pydantic_ai_agents": "Multi-agent system with specialized QSR agents",
+            "ragie_intelligence": "Advanced knowledge retrieval and visual citations",
+            "universal_context": "Context preservation across text and voice",
+            "enhanced_monitoring": "Comprehensive health monitoring for intelligence services",
+            "voice_optimization": "Voice-optimized responses for QSR environments"
         }
     }
 
@@ -4787,6 +5004,229 @@ async def multimodal_system_status():
             "multimodal_citations_ready": False,
             "error": str(e)
         }
+
+# === INTELLIGENCE HEALTH MONITORING ENDPOINTS ===
+
+@app.get("/health/intelligence")
+async def get_intelligence_health():
+    """Get detailed intelligence services health status"""
+    if not ENHANCED_MONITORING_AVAILABLE:
+        return {"error": "Enhanced monitoring not available"}
+    
+    try:
+        health_summary = enhanced_health_monitoring.get_intelligence_health_summary()
+        return {
+            "success": True,
+            "intelligence_health": health_summary,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Intelligence health check failed: {e}")
+        return {"error": str(e), "success": False}
+
+@app.get("/health/dashboard")
+async def get_performance_dashboard():
+    """Get comprehensive performance dashboard data"""
+    if not ENHANCED_MONITORING_AVAILABLE:
+        return {"error": "Enhanced monitoring not available"}
+    
+    try:
+        dashboard_data = enhanced_health_monitoring.get_performance_dashboard_data()
+        return {
+            "success": True,
+            "dashboard": dashboard_data,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Performance dashboard failed: {e}")
+        return {"error": str(e), "success": False}
+
+@app.get("/health/monitoring-status")
+async def get_monitoring_status():
+    """Get monitoring system status"""
+    if not ENHANCED_MONITORING_AVAILABLE:
+        return {"error": "Enhanced monitoring not available"}
+    
+    try:
+        status = enhanced_health_monitoring.get_monitoring_status()
+        return {
+            "success": True,
+            "monitoring_status": status,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Monitoring status check failed: {e}")
+        return {"error": str(e), "success": False}
+
+@app.post("/health/start-monitoring")
+async def start_enhanced_monitoring():
+    """Start enhanced health monitoring"""
+    if not ENHANCED_MONITORING_AVAILABLE:
+        return {"error": "Enhanced monitoring not available"}
+    
+    try:
+        enhanced_health_monitoring.start_monitoring()
+        return {
+            "success": True,
+            "message": "Enhanced health monitoring started",
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to start monitoring: {e}")
+        return {"error": str(e), "success": False}
+
+@app.post("/health/stop-monitoring")
+async def stop_enhanced_monitoring():
+    """Stop enhanced health monitoring"""
+    if not ENHANCED_MONITORING_AVAILABLE:
+        return {"error": "Enhanced monitoring not available"}
+    
+    try:
+        enhanced_health_monitoring.stop_monitoring()
+        return {
+            "success": True,
+            "message": "Enhanced health monitoring stopped",
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to stop monitoring: {e}")
+        return {"error": str(e), "success": False}
+
+@app.get("/health/ragie-service")
+async def get_ragie_service_health():
+    """Get Ragie service specific health metrics"""
+    if not ENHANCED_MONITORING_AVAILABLE:
+        return {"error": "Enhanced monitoring not available"}
+    
+    try:
+        intelligence_health = enhanced_health_monitoring.get_intelligence_health_summary()
+        ragie_health = intelligence_health.get("ragie_service_health", {})
+        
+        return {
+            "success": True,
+            "ragie_health": ragie_health,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Ragie health check failed: {e}")
+        return {"error": str(e), "success": False}
+
+@app.get("/health/agent-coordination")
+async def get_agent_coordination_health():
+    """Get PydanticAI agent coordination health metrics"""
+    if not ENHANCED_MONITORING_AVAILABLE:
+        return {"error": "Enhanced monitoring not available"}
+    
+    try:
+        intelligence_health = enhanced_health_monitoring.get_intelligence_health_summary()
+        agent_health = intelligence_health.get("agent_coordination_health", {})
+        
+        return {
+            "success": True,
+            "agent_coordination_health": agent_health,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Agent coordination health check failed: {e}")
+        return {"error": str(e), "success": False}
+
+@app.get("/health/context-preservation")
+async def get_context_preservation_health():
+    """Get context preservation health metrics"""
+    if not ENHANCED_MONITORING_AVAILABLE:
+        return {"error": "Enhanced monitoring not available"}
+    
+    try:
+        intelligence_health = enhanced_health_monitoring.get_intelligence_health_summary()
+        context_health = intelligence_health.get("context_preservation_health", {})
+        
+        return {
+            "success": True,
+            "context_preservation_health": context_health,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Context preservation health check failed: {e}")
+        return {"error": str(e), "success": False}
+
+@app.post("/health/record-interaction")
+async def record_interaction_performance(request: dict):
+    """Record interaction performance for monitoring"""
+    if not ENHANCED_MONITORING_AVAILABLE:
+        return {"error": "Enhanced monitoring not available"}
+    
+    try:
+        session_id = request.get("session_id", "anonymous")
+        interaction_data = request.get("interaction_data", {})
+        
+        enhanced_health_monitoring.record_interaction_performance(session_id, interaction_data)
+        
+        return {
+            "success": True,
+            "message": "Interaction performance recorded",
+            "session_id": session_id,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to record interaction performance: {e}")
+        return {"error": str(e), "success": False}
+
+@app.get("/health/real-time-metrics")
+async def get_real_time_metrics():
+    """Get real-time intelligence metrics"""
+    if not ENHANCED_MONITORING_AVAILABLE:
+        return {"error": "Enhanced monitoring not available"}
+    
+    try:
+        dashboard_data = enhanced_health_monitoring.get_performance_dashboard_data()
+        real_time_metrics = dashboard_data.get("real_time_metrics", {})
+        
+        return {
+            "success": True,
+            "real_time_metrics": real_time_metrics,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Real-time metrics failed: {e}")
+        return {"error": str(e), "success": False}
+
+@app.get("/health/historical-trends")
+async def get_historical_trends():
+    """Get historical performance trends"""
+    if not ENHANCED_MONITORING_AVAILABLE:
+        return {"error": "Enhanced monitoring not available"}
+    
+    try:
+        dashboard_data = enhanced_health_monitoring.get_performance_dashboard_data()
+        historical_trends = dashboard_data.get("historical_trends", {})
+        
+        return {
+            "success": True,
+            "historical_trends": historical_trends,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Historical trends failed: {e}")
+        return {"error": str(e), "success": False}
+
+@app.get("/health/user-satisfaction")
+async def get_user_satisfaction_metrics():
+    """Get user satisfaction metrics"""
+    if not ENHANCED_MONITORING_AVAILABLE:
+        return {"error": "Enhanced monitoring not available"}
+    
+    try:
+        dashboard_data = enhanced_health_monitoring.get_performance_dashboard_data()
+        user_satisfaction = dashboard_data.get("user_satisfaction", {})
+        
+        return {
+            "success": True,
+            "user_satisfaction": user_satisfaction,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"User satisfaction metrics failed: {e}")
+        return {"error": str(e), "success": False}
 
 # === EXTRACTION BOTTLENECK DIAGNOSIS (PRIORITY 0) ===
 

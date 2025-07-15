@@ -14,26 +14,43 @@ Builds upon:
 Author: Generated with Memex (https://memex.tech)
 """
 
-from pydantic import BaseModel, Field, validator, root_validator
+from pydantic import BaseModel, Field, validator, model_validator
 from typing import Optional, List, Dict, Any, Literal, Union
 from enum import Enum
 import time
 import logging
 from datetime import datetime
 
-# Import existing types from voice_agent
+# Import shared types first to avoid circular imports
+from ..agents.types import AgentType, AgentCoordinationStrategy, ConversationIntent
+
+# Then import existing types from voice_agent
 try:
     from voice_agent import (
-        VoiceResponse, VoiceState, ConversationIntent, ConversationContext,
-        AgentType, AgentCoordinationStrategy
+        VoiceResponse, VoiceState, ConversationContext
     )
-    from step_parser import ParsedStepsResponse
+    from ..step_parser import ParsedStepsResponse
+    HAS_IMPORTS = True
 except ImportError:
     # Fallback definitions if imports fail
     class VoiceState(str, Enum):
         LISTENING = "listening"
         PROCESSING = "processing"
         RESPONDING = "responding"
+    
+    class ParsedStepsResponse(BaseModel):
+        """Fallback ParsedStepsResponse"""
+        pass
+    
+    class ConversationContext(BaseModel):
+        """Fallback ConversationContext"""
+        pass
+    
+    class VoiceResponse(BaseModel):
+        """Fallback VoiceResponse"""
+        pass
+    
+    HAS_IMPORTS = False
 
 logger = logging.getLogger(__name__)
 
@@ -125,13 +142,12 @@ class VisualCitationCollection(BaseModel):
     safety_critical: bool = False
     procedure_complete: bool = False
     
-    @root_validator
-    def calculate_total_relevance(cls, values):
+    @model_validator(mode='after')
+    def calculate_total_relevance(self):
         """Calculate total relevance score from individual citations"""
-        citations = values.get('citations', [])
-        if citations:
-            values['total_relevance_score'] = sum(c.relevance_score for c in citations) / len(citations)
-        return values
+        if self.citations:
+            self.total_relevance_score = sum(c.relevance_score for c in self.citations) / len(self.citations)
+        return self
     
     def get_by_type(self, citation_type: VisualCitationType) -> List[EnhancedVisualCitation]:
         """Get citations filtered by type"""
@@ -281,26 +297,26 @@ class EnhancedQSRResponse(BaseModel):
             logger.warning("Safety-critical visual citations without safety priority flag")
         return v
     
-    @root_validator
-    def ensure_response_coherence(cls, values):
+    @model_validator(mode='after')
+    def ensure_response_coherence(self):
         """Ensure all response components are coherent"""
         
         # Align visual complexity with cognitive complexity
-        visual_complexity = values.get('visual_complexity', 'simple')
-        cognitive_complexity = values.get('cognitive_complexity', 'simple')
+        visual_complexity = self.visual_complexity
+        cognitive_complexity = self.cognitive_complexity
         
         complexity_map = {"simple": 1, "moderate": 2, "complex": 3}
         if abs(complexity_map[visual_complexity] - complexity_map[cognitive_complexity]) > 1:
             logger.warning("Visual and cognitive complexity misalignment")
         
         # Ensure safety priority consistency
-        safety_priority = values.get('safety_priority', False)
-        safety_warnings = values.get('safety_warnings', [])
+        safety_priority = self.safety_priority
+        safety_warnings = self.safety_warnings
         
         if safety_priority and not safety_warnings:
             logger.warning("Safety priority set but no safety warnings provided")
         
-        return values
+        return self
     
     def to_voice_response(self) -> 'VoiceResponse':
         """Convert to legacy VoiceResponse for backward compatibility"""
@@ -477,19 +493,19 @@ class ResponseQualityMetrics(BaseModel):
     # Overall assessment
     overall_quality_score: float = Field(ge=0.0, le=1.0)
     
-    @root_validator
-    def calculate_overall_score(cls, values):
+    @model_validator(mode='after')
+    def calculate_overall_score(self):
         """Calculate overall quality score from component metrics"""
         components = [
-            values.get('information_completeness', 0.8),
-            values.get('accuracy_confidence', 0.8),
-            values.get('relevance_score', 0.8),
-            values.get('clarity_score', 0.8),
-            values.get('actionability_score', 0.8),
-            values.get('safety_compliance_score', 1.0)
+            self.information_completeness or 0.8,
+            self.accuracy_confidence or 0.8,
+            self.relevance_score or 0.8,
+            self.clarity_score or 0.8,
+            self.actionability_score or 0.8,
+            self.safety_compliance_score or 1.0
         ]
-        values['overall_quality_score'] = sum(components) / len(components)
-        return values
+        self.overall_quality_score = sum(components) / len(components)
+        return self
 
 class AgentPerformanceTracker(BaseModel):
     """Track individual agent performance for optimization"""

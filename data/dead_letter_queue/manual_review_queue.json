@@ -1,0 +1,44 @@
+[
+  {
+    "operation_id": "failed_1752558380764074",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-15T00:46:20.764079",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752585893199535",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-15T08:24:53.199539",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752586287270828",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-15T08:31:27.270833",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  }
+]

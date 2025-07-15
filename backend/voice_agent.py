@@ -15,11 +15,32 @@ import json
 import os
 import asyncio
 import hashlib
-from step_parser import parse_ai_response_steps, ParsedStepsResponse
+try:
+    from .step_parser import parse_ai_response_steps, ParsedStepsResponse
+except ImportError:
+    from step_parser import parse_ai_response_steps, ParsedStepsResponse
+
+# Import AgentType from shared location before any models that use it
+try:
+    from .agents.types import AgentType
+except ImportError:
+    from agents.types import AgentType
+
+# Initialize logger early
+logger = logging.getLogger(__name__)
 
 # Import enhanced QSR models
 try:
-    from models.enhanced_qsr_models import (
+    try:
+        from .models.enhanced_qsr_models import (
+            EnhancedQSRResponse, EquipmentResponse, ProcedureResponse, 
+            SafetyResponse, MaintenanceResponse, EnhancedVisualCitation,
+            VisualCitationCollection, EquipmentContext, QSRResponseFactory,
+            EnhancedConversationContext, AgentPerformanceTracker,
+            VisualCitationType, VisualCitationSource
+        )
+    except ImportError:
+        from models.enhanced_qsr_models import (
         EnhancedQSRResponse, EquipmentResponse, ProcedureResponse, 
         SafetyResponse, MaintenanceResponse, EnhancedVisualCitation,
         VisualCitationCollection, EquipmentContext, QSRResponseFactory,
@@ -32,8 +53,6 @@ except ImportError as e:
     logger.warning(f"⚠️ Enhanced QSR models not available: {e}")
     ENHANCED_MODELS_AVAILABLE = False
 
-logger = logging.getLogger(__name__)
-
 class VoiceState(str, Enum):
     """Enhanced voice states for intelligent conversation flow"""
     LISTENING = "listening"
@@ -44,29 +63,19 @@ class VoiceState(str, Enum):
     ERROR_RECOVERY = "error_recovery"
     CONVERSATION_COMPLETE = "conversation_complete"
 
-class ConversationIntent(str, Enum):
-    """Detected user intents for better response handling"""
-    EQUIPMENT_QUESTION = "equipment_question"
-    FOLLOW_UP = "follow_up"
-    NEW_TOPIC = "new_topic"
-    CLARIFICATION = "clarification"
-    COMPLETION = "completion"
-    EMERGENCY = "emergency"
+# Import ConversationIntent from shared location
+try:
+    from .agents.types import ConversationIntent
+except ImportError:
+    from agents.types import ConversationIntent
 
-class AgentType(str, Enum):
-    """Types of specialized QSR agents"""
-    EQUIPMENT = "equipment"
-    PROCEDURE = "procedure" 
-    SAFETY = "safety"
-    MAINTENANCE = "maintenance"
-    GENERAL = "general"
 
-class AgentCoordinationStrategy(str, Enum):
-    """Agent coordination strategies"""
-    SINGLE_AGENT = "single_agent"          # Use one specialized agent
-    PARALLEL_CONSULTATION = "parallel"     # Multiple agents, synthesize
-    SEQUENTIAL_HANDOFF = "sequential"      # Pass between agents
-    HIERARCHICAL = "hierarchical"          # Primary agent with specialist backup
+
+# Import AgentCoordinationStrategy from shared location
+try:
+    from .agents.types import AgentCoordinationStrategy
+except ImportError:
+    from agents.types import AgentCoordinationStrategy
 
 class ConversationContext(BaseModel):
     """Maintains intelligent conversation state across voice interactions"""

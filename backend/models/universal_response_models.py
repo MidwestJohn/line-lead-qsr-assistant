@@ -29,13 +29,8 @@ logger = logging.getLogger(__name__)
 # CORE ENUMS AND TYPES
 # ===============================================================================
 
-class AgentType(str, Enum):
-    """QSR agent specializations"""
-    EQUIPMENT = "equipment"
-    PROCEDURE = "procedure"
-    SAFETY = "safety"
-    MAINTENANCE = "maintenance"
-    GENERAL = "general"
+# Import AgentType from shared location
+from ..agents.types import AgentType
 
 class InteractionMode(str, Enum):
     """Interaction modes for universal responses"""
