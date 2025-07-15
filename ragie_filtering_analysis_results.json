@@ -1,0 +1,1189 @@
+{
+  "timestamp": 1752609264.759211,
+  "sdk_capabilities": {
+    "Baxter OV520E1": {
+      "result_count": 0,
+      "response_time_ms": 1711.89,
+      "results": []
+    },
+    "fryer equipment": {
+      "result_count": 8,
+      "response_time_ms": 2784.28,
+      "results": [
+        {
+          "score": 0.19090909090909092,
+          "document_id": "2d18abca...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.19090909090909092,
+          "document_id": "aee735ab...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.16025641025641024,
+          "document_id": "9c72b8be...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.15,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.13942307692307693,
+          "document_id": "a2dc647d...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.12916666666666665,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.07142857142857142,
+          "document_id": "27b6834b...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.043478260869565216,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        }
+      ]
+    },
+    "oven maintenance": {
+      "result_count": 8,
+      "response_time_ms": 3430.7,
+      "results": [
+        {
+          "score": 0.16783216783216784,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.16233766233766234,
+          "document_id": "2d18abca...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.14545454545454545,
+          "document_id": "2d18abca...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.13942307692307693,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.12549019607843137,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.125,
+          "document_id": "2d18abca...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.11490683229813664,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.11437908496732026,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "image",
+          "source": "Unknown..."
+        }
+      ]
+    },
+    "Taylor equipment": {
+      "result_count": 0,
+      "response_time_ms": 6753.26,
+      "results": []
+    },
+    "diagram": {
+      "result_count": 4,
+      "response_time_ms": 3328.49,
+      "results": [
+        {
+          "score": 0.19090909090909092,
+          "document_id": "27b6834b...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.17142857142857143,
+          "document_id": "2d18abca...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.15,
+          "document_id": "27b6834b...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.0625,
+          "document_id": "27b6834b...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "image",
+          "source": "Unknown..."
+        }
+      ]
+    },
+    "manual": {
+      "result_count": 6,
+      "response_time_ms": 3764.99,
+      "results": [
+        {
+          "score": 0.16666666666666669,
+          "document_id": "a2dc647d...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.09090909090909091,
+          "document_id": "2d18abca...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.08333333333333333,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.06666666666666667,
+          "document_id": "9c72b8be...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.0625,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.058823529411764705,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        }
+      ]
+    },
+    "safety procedures": {
+      "result_count": 8,
+      "response_time_ms": 1835.16,
+      "results": [
+        {
+          "score": 0.15,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.13025210084033612,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.11145510835913312,
+          "document_id": "27b6834b...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.1,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.1,
+          "document_id": "27b6834b...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.09090909090909091,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.09090909090909091,
+          "document_id": "27b6834b...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.08333333333333333,
+          "document_id": "27b6834b...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "video",
+          "source": "Unknown..."
+        }
+      ]
+    },
+    "pizza preparation": {
+      "result_count": 8,
+      "response_time_ms": 3679.34,
+      "results": [
+        {
+          "score": 0.19090909090909092,
+          "document_id": "2d18abca...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.1388888888888889,
+          "document_id": "2d18abca...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.12549019607843137,
+          "document_id": "2d18abca...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.11011904761904762,
+          "document_id": "2d18abca...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.1,
+          "document_id": "2d18abca...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.09090909090909091,
+          "document_id": "2d18abca...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.08333333333333333,
+          "document_id": "2d18abca...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.07692307692307693,
+          "document_id": "2d18abca...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "image",
+          "source": "Unknown..."
+        }
+      ]
+    },
+    "kitchen equipment": {
+      "result_count": 8,
+      "response_time_ms": 3225.24,
+      "results": [
+        {
+          "score": 0.19090909090909092,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.1625,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.14583333333333331,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.1380952380952381,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.12333333333333332,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.12040133779264214,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.10644257703081232,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.10317460317460317,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "image",
+          "source": "Unknown..."
+        }
+      ]
+    },
+    "cleaning procedures": {
+      "result_count": 8,
+      "response_time_ms": 1562.85,
+      "results": [
+        {
+          "score": 0.17692307692307693,
+          "document_id": "27b6834b...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.16233766233766234,
+          "document_id": "27b6834b...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.14354066985645933,
+          "document_id": "27b6834b...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.13333333333333333,
+          "document_id": "27b6834b...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.1,
+          "document_id": "27b6834b...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.08712121212121213,
+          "document_id": "8e1364c0...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "image",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.08333333333333333,
+          "document_id": "a2dc647d...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count",
+            "equipment_type",
+            "procedure"
+          ],
+          "has_equipment_metadata": true,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        },
+        {
+          "score": 0.08166666666666667,
+          "document_id": "fe59ecbb...",
+          "metadata_keys": [
+            "file_type",
+            "source",
+            "page_number",
+            "content_type",
+            "has_images",
+            "image_count"
+          ],
+          "has_equipment_metadata": false,
+          "document_type": "pdf",
+          "source": "Unknown..."
+        }
+      ]
+    },
+    "temperature": {
+      "result_count": 0,
+      "response_time_ms": 427.54,
+      "results": []
+    },
+    "procedures": {
+      "result_count": 0,
+      "response_time_ms": 429.73,
+      "results": []
+    },
+    "equipment": {
+      "result_count": 0,
+      "response_time_ms": 439.55,
+      "results": []
+    }
+  },
+  "direct_api_capabilities": {
+    "Equipment Documents Only": {
+      "success": false,
+      "error": "HTTP 429: {\"detail\":\"Rate limit of 10 requests per minute exceeded. Please upgrade your plan or contact us at support@ragie.ai. See more at https://docs.ragie.ai/docs/errors#429---rate-limit-exceeded\"}",
+      "filter_used": {
+        "document_type": {
+          "$in": [
+            "pdf",
+            "png",
+            "jpg"
+          ]
+        }
+      }
+    },
+    "Recent Equipment Manuals": {
+      "success": false,
+      "error": "HTTP 429: {\"detail\":\"Rate limit of 10 requests per minute exceeded. Please upgrade your plan or contact us at support@ragie.ai. See more at https://docs.ragie.ai/docs/errors#429---rate-limit-exceeded\"}",
+      "filter_used": {
+        "$and": [
+          {
+            "document_type": "pdf"
+          },
+          {
+            "document_uploaded_at": {
+              "$gte": 1700000000
+            }
+          }
+        ]
+      }
+    },
+    "Image Documents": {
+      "success": false,
+      "error": "HTTP 429: {\"detail\":\"Rate limit of 10 requests per minute exceeded. Please upgrade your plan or contact us at support@ragie.ai. See more at https://docs.ragie.ai/docs/errors#429---rate-limit-exceeded\"}",
+      "filter_used": {
+        "document_type": {
+          "$in": [
+            "png",
+            "jpg",
+            "jpeg"
+          ]
+        }
+      }
+    },
+    "Equipment by Name Pattern": {
+      "success": false,
+      "error": "HTTP 429: {\"detail\":\"Rate limit of 10 requests per minute exceeded. Please upgrade your plan or contact us at support@ragie.ai. See more at https://docs.ragie.ai/docs/errors#429---rate-limit-exceeded\"}",
+      "filter_used": {
+        "document_name": {
+          "$regex": ".*[Bb]axter.*"
+        }
+      }
+    }
+  },
+  "equipment_query_performance": {
+    "Baxter OV520E1": {
+      "Baxter OV520E1": {
+        "total_results": 0,
+        "relevant_results": 0,
+        "relevance_ratio": 0,
+        "avg_score": 0,
+        "response_time_ms": 1254.85
+      },
+      "OV520E1": {
+        "total_results": 0,
+        "relevant_results": 0,
+        "relevance_ratio": 0,
+        "avg_score": 0,
+        "response_time_ms": 439.78
+      },
+      "Baxter oven": {
+        "total_results": 0,
+        "relevant_results": 0,
+        "relevance_ratio": 0,
+        "avg_score": 0,
+        "response_time_ms": 418.82
+      },
+      "electric diagram": {
+        "total_results": 0,
+        "relevant_results": 0,
+        "relevance_ratio": 0,
+        "avg_score": 0,
+        "response_time_ms": 316.54
+      }
+    },
+    "Taylor Fryer": {
+      "Taylor": {
+        "total_results": 0,
+        "relevant_results": 0,
+        "relevance_ratio": 0,
+        "avg_score": 0,
+        "response_time_ms": 421.28
+      },
+      "fryer": {
+        "total_results": 0,
+        "relevant_results": 0,
+        "relevance_ratio": 0,
+        "avg_score": 0,
+        "response_time_ms": 421.61
+      },
+      "Taylor fryer": {
+        "total_results": 0,
+        "relevant_results": 0,
+        "relevance_ratio": 0,
+        "avg_score": 0,
+        "response_time_ms": 425.02
+      },
+      "C602": {
+        "total_results": 0,
+        "relevant_results": 0,
+        "relevance_ratio": 0,
+        "avg_score": 0,
+        "response_time_ms": 436.49
+      }
+    },
+    "Slicer Equipment": {
+      "slicer": {
+        "total_results": 0,
+        "relevant_results": 0,
+        "relevance_ratio": 0,
+        "avg_score": 0,
+        "response_time_ms": 1647.88
+      },
+      "Grote": {
+        "total_results": 0,
+        "relevant_results": 0,
+        "relevance_ratio": 0,
+        "avg_score": 0,
+        "response_time_ms": 815.11
+      },
+      "slicing equipment": {
+        "total_results": 0,
+        "relevant_results": 0,
+        "relevance_ratio": 0,
+        "avg_score": 0,
+        "response_time_ms": 449.54
+      }
+    }
+  },
+  "document_analysis": {
+    "total_documents": 2,
+    "equipment_documents": 2,
+    "type_distribution": {
+      "unknown": {
+        "count": 2,
+        "examples": [
+          "Baxter_OV520E1_Rotating_Single_Rack_Oven_Electric_Diagram.png",
+          "OV520E1 Rack Oven Spec Sheet BX56140 (12-24).pdf"
+        ]
+      }
+    },
+    "equipment_docs": [
+      {
+        "name": "Baxter_OV520E1_Rotating_Single_Rack_Oven_Electric_Diagram.png",
+        "type": "unknown",
+        "id": "2ac643c8..."
+      },
+      {
+        "name": "OV520E1 Rack Oven Spec Sheet BX56140 (12-24).pdf",
+        "type": "unknown",
+        "id": "24ae4a11..."
+      }
+    ]
+  },
+  "recommendations": {
+    "overall_assessment": "analysis_complete",
+    "sdk_vs_api": [
+      "\u2705 SDK is working and provides basic search functionality",
+      "\u274c Direct API filtering may have limitations"
+    ],
+    "performance_insights": [
+      "\u2705 Equipment queries generally successful"
+    ],
+    "architecture_recommendations": [
+      "\ud83d\udcca Found 2/2 equipment documents - good foundation for filtering"
+    ]
+  }
+}

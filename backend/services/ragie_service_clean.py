@@ -194,6 +194,110 @@ Tag with equipment type (fryer, grill, oven) and procedure type (operation, main
             logger.error(f"Failed to setup QSR instructions: {e}")
             return False
     
+    def _build_smart_filter(self, original_query: str, processed_query: str) -> Optional[Dict[str, Any]]:
+        """
+        Build intelligent filter based on query analysis to improve search relevance
+        
+        Args:
+            original_query: Original user query
+            processed_query: Preprocessed query
+            
+        Returns:
+            Filter dictionary for Ragie API or None if no specific filter needed
+        """
+        query_lower = original_query.lower().strip()
+        
+        # Equipment-specific filters
+        equipment_filters = self._get_equipment_filter(query_lower)
+        if equipment_filters:
+            return equipment_filters
+        
+        # Document type filters
+        doc_type_filters = self._get_document_type_filter(query_lower)
+        if doc_type_filters:
+            return doc_type_filters
+        
+        # Content type filters
+        content_filters = self._get_content_type_filter(query_lower)
+        if content_filters:
+            return content_filters
+        
+        # No specific filter needed
+        return None
+    
+    def _get_equipment_filter(self, query_lower: str) -> Optional[Dict[str, Any]]:
+        """Generate equipment-specific filters"""
+        
+        # Baxter equipment filter
+        if any(term in query_lower for term in ['baxter', 'ov520e1']):
+            return {
+                "$or": [
+                    {"document_name": {"$regex": ".*[Bb]axter.*"}},
+                    {"document_name": {"$regex": ".*OV520E1.*"}},
+                    {"document_name": {"$regex": ".*ov520e1.*"}}
+                ]
+            }
+        
+        # Taylor equipment filter
+        if any(term in query_lower for term in ['taylor', 'c602']):
+            return {
+                "$or": [
+                    {"document_name": {"$regex": ".*[Tt]aylor.*"}},
+                    {"document_name": {"$regex": ".*C602.*"}},
+                    {"document_name": {"$regex": ".*c602.*"}}
+                ]
+            }
+        
+        # Grote equipment filter
+        if 'grote' in query_lower:
+            return {
+                "document_name": {"$regex": ".*[Gg]rote.*"}
+            }
+        
+        return None
+    
+    def _get_document_type_filter(self, query_lower: str) -> Optional[Dict[str, Any]]:
+        """Generate document type filters"""
+        
+        # Image/diagram requests
+        image_terms = ['image', 'diagram', 'picture', 'photo', 'visual', 'show me']
+        if any(term in query_lower for term in image_terms):
+            return {
+                "document_type": {"$in": ["png", "jpg", "jpeg", "pdf"]}
+            }
+        
+        # Manual/documentation requests
+        manual_terms = ['manual', 'documentation', 'guide', 'instructions']
+        if any(term in query_lower for term in manual_terms):
+            return {
+                "document_type": {"$in": ["pdf", "doc", "docx"]}
+            }
+        
+        return None
+    
+    def _get_content_type_filter(self, query_lower: str) -> Optional[Dict[str, Any]]:
+        """Generate content-specific filters"""
+        
+        # Safety/procedure content
+        safety_terms = ['safety', 'procedure', 'protocol', 'compliance']
+        if any(term in query_lower for term in safety_terms):
+            # Prefer recent documents for safety procedures
+            return {
+                "$and": [
+                    {"document_type": {"$in": ["pdf", "doc", "docx"]}},
+                    # Could add date filters here if we track upload dates
+                ]
+            }
+        
+        # Maintenance content
+        maintenance_terms = ['maintenance', 'cleaning', 'service', 'repair']
+        if any(term in query_lower for term in maintenance_terms):
+            return {
+                "document_type": {"$in": ["pdf", "png", "jpg"]}  # Include diagrams
+            }
+        
+        return None
+    
     def _preprocess_query(self, query: str) -> str:
         """
         Preprocess query to improve Ragie search results
@@ -243,7 +347,7 @@ Tag with equipment type (fryer, grill, oven) and procedure type (operation, main
     
     async def search(self, query: str, limit: int = 5) -> List[RagieSearchResult]:
         """
-        Search documents using Ragie
+        Enhanced search with intelligent filtering based on query analysis
         
         Args:
             query: Search query
@@ -261,7 +365,10 @@ Tag with equipment type (fryer, grill, oven) and procedure type (operation, main
             processed_query = self._preprocess_query(query)
             logger.info(f"🔍 Searching Ragie: '{query}' → '{processed_query}' (limit: {limit})")
             
-            # Search using Ragie SDK built-in retrieval method
+            # Build intelligent filter based on query analysis
+            smart_filter = self._build_smart_filter(query, processed_query)
+            
+            # Search using Ragie SDK with enhanced filtering
             search_request = {
                 "query": processed_query,
                 "rerank": True,
@@ -269,8 +376,10 @@ Tag with equipment type (fryer, grill, oven) and procedure type (operation, main
                 "limit": limit
             }
             
-            # Only add filters if we know they exist in our documents
-            # Removed potentially problematic custom filter
+            # Add intelligent filter if one was generated
+            if smart_filter:
+                search_request["filter"] = smart_filter
+                logger.info(f"🎯 Applying filter: {smart_filter}")
             
             response = self.client.retrievals.retrieve(request=search_request)
             
