@@ -29,6 +29,16 @@ except ImportError:
 # Initialize logger early
 logger = logging.getLogger(__name__)
 
+# Import image request handler
+try:
+    from .services.image_request_handler import image_request_handler
+except ImportError:
+    try:
+        from services.image_request_handler import image_request_handler
+    except ImportError:
+        logger.warning("Image request handler not available")
+        image_request_handler = None
+
 # Import enhanced QSR models
 try:
     try:
@@ -150,7 +160,7 @@ class VoiceResponse(BaseModel):
     contributing_agents: List[AgentType] = Field(default_factory=list)
     coordination_strategy: AgentCoordinationStrategy = AgentCoordinationStrategy.SINGLE_AGENT
     agent_confidence_scores: Dict[str, float] = Field(default_factory=dict)
-    specialized_insights: Dict[str, str] = Field(default_factory=dict)  # Agent-specific insights
+    specialized_insights: Dict[str, Any] = Field(default_factory=dict)  # Agent-specific insights
 
 class SpecializedAgentResponse(BaseModel):
     """Response from a specialized QSR agent with enhanced visual integration"""
@@ -1182,7 +1192,7 @@ class VoiceOrchestrator:
             contributing_agents=[specialized_response.agent_type],
             coordination_strategy=AgentCoordinationStrategy.SINGLE_AGENT,
             agent_confidence_scores={specialized_response.agent_type.value: specialized_response.confidence_score},
-            specialized_insights={specialized_response.agent_type.value: specialized_response.specialized_insights}
+            specialized_insights=specialized_response.specialized_insights
         )
     
     # ===============================================================================
@@ -1227,6 +1237,30 @@ class VoiceOrchestrator:
         
         # Initialize enhanced_context
         enhanced_context = None
+        
+        # STEP 0: Check for image requests first
+        if image_request_handler and image_request_handler.is_image_request(message):
+            try:
+                equipment_name = image_request_handler.extract_equipment_name(message)
+                image_response = image_request_handler.generate_image_response(equipment_name)
+                
+                logger.info(f"🖼️ Image request detected for: {equipment_name}")
+                
+                # Return specialized image response
+                return VoiceResponse(
+                    text_response=image_response["response"],
+                    should_continue_listening=True,
+                    hands_free_recommendation=False,
+                    user_intent="image_request",
+                    equipment_context=equipment_name or "Unknown equipment",
+                    safety_priority=False,
+                    response_type="factual",  # Use valid response type
+                    detected_intent="equipment_question",  # Add required field
+                    specialized_insights={"image_request": True, "equipment": equipment_name}
+                )
+            except Exception as e:
+                logger.warning(f"Image request handler error: {e}")
+                # Continue with normal processing
         
         # STEP 1: Check for graph-specific voice commands first
         graph_response = None

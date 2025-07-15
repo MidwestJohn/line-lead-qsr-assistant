@@ -1429,8 +1429,57 @@ async def chat_stream_endpoint(chat_message: ChatMessage):
         
         logger.info(f"Received streaming chat message: {user_message}")
         
-        # Search for relevant document chunks
-        relevant_chunks = search_engine.search(user_message, top_k=3)
+        # Enhanced search with Ragie integration (same as regular chat endpoint)
+        relevant_content = []
+        search_method = "fallback"
+        
+        # Try Ragie search first (if available)
+        if clean_ragie_service.is_available():
+            try:
+                logger.info("🔍 Using Ragie for enhanced search...")
+                ragie_results = await clean_ragie_service.search(user_message, limit=5)
+                
+                if ragie_results:
+                    search_method = "ragie"
+                    for result in ragie_results:
+                        relevant_content.append({
+                            "content": result.text,
+                            "score": result.score,
+                            "source": result.metadata.get("original_filename", "Unknown"),
+                            "document_id": result.document_id
+                        })
+                    logger.info(f"✅ Found {len(relevant_content)} results from Ragie")
+                else:
+                    logger.info("ℹ️ No results from Ragie, falling back to local search")
+            except Exception as e:
+                logger.warning(f"⚠️ Ragie search failed: {e}, falling back to local search")
+        
+        # Fallback to local search engine if Ragie not available or no results
+        if not relevant_content:
+            try:
+                logger.info("🔍 Using local search engine...")
+                search_results = search_engine.search(user_message, top_k=5)
+                search_method = "local"
+                
+                for result in search_results:
+                    relevant_content.append({
+                        "content": result.get("text", ""),
+                        "score": result.get("score", 0.0),
+                        "source": result.get("filename", "Unknown"),
+                        "document_id": result.get("doc_id", "unknown")
+                    })
+                logger.info(f"✅ Found {len(relevant_content)} results from local search")
+            except Exception as e:
+                logger.warning(f"⚠️ Local search failed: {e}")
+        
+        # Convert to format expected by voice orchestrator
+        relevant_chunks = []
+        for item in relevant_content:
+            relevant_chunks.append({
+                "text": item["content"],
+                "metadata": {"filename": item["source"]},
+                "similarity": item["score"]
+            })
         
         async def generate_stream():
             try:
