@@ -40,5 +40,33 @@
     "max_retries": 3,
     "retry_strategy": "manual",
     "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752586478952183",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-15T08:34:38.952190",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
+  },
+  {
+    "operation_id": "failed_1752586566750699",
+    "operation_type": "test_operation",
+    "operation_data": {
+      "test": "data"
+    },
+    "error_message": "Test error",
+    "error_type": "Exception",
+    "failure_time": "2025-07-15T08:36:06.750704",
+    "retry_count": 3,
+    "max_retries": 3,
+    "retry_strategy": "manual",
+    "manual_review": true
   }
 ]

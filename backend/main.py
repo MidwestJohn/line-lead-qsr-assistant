@@ -35,6 +35,9 @@ from services.ragie_service_clean import clean_ragie_service
 import uuid
 from dotenv import load_dotenv
 
+# Production error handling (BaseChat pattern)
+from error_handling.production_errors_v3 import setup_production_error_handling
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -47,6 +50,16 @@ ALLOWED_EXTENSIONS = {".pdf"}
 
 # Ensure upload directory exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# Initialize FastAPI app
+app = FastAPI(
+    title="Line Lead QSR Assistant API",
+    description="Production QSR assistant with PydanticAI orchestration and Ragie enhancement",
+    version="3.0.0"
+)
+
+# Setup production error handling (BaseChat pattern)
+error_handler = setup_production_error_handling(app)
 
 # Track application startup time for monitoring
 app_start_time = datetime.datetime.now()
@@ -262,12 +275,7 @@ def is_valid_pdf(content: bytes) -> bool:
     except:
         return False
 
-# Initialize FastAPI app
-app = FastAPI(
-    title="Line Lead QSR Assistant API",
-    description="Backend API for QSR maintenance assistant with automatic LightRAG → Neo4j integration",
-    version="2.0.0"
-)
+# FastAPI app already initialized above with production error handling
 
 # Import and include enhanced upload endpoints
 try:
@@ -614,20 +622,30 @@ CORS_ORIGINS = [
 ]
 
 # Debug: Log CORS origins for troubleshooting
-logger.info(f"CORS origins configured: {CORS_ORIGINS}")
+# CORS middleware configured by production error handler (BaseChat pattern)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Simple startup event for clean Ragie implementation
+# Enhanced startup with agent pre-initialization
 @app.on_event("startup")
-async def startup_clean_ragie():
-    """Initialize reliability infrastructure first"""
+async def startup_with_agent_optimization():
+    """Initialize services and pre-load PydanticAI agents for optimal performance"""
+    logger.info("🚀 Starting Line Lead QSR backend with optimizations...")
+    
+    # 1. Initialize PydanticAI agents at startup
+    try:
+        from agents.startup_optimizer import initialize_agents_at_startup
+        
+        logger.info("🤖 Pre-initializing PydanticAI agents...")
+        agent_init_success = await initialize_agents_at_startup()
+        
+        if agent_init_success:
+            logger.info("✅ PydanticAI agents pre-initialized successfully")
+        else:
+            logger.warning("⚠️ Agent pre-initialization failed - will initialize on-demand")
+            
+    except Exception as e:
+        logger.error(f"❌ Agent startup optimization failed: {e}")
+    
+    # 2. Initialize reliability infrastructure (if available)
     try:
         from reliability_infrastructure import circuit_breaker, transaction_manager, dead_letter_queue
         from enhanced_neo4j_service import enhanced_neo4j_service
@@ -689,13 +707,31 @@ class ChatResponse(BaseModel):
         """Include null fields in JSON output"""
         exclude_none = False
 
-class HealthResponse(BaseModel):
+class ServiceHealth(BaseModel):
     status: str
+    response_time_ms: Optional[float] = None
+    degraded: bool = False
+    error: Optional[str] = None
+
+class PerformanceMetrics(BaseModel):
+    total_response_time_ms: float
+    target_response_time: str
+    memory: Dict[str, Any] = {}
+
+class VersionInfo(BaseModel):
+    commit_hash: str
+    architecture: str
+
+class HealthResponse(BaseModel):
+    status: str  # "healthy", "degraded", "unhealthy", "error"
     timestamp: str
-    version: str
-    services: Dict[str, str]
-    document_count: int
-    search_ready: bool
+    platform: str = "render"
+    deployment: str = "line-lead-qsr-backend"
+    services: Dict[str, Any] = {}
+    degraded_services: List[str] = []
+    performance: Dict[str, Any] = {}
+    version: Optional[Dict[str, str]] = None
+    error: Optional[str] = None
 
 class UploadResponse(BaseModel):
     success: bool
@@ -803,60 +839,219 @@ async def debug_cors():
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check(request: Request):
-    """Comprehensive health check with connection monitoring and keep-alive"""
+    """Enhanced health check following BaseChat enterprise patterns"""
     try:
         start_time = datetime.datetime.now()
         
-        # Extract session and monitoring headers
+        # Extract monitoring headers (BaseChat pattern)
         session_id = request.headers.get('X-Session-ID', 'anonymous')
         is_heartbeat = request.headers.get('X-Heartbeat') == 'true'
         health_check_type = request.headers.get('X-Health-Check', 'basic')
         
-        # Log connection for monitoring
         if not is_heartbeat:
-            logger.info(f"Health check requested by session {session_id[:12]}... (type: {health_check_type})")
+            logger.info(f"🩺 Health check requested by session {session_id[:12]}... (type: {health_check_type})")
         
-        # Basic service checks - only count Neo4j-verified documents for data integrity
-        documents_db = load_documents()
-        doc_count = len(documents_db)
+        # Initialize service health tracking
+        service_health = {}
+        overall_status = "healthy"
+        degraded_services = []
         
-        # Clean document status check
-        if doc_count > 0:
-            logger.info(f"📋 Document Status: {doc_count} documents available")
-        
-        # Enhanced search engine check
-        search_ready = search_engine is not None and hasattr(search_engine, 'model')
-        search_status = "ready" if search_ready else "initializing"
-        
-        # AI service health with timeout
-        ai_status = "ready"
-        ai_response_time = None
+        # 1. PydanticAI Orchestration Health (Optimized - no agent recreation)
         try:
-            ai_check_start = datetime.datetime.now()
-            from openai_integration import qsr_assistant
-            ai_status = "ready" if qsr_assistant else "unavailable"
-            ai_response_time = (datetime.datetime.now() - ai_check_start).total_seconds() * 1000
+            from agents.startup_optimizer import health_check_fast
             
-            # Additional AI connectivity test for full health check
-            if health_check_type == 'full' and ai_status == "ready":
-                try:
-                    # Quick test call to verify AI is responsive
-                    import asyncio
-                    test_future = asyncio.wait_for(
-                        asyncio.create_task(test_ai_connection()), 
-                        timeout=3.0
-                    )
-                    ai_test_result = await test_future
-                    if not ai_test_result:
-                        ai_status = "degraded"
-                except asyncio.TimeoutError:
-                    ai_status = "slow"
-                except Exception:
-                    ai_status = "error"
-                    
+            pydantic_health = await health_check_fast()
+            service_health["pydantic_orchestration"] = pydantic_health
+            
+            if pydantic_health["degraded"]:
+                degraded_services.append("pydantic_orchestration")
+                
         except Exception as e:
-            logger.warning(f"AI health check failed: {e}")
-            ai_status = "error"
+            service_health["pydantic_orchestration"] = {
+                "status": "error",
+                "error": str(e),
+                "degraded": True,
+                "note": "Agent optimization system error"
+            }
+            degraded_services.append("pydantic_orchestration")
+            overall_status = "degraded"
+        
+        # 2. Safe Ragie Enhancement Health
+        try:
+            ragie_start = time.time()
+            from services.safe_ragie_enhancement import safe_ragie_enhancement
+            
+            # Test Ragie enhancement (proven working)
+            ragie_result = await safe_ragie_enhancement.enhance_query_safely(
+                "health check fryer test"
+            )
+            
+            ragie_response_time = (time.time() - ragie_start) * 1000
+            
+            service_health["ragie_enhancement"] = {
+                "status": "healthy" if ragie_result.ragie_enhanced else "degraded",
+                "response_time_ms": round(ragie_response_time, 2),
+                "enhancement_available": ragie_result.ragie_enhanced,
+                "degraded": ragie_response_time > 2000 or not ragie_result.ragie_enhanced,
+                "target_response_time": "< 800ms"
+            }
+            
+            if ragie_response_time > 2000 or not ragie_result.ragie_enhanced:
+                degraded_services.append("ragie_enhancement")
+                
+        except Exception as e:
+            service_health["ragie_enhancement"] = {
+                "status": "error",
+                "error": str(e),
+                "degraded": True,
+                "fallback_available": True
+            }
+            degraded_services.append("ragie_enhancement")
+        
+        # 3. Document Storage Health
+        try:
+            doc_start = time.time()
+            documents_db = load_documents()
+            doc_count = len(documents_db)
+            doc_response_time = (time.time() - doc_start) * 1000
+            
+            service_health["document_storage"] = {
+                "status": "healthy",
+                "response_time_ms": round(doc_response_time, 2),
+                "document_count": doc_count,
+                "degraded": doc_response_time > 1000
+            }
+            
+            if doc_response_time > 1000:
+                degraded_services.append("document_storage")
+                
+        except Exception as e:
+            service_health["document_storage"] = {
+                "status": "error",
+                "error": str(e),
+                "degraded": True
+            }
+            degraded_services.append("document_storage")
+        
+        # 4. Voice Processing Health (if available)
+        try:
+            voice_start = time.time()
+            # Test voice service availability more thoroughly
+            voice_available = (hasattr(voice_orchestrator, 'process_voice_input') or 
+                             hasattr(voice_orchestrator, 'process_voice_message'))
+            
+            # Additional check for voice service initialization
+            if voice_available and hasattr(voice_service, 'is_available'):
+                voice_available = voice_service.is_available()
+            
+            voice_response_time = (time.time() - voice_start) * 1000
+            
+            service_health["voice_processing"] = {
+                "status": "healthy" if voice_available else "maintenance",
+                "response_time_ms": round(voice_response_time, 2),
+                "feature_available": voice_available,
+                "degraded": not voice_available,
+                "fallback": "text_chat_available",
+                "note": "Voice features under development" if not voice_available else None
+            }
+            
+            if not voice_available:
+                degraded_services.append("voice_processing")
+                
+        except Exception as e:
+            service_health["voice_processing"] = {
+                "status": "maintenance",
+                "error": "Voice service initialization in progress",
+                "degraded": True,
+                "fallback": "text_chat_available",
+                "note": "Voice features coming soon"
+            }
+            degraded_services.append("voice_processing")
+        
+        # 5. Search Engine Health
+        try:
+            search_start = time.time()
+            search_ready = search_engine is not None and hasattr(search_engine, 'model')
+            search_response_time = (time.time() - search_start) * 1000
+            
+            service_health["search_engine"] = {
+                "status": "healthy" if search_ready else "initializing",
+                "response_time_ms": round(search_response_time, 2),
+                "engine_ready": search_ready,
+                "degraded": not search_ready
+            }
+            
+            if not search_ready:
+                degraded_services.append("search_engine")
+                
+        except Exception as e:
+            service_health["search_engine"] = {
+                "status": "error",
+                "error": str(e),
+                "degraded": True
+            }
+            degraded_services.append("search_engine")
+        
+        # Calculate overall status based on BaseChat patterns
+        if len(degraded_services) == 0:
+            overall_status = "healthy"
+        elif len(degraded_services) <= 2:
+            overall_status = "degraded"
+        else:
+            overall_status = "unhealthy"
+        
+        # Performance metrics (Render-specific)
+        total_response_time = (datetime.datetime.now() - start_time).total_seconds() * 1000
+        
+        # Memory usage (if available)
+        memory_info = {}
+        try:
+            import psutil
+            memory = psutil.virtual_memory()
+            memory_info = {
+                "total_mb": round(memory.total / 1024 / 1024, 2),
+                "available_mb": round(memory.available / 1024 / 1024, 2),
+                "percent_used": memory.percent
+            }
+        except ImportError:
+            memory_info = {"status": "psutil_not_available"}
+        
+        response_data = {
+            "status": overall_status,
+            "timestamp": start_time.isoformat(),
+            "platform": "render",
+            "deployment": "line-lead-qsr-backend",
+            "services": service_health,
+            "degraded_services": degraded_services,
+            "performance": {
+                "total_response_time_ms": round(total_response_time, 2),
+                "target_response_time": "< 1000ms",
+                "memory": memory_info
+            },
+            "version": {
+                "commit_hash": "624bb5b",
+                "architecture": "proven_pydantic_ai_ragie"
+            }
+        }
+        
+        # Log degraded services for monitoring
+        if degraded_services:
+            logger.warning(f"⚠️ Degraded services detected: {degraded_services}")
+        
+        return HealthResponse(**response_data)
+        
+    except Exception as e:
+        logger.error(f"💥 Health check failed: {str(e)}")
+        error_response = {
+            "status": "error",
+            "timestamp": datetime.datetime.now().isoformat(),
+            "platform": "render",
+            "error": str(e),
+            "services": {},
+            "degraded_services": ["health_check_system"],
+            "performance": {}
+        }
+        return HealthResponse(**error_response)
         
         # File system checks
         file_upload_status = "ready" if os.path.exists(UPLOAD_DIR) else "error"
@@ -1150,9 +1345,9 @@ Response:"""
             logger.info("🤖 Generating AI response...")
             
             # Use OpenAI directly with the enhanced prompt
-            ai_response = await qsr_assistant.get_response(
+            ai_response = await qsr_assistant.generate_response(
                 enhanced_prompt,
-                relevant_context=relevant_content
+                relevant_content
             )
             
             response_text = ai_response.get("response", "I apologize, but I encountered an issue processing your request.")
@@ -6216,6 +6411,270 @@ async def enterprise_verify_documents():
     except Exception as e:
         logger.error(f"Enterprise Bridge document verification failed: {e}")
         return {"error": str(e), "success": False}
+
+# ===========================================
+# SERVICE DEGRADATION MANAGEMENT (BaseChat Pattern)
+# ===========================================
+
+@app.get("/health/startup")
+async def startup_optimization_metrics():
+    """Get agent startup optimization metrics"""
+    try:
+        from agents.startup_optimizer import get_startup_metrics
+        
+        metrics = await get_startup_metrics()
+        
+        return {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "startup_optimization": metrics,
+            "service": "line-lead-agent-startup-optimizer"
+        }
+        
+    except Exception as e:
+        logger.error(f"Startup metrics failed: {e}")
+        return {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "startup_optimization": {
+                "error": str(e),
+                "optimization_available": False
+            }
+        }
+
+@app.get("/health/degradation")
+async def service_degradation_status():
+    """Get service degradation status following BaseChat patterns"""
+    try:
+        from resilience.service_degradation import degradation_manager
+        
+        system_status = degradation_manager.get_system_status()
+        
+        return {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "degradation_management": system_status,
+            "service": "line-lead-degradation-manager"
+        }
+        
+    except Exception as e:
+        logger.error(f"Service degradation status failed: {e}")
+        return {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "degradation_management": {
+                "overall_status": "unknown",
+                "error": str(e)
+            }
+        }
+
+@app.get("/health/degradation/history")
+async def service_degradation_history():
+    """Get service degradation history"""
+    try:
+        from resilience.service_degradation import degradation_manager
+        
+        history = degradation_manager.get_degradation_history(limit=100)
+        
+        return {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "degradation_history": history,
+            "service": "line-lead-degradation-history"
+        }
+        
+    except Exception as e:
+        logger.error(f"Degradation history failed: {e}")
+        return {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "degradation_history": [],
+            "error": str(e)
+        }
+
+# ===========================================
+# DATABASE HEALTH ENDPOINTS (BaseChat Pattern)
+# ===========================================
+
+@app.get("/health/database")
+async def database_health_check():
+    """Database health check following BaseChat patterns"""
+    try:
+        from database.render_database_health import render_db_health
+        
+        logger.info("🗄️ Running database health check...")
+        health_result = await render_db_health.check_database_health()
+        
+        return {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "database_health": health_result,
+            "service": "line-lead-qsr-database"
+        }
+        
+    except Exception as e:
+        logger.error(f"Database health check failed: {e}")
+        return {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "database_health": {
+                "status": "error",
+                "error": str(e),
+                "fallback": "file_based_storage"
+            },
+            "service": "line-lead-qsr-database"
+        }
+
+@app.get("/health/conversation-storage")
+async def conversation_storage_health():
+    """Conversation storage specific health check"""
+    try:
+        from database.render_database_health import render_db_health
+        
+        storage_health = await render_db_health.get_conversation_storage_health()
+        
+        return {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "conversation_storage": storage_health,
+            "service": "line-lead-conversation-storage"
+        }
+        
+    except Exception as e:
+        logger.error(f"Conversation storage health check failed: {e}")
+        return {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "conversation_storage": {
+                "status": "error",
+                "error": str(e)
+            }
+        }
+
+@app.post("/database/optimize")
+async def optimize_database_for_render():
+    """Apply Render-specific database optimizations"""
+    try:
+        from database.render_database_health import render_db_health
+        
+        logger.info("🚀 Applying Render database optimizations...")
+        optimization_result = await render_db_health.optimize_for_render()
+        
+        return {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "optimization": optimization_result,
+            "service": "line-lead-database-optimization"
+        }
+        
+    except Exception as e:
+        logger.error(f"Database optimization failed: {e}")
+        return {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "optimization": {
+                "status": "error",
+                "error": str(e)
+            }
+        }
+
+# ===========================================
+# RAGIE VERIFICATION ENDPOINTS
+# ===========================================
+
+@app.get("/health/ragie")
+async def ragie_health_check():
+    """Comprehensive Ragie health check to verify API connectivity"""
+    try:
+        from services.ragie_verification_service import ragie_verification
+        from services.enhanced_ragie_service import enhanced_ragie_service
+        
+        logger.info("🩺 Running Ragie health check...")
+        
+        health_result = await ragie_verification.health_check_ragie(enhanced_ragie_service)
+        
+        return {
+            "status": "healthy" if health_result["ragie_accessible"] else "error",
+            "ragie_api_accessible": health_result["ragie_accessible"],
+            "api_response_time_ms": round(health_result["api_response_time"] * 1000, 2) if health_result["api_response_time"] else None,
+            "test_results_found": health_result.get("test_results_found", 0),
+            "error": health_result.get("error"),
+            "timestamp": health_result["timestamp"]
+        }
+        
+    except Exception as e:
+        logger.error(f"Ragie health check failed: {e}")
+        return {
+            "status": "error",
+            "ragie_api_accessible": False,
+            "error": str(e),
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+
+@app.get("/verification/ragie")
+async def ragie_verification_status():
+    """Get current Ragie verification statistics"""
+    try:
+        from services.ragie_verification_service import ragie_verification
+        
+        return {
+            "status": "success",
+            "verification_data": ragie_verification.get_verification_summary(),
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+
+@app.post("/verification/ragie/comprehensive")
+async def run_comprehensive_ragie_verification():
+    """Run comprehensive Ragie verification test suite"""
+    try:
+        from services.ragie_verification_service import ragie_verification
+        from services.enhanced_ragie_service import enhanced_ragie_service
+        
+        logger.info("🧪 Running comprehensive Ragie verification...")
+        
+        verification_results = await ragie_verification.run_comprehensive_verification(enhanced_ragie_service)
+        
+        return {
+            "status": "completed",
+            "verification_results": verification_results,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Comprehensive Ragie verification failed: {e}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+
+@app.post("/test/ragie/query")
+async def test_ragie_with_query(request: dict):
+    """Test Ragie with a specific query and detailed logging"""
+    try:
+        query = request.get("query", "test equipment safety")
+        
+        from services.safe_ragie_enhancement import safe_ragie_enhancement
+        
+        logger.info(f"🧪 Testing Ragie with query: {query}")
+        
+        result = await safe_ragie_enhancement.enhance_query_safely(query, "test_verification")
+        
+        return {
+            "status": "completed",
+            "query": query,
+            "enhanced_query": result.enhanced_query,
+            "ragie_enhanced": result.ragie_enhanced,
+            "visual_citations_count": len(result.visual_citations),
+            "processing_time": result.processing_time,
+            "equipment_context": result.equipment_context,
+            "procedure_context": result.procedure_context,
+            "error": result.error,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Ragie query test failed: {e}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.datetime.now().isoformat()
+        }
 
 if __name__ == "__main__":
     import uvicorn

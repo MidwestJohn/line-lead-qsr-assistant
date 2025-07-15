@@ -28,6 +28,25 @@
   animation: pulse 2s infinite;
 }
 
+/* Enhanced info styling for BaseChat format */
+.enhanced-info {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b7280;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.enhanced-info .status-detail {
+  color: #6b7280;
+}
+
+.enhanced-info .status-detail.degraded {
+  color: #f59e0b;
+  font-weight: 500;
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }

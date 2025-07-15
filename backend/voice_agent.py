@@ -1225,6 +1225,9 @@ class VoiceOrchestrator:
         context = self.get_context(session_id)
         session_id = session_id or self.default_session
         
+        # Initialize enhanced_context
+        enhanced_context = None
+        
         # STEP 1: Check for graph-specific voice commands first
         graph_response = None
         if self.voice_graph_service:

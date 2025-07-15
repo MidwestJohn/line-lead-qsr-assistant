@@ -31,6 +31,9 @@ try:
 except ImportError:
     RAGIE_AVAILABLE = False
 
+# Import verification service
+from services.ragie_verification_service import ragie_verification, format_response_with_source
+
 logger = logging.getLogger(__name__)
 
 @dataclass
@@ -108,20 +111,23 @@ class SafeRagieEnhancement:
             return self._create_fallback_result(query, start_time, str(e))
     
     async def _perform_ragie_search(self, query: str) -> Dict[str, Any]:
-        """Perform Ragie search with QSR optimization"""
+        """Perform Ragie search with QSR optimization and verification logging"""
         # Detect QSR context for better search
         qsr_context = enhanced_ragie_service._detect_qsr_context(query)
         
-        # Perform search
-        results = await enhanced_ragie_service.search_with_qsr_context(
-            query=query,
+        # Perform search with verification logging
+        results, metrics = await ragie_verification.verify_ragie_call(
+            query,
+            enhanced_ragie_service.search_with_qsr_context,
+            query,  # Pass query as positional argument to the callable
             qsr_context=qsr_context,
             top_k=2  # Keep minimal for performance
         )
         
         return {
             "results": results,
-            "qsr_context": qsr_context
+            "qsr_context": qsr_context,
+            "verification_metrics": metrics
         }
     
     def _create_enhanced_result(

@@ -231,8 +231,13 @@ Remember: People can't remember long spoken instructions. Keep it short and clea
         # Extract and simplify the content
         simplified_info = []
         for chunk in relevant_chunks:
-            text = chunk['text']
+            # Handle both old and new chunk formats
+            text = chunk.get('text', chunk.get('content', ''))
             
+            # Skip empty chunks
+            if not text:
+                continue
+                
             # Simplify corporate language in the content
             simplified_text = self._simplify_manual_text(text)
             simplified_info.append(simplified_text)
@@ -333,10 +338,19 @@ Remember: People can't remember long spoken instructions. Keep it short and clea
             # Add source attribution
             sources = []
             for chunk in relevant_chunks:
-                source_info = {
-                    'filename': chunk['metadata']['filename'],
-                    'similarity': chunk['similarity']
-                }
+                # Handle both old and new chunk formats
+                if 'metadata' in chunk and 'filename' in chunk['metadata']:
+                    # Old format
+                    source_info = {
+                        'filename': chunk['metadata']['filename'],
+                        'similarity': chunk.get('similarity', chunk.get('score', 0.0))
+                    }
+                else:
+                    # New format from main.py
+                    source_info = {
+                        'filename': chunk.get('source', 'Unknown'),
+                        'similarity': chunk.get('score', 0.0)
+                    }
                 if source_info not in sources:
                     sources.append(source_info)
             

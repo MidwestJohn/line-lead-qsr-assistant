@@ -31,13 +31,13 @@ from pydantic import BaseModel, Field
 
 # Import enhanced Ragie service
 try:
-    from ..services.enhanced_ragie_service import EnhancedRagieService, create_enhanced_ragie_service
+    from ..services.enhanced_ragie_service import EnhancedRagieService, enhanced_ragie_service
 except ImportError:
     # Fallback for direct execution
     import sys
     import os
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-    from services.enhanced_ragie_service import EnhancedRagieService, create_enhanced_ragie_service
+    from services.enhanced_ragie_service import EnhancedRagieService, enhanced_ragie_service
 
 # Equipment-specific system prompt
 EQUIPMENT_SPECIALIST_PROMPT = """You are an expert Equipment Specialist for QSR (Quick Service Restaurant) operations with deep expertise in:
@@ -282,7 +282,7 @@ class EquipmentSpecialistAgent:
         
         try:
             # Initialize enhanced Ragie service
-            self._ragie_service = await create_enhanced_ragie_service()
+            self._ragie_service = enhanced_ragie_service
             self._initialized = True
             
         except Exception as e:
