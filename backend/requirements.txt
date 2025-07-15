@@ -10,5 +10,8 @@ numpy==2.0.2
 openai==1.91.0
 python-dotenv==1.1.1
 
+# Phase 3 Production Server Dependencies
+slowapi==0.1.9
+
 # Clean Ragie Integration
 ragie>=1.9.0
