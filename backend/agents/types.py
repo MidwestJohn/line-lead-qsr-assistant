@@ -56,6 +56,10 @@ class QueryClassification(BaseModel):
     keywords: List[str] = Field(default_factory=list, description="Key terms that influenced classification")
     urgency: str = Field(default="normal", description="Query urgency level")
     reasoning: str = Field(description="Explanation of classification decision")
+    # Enhanced fields for Ragie integration
+    equipment_mentioned: List[str] = Field(default_factory=list, description="Equipment mentioned in query")
+    procedure_detected: Optional[str] = Field(default=None, description="Procedure type detected")
+    safety_critical: bool = Field(default=False, description="Whether query is safety critical")
 
 
 class OrchestratorResponse(BaseModel):

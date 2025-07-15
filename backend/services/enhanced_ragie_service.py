@@ -1,561 +1,349 @@
 #!/usr/bin/env python3
 """
-Enhanced Ragie Service - Phase 2 Implementation
-===============================================
+Enhanced Ragie Service for PydanticAI Integration
+================================================
 
-Enhanced Ragie integration that works with specialist agents to provide
-contextually relevant document search and retrieval. Filters and prioritizes
-content based on agent type and query classification.
+Combines the clean architecture from ragie_service_clean.py with the enhanced
+functionality from ragie_service.py for optimal PydanticAI integration.
 
 Features:
-- Agent-specific document filtering
-- Contextual search enhancement
-- QSR domain-specific search optimization
-- Performance optimization and caching
-- Error handling and fallback mechanisms
+- Clean dependency injection patterns for PydanticAI RunContext
+- QSR-optimized search with equipment/procedure detection  
+- Multi-modal content support and visual citations
+- Async-first design with proper error handling
+- Production-ready with fallback strategies
 
 Author: Generated with Memex (https://memex.tech)
 Co-Authored-By: Memex <noreply@memex.tech>
 """
 
 import os
-import asyncio
 import logging
+import time
+import datetime
 from typing import Dict, List, Optional, Any, Union
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
 import json
+from pathlib import Path
+from dotenv import load_dotenv
+import asyncio
 
-import httpx
-from pydantic import BaseModel, Field
+# Load environment variables
+load_dotenv()
 
-# Import agent types for filtering
+# Ragie SDK imports
 try:
-    from ..agents.qsr_orchestrator import AgentType, QueryClassification
+    from ragie import Ragie
+    RAGIE_AVAILABLE = True
 except ImportError:
-    # Fallback for direct execution
-    import sys
-    import os
-    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-    from agents.qsr_orchestrator import AgentType, QueryClassification
+    RAGIE_AVAILABLE = False
+    logging.warning("Ragie SDK not available. Install with: pip install ragie")
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-class RagieSearchFilter(BaseModel):
-    """Search filters specific to agent types"""
-    agent_type: AgentType = Field(description="Agent type for filtering")
-    equipment_brands: List[str] = Field(default_factory=list, description="Equipment brands to prioritize")
-    document_types: List[str] = Field(default_factory=list, description="Document types to include")
-    safety_keywords: List[str] = Field(default_factory=list, description="Safety-related keywords")
-    urgency_boost: float = Field(default=1.0, description="Boost factor for urgent content")
-
-
-class RagieSearchResult(BaseModel):
-    """Enhanced search result with agent-specific scoring"""
-    content: str = Field(description="Document content")
-    source: str = Field(description="Source document")
-    score: float = Field(description="Relevance score")
-    agent_relevance: float = Field(description="Agent-specific relevance score")
-    document_type: str = Field(description="Type of document")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
-
-
-class EnhancedRagieResponse(BaseModel):
-    """Enhanced response from Ragie search"""
-    results: List[RagieSearchResult] = Field(description="Search results")
-    total_results: int = Field(description="Total number of results")
-    query_used: str = Field(description="Actual query sent to Ragie")
-    agent_type: AgentType = Field(description="Agent type used for filtering")
-    processing_time: float = Field(description="Processing time in seconds")
-    cache_hit: bool = Field(default=False, description="Whether result was cached")
-
+@dataclass
+class RagieSearchResult:
+    """Enhanced result from Ragie search with QSR optimization"""
+    text: str
+    score: float
+    document_id: str
+    chunk_id: str
+    metadata: Dict[str, Any]
+    images: Optional[List[Dict[str, Any]]] = None
+    equipment_context: Optional[str] = None
+    procedure_context: Optional[str] = None
+    safety_level: Optional[str] = None
 
 @dataclass
+class RagieUploadResult:
+    """Result from Ragie upload with enhanced metadata"""
+    success: bool
+    document_id: Optional[str] = None
+    filename: Optional[str] = None
+    chunk_count: Optional[int] = None
+    page_count: Optional[int] = None
+    qsr_metadata: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+
+@dataclass
+class QSRContext:
+    """QSR-specific context for enhanced search"""
+    equipment_type: Optional[str] = None
+    procedure_type: Optional[str] = None
+    safety_level: Optional[str] = None
+    conversation_history: List[str] = field(default_factory=list)
+
 class EnhancedRagieService:
-    """
-    Enhanced Ragie service with agent-specific optimization.
+    """Enhanced Ragie service optimized for PydanticAI integration"""
     
-    Provides contextually relevant document search based on the agent type
-    and query classification, with performance optimization and caching.
-    """
-    
-    # Configuration
-    base_url: str = field(default_factory=lambda: os.getenv("RAGIE_BASE_URL", "https://api.ragie.ai"))
-    api_key: str = field(default_factory=lambda: os.getenv("RAGIE_API_KEY", ""))
-    timeout: int = 30
-    max_results: int = 10
-    enable_caching: bool = True
-    cache_ttl: int = 300  # 5 minutes
-    
-    # Performance tracking
-    query_count: int = field(default=0)
-    cache_hits: int = field(default=0)
-    average_response_time: float = field(default=0.0)
-    
-    # Internal state
-    _client: Optional[httpx.AsyncClient] = field(default=None, init=False)
-    _cache: Dict[str, Dict[str, Any]] = field(default_factory=dict, init=False)
-    _initialized: bool = field(default=False, init=False)
-    
-    def __post_init__(self):
-        """Initialize logging"""
-        self.logger = logging.getLogger(__name__)
-    
-    async def initialize(self) -> None:
-        """Initialize the Ragie service"""
-        if self._initialized:
-            return
+    def __init__(self):
+        """Initialize service with QSR optimization"""
+        self.api_key = os.getenv("RAGIE_API_KEY")
+        self.partition = os.getenv("RAGIE_PARTITION", "qsr_manuals")
+        self.available = RAGIE_AVAILABLE and bool(self.api_key)
         
-        try:
-            # Initialize HTTP client
-            self._client = httpx.AsyncClient(
-                base_url=self.base_url,
-                timeout=self.timeout,
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json"
-                }
+        if self.available:
+            self.client = Ragie(auth=self.api_key)
+            logger.info(f"✅ Enhanced Ragie client initialized with partition: {self.partition}")
+        else:
+            logger.warning("❌ Ragie service not available (missing API key or SDK)")
+            
+        # QSR-specific configuration
+        self.qsr_equipment_types = {
+            "fryer", "grill", "oven", "ice_machine", "pos_system", 
+            "drive_thru", "prep_station", "dishwasher", "mixer",
+            "taylor", "grote", "canotto", "romana"  # Brand-specific
+        }
+        
+        self.qsr_procedure_types = {
+            "cleaning", "maintenance", "troubleshooting", "setup", 
+            "safety", "daily_ops", "opening", "closing"
+        }
+        
+        # Cache for search results
+        self._search_cache = {}
+        self._cache_ttl = int(os.getenv("RAGIE_CACHE_TTL", "300"))  # 5 minutes
+    
+    def is_available(self) -> bool:
+        """Check if Ragie service is available"""
+        return self.available
+    
+    async def search_with_qsr_context(
+        self, 
+        query: str, 
+        qsr_context: Optional[QSRContext] = None,
+        top_k: int = 5
+    ) -> List[RagieSearchResult]:
+        """
+        Enhanced search with QSR context optimization
+        
+        Designed for PydanticAI RunContext integration:
+        
+        @agent.tool
+        async def search_equipment_docs(ctx: RunContext[QSRRunContext], equipment: str) -> List[RagieSearchResult]:
+            return await ctx.deps.ragie_service.search_with_qsr_context(
+                query=f"equipment {equipment}",
+                qsr_context=QSRContext(equipment_type=equipment)
             )
-            
-            self._initialized = True
-            self.logger.info("Enhanced Ragie service initialized successfully")
-            
-        except Exception as e:
-            self.logger.error(f"Failed to initialize Ragie service: {e}")
-            raise
-    
-    async def search_for_agent(
-        self,
-        query: str,
-        agent_type: AgentType,
-        classification: Optional[QueryClassification] = None,
-        context: Optional[Dict[str, Any]] = None
-    ) -> EnhancedRagieResponse:
         """
-        Search documents with agent-specific optimization.
-        
-        Args:
-            query: The search query
-            agent_type: Type of agent making the request
-            classification: Query classification for additional context
-            context: Additional context for search optimization
+        if not self.available:
+            logger.warning("Ragie service not available for search")
+            return []
             
-        Returns:
-            Enhanced search results optimized for the agent type
-        """
-        
-        if not self._initialized:
-            await self.initialize()
-        
-        start_time = datetime.now()
-        self.query_count += 1
-        
         try:
             # Check cache first
-            cache_key = self._generate_cache_key(query, agent_type, classification)
-            if self.enable_caching and cache_key in self._cache:
-                cached_result = self._cache[cache_key]
-                if datetime.now() - cached_result["timestamp"] < timedelta(seconds=self.cache_ttl):
-                    self.cache_hits += 1
-                    cached_result["response"].cache_hit = True
-                    return cached_result["response"]
+            cache_key = f"{query}:{hash(str(qsr_context))}"
+            cached_result = self._get_from_cache(cache_key)
+            if cached_result:
+                logger.info(f"🎯 Cache hit for query: {query[:50]}...")
+                return cached_result
             
-            # Create agent-specific search filter
-            search_filter = self._create_search_filter(agent_type, classification, context)
+            # Detect QSR intent if context not provided
+            if not qsr_context:
+                qsr_context = self._detect_qsr_context(query)
             
-            # Enhance query for agent type
-            enhanced_query = self._enhance_query_for_agent(query, agent_type, classification)
+            # Build search filters
+            filters = self._build_search_filters(qsr_context)
             
             # Perform Ragie search
-            ragie_results = await self._perform_ragie_search(enhanced_query, search_filter)
+            response = self.client.retrievals.retrieve(request={
+                "query": query,
+                "partition": self.partition,
+                "top_k": top_k,
+                "filter": filters if filters else {},
+                "mode": "hybrid"  # Best for QSR technical content
+            })
             
-            # Process and score results for agent
-            processed_results = self._process_results_for_agent(
-                ragie_results, 
-                agent_type, 
-                classification,
-                query
-            )
+            # Parse and enhance results
+            results = []
+            for chunk in response.scored_chunks:
+                result = RagieSearchResult(
+                    text=chunk.text,
+                    score=chunk.score,
+                    document_id=getattr(chunk, 'document_id', 'unknown'),
+                    chunk_id=getattr(chunk, 'chunk_id', getattr(chunk, 'id', 'unknown')),
+                    metadata=getattr(chunk, 'metadata', {}) or {},
+                    equipment_context=qsr_context.equipment_type if qsr_context else None,
+                    procedure_context=qsr_context.procedure_type if qsr_context else None,
+                    safety_level=qsr_context.safety_level if qsr_context else None
+                )
+                
+                # Enhance with images if available
+                if hasattr(chunk, 'images') and chunk.images:
+                    result.images = [{"url": img.url, "caption": img.caption} for img in chunk.images]
+                
+                results.append(result)
             
-            # Create enhanced response
-            processing_time = (datetime.now() - start_time).total_seconds()
-            self._update_performance_metrics(processing_time)
+            # Cache results
+            self._cache_results(cache_key, results)
             
-            response = EnhancedRagieResponse(
-                results=processed_results,
-                total_results=len(processed_results),
-                query_used=enhanced_query,
-                agent_type=agent_type,
-                processing_time=processing_time,
-                cache_hit=False
-            )
-            
-            # Cache the result
-            if self.enable_caching:
-                self._cache[cache_key] = {
-                    "response": response,
-                    "timestamp": datetime.now()
-                }
-            
-            return response
+            logger.info(f"📚 Retrieved {len(results)} QSR-optimized chunks for: {query[:50]}...")
+            return results
             
         except Exception as e:
-            self.logger.error(f"Error in agent search: {e}")
-            # Return empty results rather than failing
-            return EnhancedRagieResponse(
-                results=[],
-                total_results=0,
-                query_used=query,
-                agent_type=agent_type,
-                processing_time=(datetime.now() - start_time).total_seconds(),
-                cache_hit=False
-            )
+            logger.error(f"Enhanced Ragie search failed: {e}")
+            return []
     
-    def _create_search_filter(
-        self,
-        agent_type: AgentType,
-        classification: Optional[QueryClassification] = None,
-        context: Optional[Dict[str, Any]] = None
-    ) -> RagieSearchFilter:
-        """Create search filter based on agent type"""
-        
-        if agent_type == AgentType.EQUIPMENT:
-            return RagieSearchFilter(
-                agent_type=agent_type,
-                equipment_brands=["taylor", "vulcan", "hobart", "traulsen", "pitco", "frymaster"],
-                document_types=["manual", "troubleshooting", "maintenance", "specs"],
-                safety_keywords=["safety", "caution", "warning", "danger"],
-                urgency_boost=1.2 if classification and classification.urgency == "high" else 1.0
-            )
-            
-        elif agent_type == AgentType.SAFETY:
-            return RagieSearchFilter(
-                agent_type=agent_type,
-                equipment_brands=[],
-                document_types=["safety", "emergency", "protocols", "procedures", "training"],
-                safety_keywords=["emergency", "fire", "burn", "cut", "injury", "hazard", "dangerous"],
-                urgency_boost=2.0 if classification and classification.urgency == "high" else 1.5
-            )
-            
-        elif agent_type == AgentType.OPERATIONS:
-            return RagieSearchFilter(
-                agent_type=agent_type,
-                equipment_brands=[],
-                document_types=["procedures", "operations", "management", "quality", "customer"],
-                safety_keywords=["procedure", "process", "workflow", "checklist"],
-                urgency_boost=1.1 if classification and classification.urgency == "high" else 1.0
-            )
-            
-        elif agent_type == AgentType.TRAINING:
-            return RagieSearchFilter(
-                agent_type=agent_type,
-                equipment_brands=[],
-                document_types=["training", "certification", "onboarding", "skills", "assessment"],
-                safety_keywords=["training", "learning", "certification", "competency"],
-                urgency_boost=1.0
-            )
-        
-        # Base agent - no specific filtering
-        return RagieSearchFilter(
-            agent_type=agent_type,
-            equipment_brands=[],
-            document_types=[],
-            safety_keywords=[],
-            urgency_boost=1.0
-        )
-    
-    def _enhance_query_for_agent(
-        self,
-        query: str,
-        agent_type: AgentType,
-        classification: Optional[QueryClassification] = None
-    ) -> str:
-        """Enhance the search query based on agent type"""
-        
-        enhanced_query = query
-        
-        if agent_type == AgentType.EQUIPMENT:
-            # Add equipment-specific terms
-            equipment_terms = ["equipment", "machine", "device", "repair", "maintenance", "troubleshooting"]
-            if not any(term in query.lower() for term in equipment_terms):
-                enhanced_query += " equipment maintenance"
-        
-        elif agent_type == AgentType.SAFETY:
-            # Add safety-specific terms
-            safety_terms = ["safety", "emergency", "procedure", "protocol"]
-            if not any(term in query.lower() for term in safety_terms):
-                enhanced_query += " safety procedures"
-        
-        elif agent_type == AgentType.OPERATIONS:
-            # Add operations-specific terms
-            ops_terms = ["procedure", "process", "operation", "workflow"]
-            if not any(term in query.lower() for term in ops_terms):
-                enhanced_query += " operational procedures"
-        
-        elif agent_type == AgentType.TRAINING:
-            # Add training-specific terms
-            training_terms = ["training", "learning", "certification", "skill"]
-            if not any(term in query.lower() for term in training_terms):
-                enhanced_query += " training procedures"
-        
-        # Add urgency indicators for high-priority queries
-        if classification and classification.urgency == "high":
-            enhanced_query += " urgent emergency immediate"
-        
-        return enhanced_query
-    
-    async def _perform_ragie_search(
-        self,
-        query: str,
-        search_filter: RagieSearchFilter
-    ) -> List[Dict[str, Any]]:
-        """Perform the actual Ragie API search"""
+    async def upload_document(
+        self, 
+        file_path: str, 
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> RagieUploadResult:
+        """Upload document with QSR metadata enhancement"""
+        if not self.available:
+            return RagieUploadResult(success=False, error="Ragie service not available")
         
         try:
-            # Prepare search request
-            search_payload = {
-                "query": query,
-                "k": self.max_results,
-                "filter": {
-                    "document_types": search_filter.document_types,
-                    "keywords": search_filter.safety_keywords
-                }
-            }
+            # Enhance metadata with QSR tags
+            enhanced_metadata = self._enhance_qsr_metadata(file_path, metadata or {})
             
-            # Make API call to Ragie
-            response = await self._client.post("/search", json=search_payload)
-            response.raise_for_status()
+            # Upload to Ragie
+            with open(file_path, 'rb') as f:
+                response = self.client.documents.create(request={
+                    "file": {
+                        "file_name": Path(file_path).name,
+                        "content": f,
+                    },
+                    "mode": "hi_res",  # Extract images for QSR diagrams
+                    "metadata": enhanced_metadata,
+                    "partition": self.partition,
+                    "name": enhanced_metadata.get("display_name", Path(file_path).name)
+                })
             
-            results = response.json()
-            return results.get("results", [])
+            logger.info(f"✅ Uploaded {Path(file_path).name} to Ragie: {response.id}")
             
-        except httpx.HTTPError as e:
-            self.logger.error(f"Ragie API error: {e}")
-            return []
-        except Exception as e:
-            self.logger.error(f"Unexpected error in Ragie search: {e}")
-            return []
-    
-    def _process_results_for_agent(
-        self,
-        raw_results: List[Dict[str, Any]],
-        agent_type: AgentType,
-        classification: Optional[QueryClassification],
-        original_query: str
-    ) -> List[RagieSearchResult]:
-        """Process and score results for the specific agent type"""
-        
-        processed_results = []
-        
-        for result in raw_results:
-            # Extract basic information
-            content = result.get("content", "")
-            source = result.get("source", "unknown")
-            base_score = result.get("score", 0.0)
-            
-            # Calculate agent-specific relevance
-            agent_relevance = self._calculate_agent_relevance(
-                content, 
-                agent_type, 
-                classification, 
-                original_query
+            return RagieUploadResult(
+                success=True,
+                document_id=response.id,
+                filename=Path(file_path).name,
+                chunk_count=getattr(response, 'chunk_count', None),
+                page_count=getattr(response, 'page_count', None),
+                qsr_metadata=enhanced_metadata
             )
             
-            # Determine document type
-            document_type = self._classify_document_type(content, source)
-            
-            processed_results.append(RagieSearchResult(
-                content=content,
-                source=source,
-                score=base_score,
-                agent_relevance=agent_relevance,
-                document_type=document_type,
-                metadata=result.get("metadata", {})
-            ))
-        
-        # Sort by agent relevance score
-        processed_results.sort(key=lambda x: x.agent_relevance, reverse=True)
-        
-        return processed_results[:self.max_results]
+        except Exception as e:
+            logger.error(f"Failed to upload {file_path}: {e}")
+            return RagieUploadResult(success=False, error=str(e))
     
-    def _calculate_agent_relevance(
-        self,
-        content: str,
-        agent_type: AgentType,
-        classification: Optional[QueryClassification],
-        query: str
-    ) -> float:
-        """Calculate relevance score specific to the agent type"""
+    async def get_visual_citations(self, query: str) -> List[Dict[str, Any]]:
+        """Extract visual citations for frontend display"""
+        results = await self.search_with_qsr_context(query, top_k=3)
         
-        content_lower = content.lower()
+        citations = []
+        for result in results:
+            if result.images:
+                for img in result.images:
+                    citations.append({
+                        "type": "image",
+                        "url": img["url"],
+                        "caption": img.get("caption", ""),
+                        "source_document": result.metadata.get("filename", "Unknown"),
+                        "relevance_score": result.score
+                    })
+            
+            # Add text citations
+            citations.append({
+                "type": "text",
+                "content": result.text[:200] + "..." if len(result.text) > 200 else result.text,
+                "source_document": result.metadata.get("filename", "Unknown"),
+                "page": result.metadata.get("page_number"),
+                "relevance_score": result.score
+            })
+        
+        return citations
+    
+    def _detect_qsr_context(self, query: str) -> QSRContext:
+        """Detect QSR context from query text"""
         query_lower = query.lower()
         
-        # Base relevance from query keywords
-        base_relevance = 0.5
+        # Detect equipment
+        equipment_type = None
+        for equipment in self.qsr_equipment_types:
+            if equipment in query_lower:
+                equipment_type = equipment
+                break
         
-        # Query keyword matching
-        query_words = query_lower.split()
-        content_words = content_lower.split()
-        keyword_matches = sum(1 for word in query_words if word in content_words)
-        base_relevance += (keyword_matches / len(query_words)) * 0.3
+        # Detect procedure type
+        procedure_type = None
+        for procedure in self.qsr_procedure_types:
+            if procedure in query_lower:
+                procedure_type = procedure
+                break
         
-        # Agent-specific scoring
-        if agent_type == AgentType.EQUIPMENT:
-            equipment_keywords = ["taylor", "vulcan", "hobart", "traulsen", "machine", "equipment", "repair", "maintenance", "error", "diagnostic"]
-            equipment_score = sum(1 for kw in equipment_keywords if kw in content_lower) * 0.1
-            base_relevance += equipment_score
+        # Detect safety level
+        safety_level = None
+        if any(word in query_lower for word in ["danger", "warning", "caution", "safety"]):
+            safety_level = "high"
+        elif any(word in query_lower for word in ["careful", "notice", "important"]):
+            safety_level = "medium"
+        
+        return QSRContext(
+            equipment_type=equipment_type,
+            procedure_type=procedure_type,
+            safety_level=safety_level
+        )
+    
+    def _build_search_filters(self, qsr_context: QSRContext) -> Dict[str, Any]:
+        """Build Ragie search filters from QSR context"""
+        filters = {}
+        
+        if qsr_context.equipment_type:
+            filters["equipment_type"] = qsr_context.equipment_type
+        
+        if qsr_context.procedure_type:
+            filters["procedure_type"] = qsr_context.procedure_type
             
-        elif agent_type == AgentType.SAFETY:
-            safety_keywords = ["safety", "emergency", "fire", "burn", "cut", "injury", "accident", "hazard", "dangerous", "caution"]
-            safety_score = sum(1 for kw in safety_keywords if kw in content_lower) * 0.15
-            base_relevance += safety_score
-            
-        elif agent_type == AgentType.OPERATIONS:
-            ops_keywords = ["procedure", "process", "operation", "workflow", "checklist", "opening", "closing", "shift", "quality"]
-            ops_score = sum(1 for kw in ops_keywords if kw in content_lower) * 0.1
-            base_relevance += ops_score
-            
-        elif agent_type == AgentType.TRAINING:
-            training_keywords = ["training", "certification", "learning", "skill", "competency", "onboarding", "assessment"]
-            training_score = sum(1 for kw in training_keywords if kw in content_lower) * 0.1
-            base_relevance += training_score
+        if qsr_context.safety_level:
+            filters["safety_level"] = qsr_context.safety_level
         
-        # Urgency boost
-        if classification and classification.urgency == "high":
-            urgency_keywords = ["immediate", "urgent", "emergency", "critical"]
-            if any(kw in content_lower for kw in urgency_keywords):
-                base_relevance *= 1.5
-        
-        return min(base_relevance, 1.0)  # Cap at 1.0
+        return filters
     
-    def _classify_document_type(self, content: str, source: str) -> str:
-        """Classify the type of document based on content and source"""
+    def _enhance_qsr_metadata(self, file_path: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Enhance metadata with QSR-specific tags"""
+        enhanced = metadata.copy()
+        filename = Path(file_path).name.lower()
         
-        content_lower = content.lower()
-        source_lower = source.lower()
+        # Auto-detect equipment from filename
+        for equipment in self.qsr_equipment_types:
+            if equipment in filename:
+                enhanced["equipment_type"] = equipment
+                break
         
-        # Check source first
-        if "manual" in source_lower:
-            return "manual"
-        elif "safety" in source_lower:
-            return "safety"
-        elif "training" in source_lower:
-            return "training"
-        elif "procedure" in source_lower:
-            return "procedure"
+        # Auto-detect document type
+        if any(word in filename for word in ["manual", "guide", "instruction"]):
+            enhanced["document_type"] = "manual"
+        elif any(word in filename for word in ["sop", "procedure", "process"]):
+            enhanced["document_type"] = "procedure"
+        elif any(word in filename for word in ["safety", "msds", "hazard"]):
+            enhanced["document_type"] = "safety"
+            enhanced["safety_level"] = "high"
         
-        # Check content patterns
-        if any(kw in content_lower for kw in ["step 1", "step 2", "procedure", "instructions"]):
-            return "procedure"
-        elif any(kw in content_lower for kw in ["warning", "caution", "danger", "safety"]):
-            return "safety"
-        elif any(kw in content_lower for kw in ["model", "specifications", "parts", "manual"]):
-            return "manual"
-        elif any(kw in content_lower for kw in ["training", "certification", "learning"]):
-            return "training"
+        # Add upload timestamp
+        enhanced["upload_timestamp"] = datetime.datetime.now().isoformat()
+        enhanced["display_name"] = metadata.get("original_filename", Path(file_path).name)
         
-        return "general"
+        return enhanced
     
-    def _generate_cache_key(
-        self,
-        query: str,
-        agent_type: AgentType,
-        classification: Optional[QueryClassification]
-    ) -> str:
-        """Generate cache key for the search"""
-        
-        key_components = [
-            query.lower().strip(),
-            agent_type.value,
-            classification.urgency if classification else "normal"
-        ]
-        
-        return ":".join(key_components)
-    
-    def _update_performance_metrics(self, response_time: float) -> None:
-        """Update performance tracking metrics"""
-        
-        if self.query_count == 1:
-            self.average_response_time = response_time
-        else:
-            self.average_response_time = (
-                (self.average_response_time * (self.query_count - 1) + response_time) / 
-                self.query_count
-            )
-    
-    async def get_health_status(self) -> Dict[str, Any]:
-        """Get health status of the Ragie service"""
-        
-        try:
-            # Test API connectivity
-            if self._client:
-                response = await self._client.get("/health")
-                api_healthy = response.status_code == 200
+    def _get_from_cache(self, cache_key: str) -> Optional[List[RagieSearchResult]]:
+        """Get results from cache if still valid"""
+        if cache_key in self._search_cache:
+            cached_data = self._search_cache[cache_key]
+            if time.time() - cached_data["timestamp"] < self._cache_ttl:
+                return cached_data["results"]
             else:
-                api_healthy = False
-                
-            return {
-                "status": "healthy" if api_healthy else "degraded",
-                "api_connectivity": api_healthy,
-                "initialized": self._initialized,
-                "query_count": self.query_count,
-                "cache_hits": self.cache_hits,
-                "cache_hit_rate": self.cache_hits / max(self.query_count, 1),
-                "average_response_time": self.average_response_time
-            }
-            
-        except Exception as e:
-            return {
-                "status": "error",
-                "error": str(e),
-                "initialized": self._initialized
-            }
+                # Remove expired cache entry
+                del self._search_cache[cache_key]
+        return None
     
-    async def clear_cache(self) -> None:
-        """Clear the search cache"""
-        self._cache.clear()
-        self.logger.info("Ragie service cache cleared")
-    
-    async def cleanup(self) -> None:
-        """Clean up resources"""
-        if self._client:
-            await self._client.aclose()
-        self._initialized = False
-    
-    @classmethod
-    async def create(cls, **kwargs) -> 'EnhancedRagieService':
-        """Factory method to create and initialize the service"""
-        service = cls(**kwargs)
-        await service.initialize()
-        return service
+    def _cache_results(self, cache_key: str, results: List[RagieSearchResult]):
+        """Cache search results"""
+        self._search_cache[cache_key] = {
+            "results": results,
+            "timestamp": time.time()
+        }
 
+# Global service instance for dependency injection
+enhanced_ragie_service = EnhancedRagieService()
 
-# Factory function
-async def create_enhanced_ragie_service(**kwargs) -> EnhancedRagieService:
-    """Create and initialize an enhanced Ragie service"""
-    return await EnhancedRagieService.create(**kwargs)
-
-
-if __name__ == "__main__":
-    async def test_enhanced_ragie():
-        """Test the enhanced Ragie service"""
-        service = await create_enhanced_ragie_service()
-        
-        test_queries = [
-            ("Taylor machine error E01", AgentType.EQUIPMENT),
-            ("Employee burn emergency", AgentType.SAFETY),
-            ("Opening procedure checklist", AgentType.OPERATIONS),
-            ("New employee training", AgentType.TRAINING)
-        ]
-        
-        for query, agent_type in test_queries:
-            print(f"\nTesting: {query} with {agent_type.value} agent")
-            result = await service.search_for_agent(query, agent_type)
-            print(f"Results: {result.total_results}")
-            for i, res in enumerate(result.results[:3]):
-                print(f"  {i+1}. {res.source} (score: {res.agent_relevance:.2f})")
-    
-    asyncio.run(test_enhanced_ragie())
+# Backward compatibility alias
+clean_ragie_service = enhanced_ragie_service
