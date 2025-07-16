@@ -26,6 +26,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from services.automatic_bridge_service import automatic_bridge_service, ProcessingStage
+from services.multi_format_validator import multi_format_validator
 
 # Import comprehensive logging
 from comprehensive_logging import (
@@ -183,25 +184,35 @@ async def upload_with_automatic_processing(
         await file.seek(0)
         content = await file.read()
         
-        # Validate file type and size
-        if not file.filename.lower().endswith('.pdf'):
-            raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+        # Validate file type and size using multi-format validator
+        validation_result = multi_format_validator.validate_file(file.filename, content)
         
-        if len(content) > 10 * 1024 * 1024:  # 10MB limit
-            raise HTTPException(status_code=400, detail="File size exceeds 10MB limit")
+        if validation_result.result.value != "valid":
+            raise HTTPException(
+                status_code=400, 
+                detail=f"File validation failed: {validation_result.error_message}"
+            )
         
-        # Validate PDF content
+        # Import required functions
         from main import is_valid_pdf, extract_pdf_text, generate_document_id
-        if not is_valid_pdf(content):
-            raise HTTPException(status_code=400, detail="Invalid PDF file")
+        
+        # For PDF files, perform additional validation
+        if validation_result.file_type.value == "pdf":
+            if not is_valid_pdf(content):
+                raise HTTPException(status_code=400, detail="Invalid PDF file")
         
         # 1.2 Validation passed logging
         upload_logger.log_validation_passed(file.filename)
         
-        # Extract basic info for immediate response
-        extracted_text, pages_count = extract_pdf_text(content)
-        if not extracted_text.strip():
-            raise HTTPException(status_code=400, detail="No text could be extracted from PDF")
+        # Extract basic info based on file type
+        if validation_result.file_type.value == "pdf":
+            extracted_text, pages_count = extract_pdf_text(content)
+            if not extracted_text.strip():
+                raise HTTPException(status_code=400, detail="No text could be extracted from PDF")
+        else:
+            # For non-PDF files, we'll let Ragie handle the extraction
+            extracted_text = f"Multi-format file: {file.filename}"
+            pages_count = 1  # Default for non-PDF files
         
         # Generate IDs
         doc_id = generate_document_id()

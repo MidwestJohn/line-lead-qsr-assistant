@@ -198,6 +198,9 @@ Tag with equipment type (fryer, grill, oven) and procedure type (operation, main
         """
         Build intelligent filter based on query analysis to improve search relevance
         
+        Enhanced to detect image-seeking intent regardless of specific equipment brands.
+        Prioritizes visual content when user expresses desire for images/diagrams.
+        
         Args:
             original_query: Original user query
             processed_query: Preprocessed query
@@ -207,22 +210,85 @@ Tag with equipment type (fryer, grill, oven) and procedure type (operation, main
         """
         query_lower = original_query.lower().strip()
         
-        # Equipment-specific filters
+        # 1. PRIMARY: Image/Visual intent detection (highest priority)
+        image_intent_filter = self._detect_image_intent_filter(query_lower)
+        if image_intent_filter:
+            return image_intent_filter
+        
+        # 2. SECONDARY: Equipment-specific filters (for specific brand targeting)
         equipment_filters = self._get_equipment_filter(query_lower)
         if equipment_filters:
             return equipment_filters
         
-        # Document type filters
+        # 3. TERTIARY: General document type filters
         doc_type_filters = self._get_document_type_filter(query_lower)
         if doc_type_filters:
             return doc_type_filters
         
-        # Content type filters
+        # 4. FALLBACK: Content type filters
         content_filters = self._get_content_type_filter(query_lower)
         if content_filters:
             return content_filters
         
         # No specific filter needed
+        return None
+    
+    def _detect_image_intent_filter(self, query_lower: str) -> Optional[Dict[str, Any]]:
+        """
+        Detect when user wants images/diagrams and prioritize visual content
+        
+        This method analyzes the query for visual intent keywords and returns
+        appropriate filters to prioritize image files (PNG, JPG) over text documents.
+        
+        Image Intent Signals:
+        - Direct requests: "show me", "image", "picture", "diagram"
+        - Visual language: "what does it look like", "appearance", "visual"
+        - Diagnostic language: "see", "view", "display", "illustrate"
+        - Equipment identification: "identify", "recognize", "find"
+        
+        Returns filter that prioritizes PNG/JPG files and equipment documentation
+        """
+        
+        # Primary visual intent keywords (strongest signals)
+        primary_visual_signals = [
+            'show me', 'image', 'picture', 'diagram', 'schematic', 'drawing',
+            'visual', 'photo', 'illustration', 'figure', 'chart'
+        ]
+        
+        # Secondary visual intent keywords (moderate signals) 
+        secondary_visual_signals = [
+            'see', 'view', 'display', 'look', 'appear', 'identify', 'recognize',
+            'what does', 'how does', 'find', 'locate', 'point out'
+        ]
+        
+        # Equipment context keywords (suggest need for equipment images)
+        equipment_context = [
+            'equipment', 'machine', 'device', 'unit', 'appliance', 'component',
+            'part', 'assembly', 'system', 'model', 'type'
+        ]
+        
+        # Check for primary visual signals
+        has_primary_visual = any(signal in query_lower for signal in primary_visual_signals)
+        
+        # Check for secondary visual signals 
+        has_secondary_visual = any(signal in query_lower for signal in secondary_visual_signals)
+        
+        # Check for equipment context
+        has_equipment_context = any(context in query_lower for context in equipment_context)
+        
+        # Determine if this is an image-seeking query
+        is_image_intent = (
+            has_primary_visual or  # Direct visual request
+            (has_secondary_visual and has_equipment_context)  # Visual + equipment context
+        )
+        
+        if is_image_intent:
+            # Modified approach: Since Ragie documents don't have rich metadata,
+            # we'll use content-based filtering and let Ragie's reranking handle relevance
+            # Return a special marker to indicate image intent was detected
+            logger.info(f"🎯 Image intent detected for query: '{query_lower}' - using content-based search")
+            return {"_image_intent": True}  # Special marker for image intent
+        
         return None
     
     def _get_equipment_filter(self, query_lower: str) -> Optional[Dict[str, Any]]:
@@ -257,20 +323,18 @@ Tag with equipment type (fryer, grill, oven) and procedure type (operation, main
         return None
     
     def _get_document_type_filter(self, query_lower: str) -> Optional[Dict[str, Any]]:
-        """Generate document type filters"""
+        """
+        Generate document type filters for non-visual content requests
         
-        # Image/diagram requests
-        image_terms = ['image', 'diagram', 'picture', 'photo', 'visual', 'show me']
-        if any(term in query_lower for term in image_terms):
-            return {
-                "document_type": {"$in": ["png", "jpg", "jpeg", "pdf"]}
-            }
+        Note: Image/visual intent is handled by _detect_image_intent_filter()
+        This method focuses on manual/documentation requests
+        """
         
-        # Manual/documentation requests
-        manual_terms = ['manual', 'documentation', 'guide', 'instructions']
+        # Manual/documentation requests (text-based content)
+        manual_terms = ['manual', 'documentation', 'guide', 'instructions', 'procedure', 'protocol']
         if any(term in query_lower for term in manual_terms):
             return {
-                "document_type": {"$in": ["pdf", "doc", "docx"]}
+                "document_name": {"$regex": ".*\\.(pdf|PDF|doc|DOC|docx|DOCX)$"}
             }
         
         return None
@@ -300,48 +364,71 @@ Tag with equipment type (fryer, grill, oven) and procedure type (operation, main
     
     def _preprocess_query(self, query: str) -> str:
         """
-        Preprocess query to improve Ragie search results
-        Extract key terms and remove query patterns that don't match well
+        Enhanced query preprocessing for better Ragie search results
+        Detects image intent and adds visual search terms to improve content matching
         """
         import re
         
         # Convert to lowercase for processing
         processed = query.lower()
+        original_query = processed
         
-        # Remove common request patterns that don't help with document search
-        remove_patterns = [
-            r"show me (?:an? )?(image|picture|photo) of ",
-            r"can you show me ",
-            r"i want to see ",
-            r"display ",
-            r"what does .* look like",
-            r"how does .* look",
-        ]
+        # Detect if this is an image-seeking query (use original query for detection)
+        image_intent = self._detect_image_intent_filter(query.lower()) is not None
         
-        for pattern in remove_patterns:
-            processed = re.sub(pattern, "", processed)
+        # Remove common request patterns but preserve core terms
+        if image_intent:
+            # For image queries, add visual context terms to help find image-rich content
+            visual_search_terms = ["image", "shows", "picture", "diagram", "visual", "see", "look", "appearance"]
+            
+            # Remove verbose request patterns but keep the essential subject
+            remove_patterns = [
+                r"show me (?:an? )?(image|picture|photo) of ",
+                r"can you show me ",
+                r"i want to see ",
+                r"what does (.+) look like",  # Capture the subject
+                r"how does (.+) look",
+            ]
+            
+            for pattern in remove_patterns:
+                match = re.search(pattern, processed)
+                if match and match.groups():
+                    # Keep the subject being asked about
+                    processed = match.group(1)
+                    break
+                else:
+                    processed = re.sub(pattern, "", processed)
         
-        # Extract pizza types and key culinary terms
-        pizza_terms = ["canotto", "margherita", "napoli", "gourmet", "new york"]
-        culinary_terms = ["dough", "sauce", "cheese", "topping", "crust", "recipe"]
-        equipment_terms = ["fryer", "grill", "oven", "mixer", "temperature"]
+        # Extract key terms by category
+        pizza_terms = ["canotto", "margherita", "napoli", "gourmet", "new york", "romana"]
+        culinary_terms = ["dough", "sauce", "cheese", "topping", "crust", "recipe", "cooking", "preparation"]
+        equipment_terms = ["fryer", "grill", "oven", "mixer", "temperature", "baxter", "taylor", "grote", 
+                          "equipment", "machine", "device", "ov520e1", "control", "panel", "interface"]
         
-        # If we find key terms, prioritize them
+        # Collect found terms
         found_terms = []
-        for term in pizza_terms + culinary_terms + equipment_terms:
-            if term in processed:
-                found_terms.append(term)
+        for term_list in [equipment_terms, pizza_terms, culinary_terms]:
+            for term in term_list:
+                if term in processed:
+                    found_terms.append(term)
         
-        # If we found key terms, use them as the primary query
+        # Build enhanced query
         if found_terms:
-            processed = " ".join(found_terms)
+            if image_intent:
+                # For image queries, combine subject terms with visual indicators
+                enhanced_query = " ".join(found_terms[:3])  # Limit to top 3 terms
+                enhanced_query += " image shows appearance visual"
+                processed = enhanced_query
+            else:
+                # For text queries, use just the key terms
+                processed = " ".join(found_terms[:4])
         
         # Clean up extra spaces
         processed = re.sub(r'\s+', ' ', processed).strip()
         
-        # If query became too short, return original key parts
-        if len(processed) < 3:
-            processed = query
+        # If query became too short or lost meaning, fall back to original
+        if len(processed) < 3 or not any(term in processed for term in found_terms):
+            processed = original_query
         
         return processed
     
@@ -376,10 +463,12 @@ Tag with equipment type (fryer, grill, oven) and procedure type (operation, main
                 "limit": limit
             }
             
-            # Add intelligent filter if one was generated
-            if smart_filter:
+            # Add intelligent filter if one was generated (but not special markers)
+            if smart_filter and "_image_intent" not in smart_filter:
                 search_request["filter"] = smart_filter
-                logger.info(f"🎯 Applying filter: {smart_filter}")
+                logger.info(f"🎯 Applying metadata filter: {smart_filter}")
+            elif smart_filter and "_image_intent" in smart_filter:
+                logger.info(f"🎯 Image intent detected - using enhanced query processing")
             
             response = self.client.retrievals.retrieve(request=search_request)
             
@@ -593,21 +682,20 @@ Tag with equipment type (fryer, grill, oven) and procedure type (operation, main
                 "upload_timestamp": datetime.datetime.now().isoformat()
             }
             
-            # Use proper resource management with context manager
-            with self.client as ragie_client:
-                with open(file_path, 'rb') as f:
-                    create_request = {
-                        "file": {
-                            "file_name": Path(file_path).name,
-                            "content": f,
-                        },
-                        "metadata": ragie_metadata,
-                        "mode": "hi_res",  # Extract images and tables for QSR manuals
-                        "partition": self.partition
-                    }
-                    
-                    logger.info("🔄 Sending upload request to Ragie...")
-                    response = ragie_client.documents.create(request=create_request)
+            # Use proper resource management
+            with open(file_path, 'rb') as f:
+                create_request = {
+                    "file": {
+                        "file_name": Path(file_path).name,
+                        "content": f,
+                    },
+                    "metadata": ragie_metadata,
+                    "mode": "hi_res",  # Extract images and tables for QSR manuals
+                    "partition": self.partition
+                }
+                
+                logger.info("🔄 Sending upload request to Ragie...")
+                response = self.client.documents.create(request=create_request)
             
             upload_time = time.time() - start_time
             

@@ -39,9 +39,21 @@ function FileUpload({ onUploadSuccess, onDocumentsUpdate }) {
   };
 
   const validateFile = (file) => {
-    // Check file type
-    if (!file.name.toLowerCase().endsWith('.pdf')) {
-      throw new Error('Only PDF files are allowed');
+    // Supported file types (20 formats)
+    const supportedTypes = [
+      // Documents
+      '.pdf', '.docx', '.xlsx', '.pptx', '.docm', '.xlsm', '.txt', '.md', '.csv',
+      // Images
+      '.jpg', '.jpeg', '.png', '.gif', '.webp',
+      // Audio/Video
+      '.mp4', '.mov', '.avi', '.wav', '.mp3', '.m4a'
+    ];
+    
+    const fileName = file.name.toLowerCase();
+    const isSupported = supportedTypes.some(type => fileName.endsWith(type));
+    
+    if (!isSupported) {
+      throw new Error('Unsupported file type. Supported formats: PDF, DOCX, XLSX, PPTX, Images (JPG, PNG, GIF, WEBP), Audio/Video (MP4, MOV, AVI, WAV, MP3, M4A), and text files (TXT, MD, CSV)');
     }
     
     // Check file size (10MB limit)
@@ -178,7 +190,7 @@ function FileUpload({ onUploadSuccess, onDocumentsUpdate }) {
             <input
               type="file"
               id="file-upload"
-              accept=".pdf"
+              accept=".pdf,.docx,.xlsx,.pptx,.docm,.xlsm,.txt,.md,.csv,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.avi,.wav,.mp3,.m4a"
               onChange={handleFileInput}
               disabled={uploading}
               style={{ display: 'none' }}
@@ -192,15 +204,15 @@ function FileUpload({ onUploadSuccess, onDocumentsUpdate }) {
                 <div className="upload-text">
                   <strong>Upload Equipment Manual</strong>
                   <br />
-                  Drag & drop a PDF file here, or{' '}
+                  Drag & drop your file here, or{' '}
                   <label htmlFor="file-upload" className="upload-link">
                     browse
                   </label>
                 </div>
                 <div className="upload-hint">
-                  PDF files only, max 10MB
+                  Documents, Images, Audio/Video supported • Max 10MB
                   <br />
-                  <small style={{ opacity: 0.7 }}>Enhanced processing with real-time progress</small>
+                  <small style={{ opacity: 0.7 }}>PDF, DOCX, XLSX, PPTX, JPG, PNG, MP4, WAV, MP3, and more</small>
                 </div>
               </>
             ) : (

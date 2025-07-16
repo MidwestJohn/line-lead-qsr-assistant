@@ -32,11 +32,22 @@ from voice_agent import voice_orchestrator, VoiceState, ConversationIntent
 # Clean Ragie integration
 from services.ragie_service_clean import clean_ragie_service
 
+# QSR-optimized Ragie integration following comprehensive philosophy
+from services.qsr_ragie_service import qsr_ragie_service
+from models.qsr_models import QSRTaskResponse, QSRSearchRequest, QSRUploadMetadata
+from agents.qsr_support_agent import get_qsr_assistance, PYDANTIC_AI_AVAILABLE
+
+# Voice graph service placeholder (disabled for now)
+voice_graph_query_service = None
+
 import uuid
 from dotenv import load_dotenv
 
 # Production error handling (BaseChat pattern)
 from error_handling.production_errors_v3 import setup_production_error_handling
+
+# Multi-format validation
+from services.multi_format_validator import multi_format_validator
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -352,8 +363,17 @@ async def simple_upload(file: UploadFile = File(...)):
         # Ensure upload directory exists
         os.makedirs("uploaded_docs", exist_ok=True)
         
-        # Read and save file content
+        # Read and validate file content
         content = await file.read()
+        
+        # Validate file type and content
+        validation_result = multi_format_validator.validate_file(file.filename, content)
+        
+        if validation_result.result.value != "valid":
+            raise HTTPException(
+                status_code=400, 
+                detail=f"File validation failed: {validation_result.error_message}"
+            )
         
         with open(file_path, "wb") as f:
             f.write(content)
@@ -646,28 +666,20 @@ async def startup_with_agent_optimization():
         logger.error(f"❌ Agent startup optimization failed: {e}")
     
     # 2. Initialize reliability infrastructure (if available)
+    # Note: Reliability infrastructure disabled - using clean Ragie service
+    logger.info("🛡️ Using clean Ragie service (reliability infrastructure disabled)")
     try:
-        from reliability_infrastructure import circuit_breaker, transaction_manager, dead_letter_queue
-        from enhanced_neo4j_service import enhanced_neo4j_service
-        
-        logger.info("🛡️ Initializing reliability infrastructure...")
-        
-        # Test enhanced Neo4j service
-        connection_success = await enhanced_neo4j_service.connect()
-        if connection_success:
-            logger.info("✅ Enhanced Neo4j service connected")
+        # Test clean Ragie service availability
+        if clean_ragie_service.is_available():
+            logger.info("✅ Clean Ragie service is available")
         else:
-            logger.warning("⚠️ Enhanced Neo4j service connection failed, will retry with circuit breaker")
+            logger.warning("⚠️ Clean Ragie service not available")
         
-        # Test reliability features
-        reliability_test = await enhanced_neo4j_service.test_reliability_features()
-        logger.info(f"🧪 Reliability features test: {reliability_test}")
-        
-        logger.info("✅ Reliability infrastructure ready")
+        logger.info("✅ Basic reliability checks complete")
         
     except Exception as e:
-        logger.error(f"❌ Reliability infrastructure initialization failed: {e}")
-        # Don't fail startup - fallback to existing services
+        logger.error(f"❌ Reliability check failed: {e}")
+        # Don't fail startup - continue with available services
 
 # Removed RAG-Anything startup event
 
@@ -1875,16 +1887,17 @@ async def upload_file(background_tasks: BackgroundTasks, file: UploadFile = File
 async def upload_file_original(file: UploadFile = File(...)):
     """Upload and process PDF manual files"""
     try:
-        # Validate file type
-        if not file.filename.lower().endswith('.pdf'):
-            raise HTTPException(status_code=400, detail="Only PDF files are allowed")
-        
         # Read file content
         content = await file.read()
         
-        # Validate file size
-        if len(content) > MAX_FILE_SIZE:
-            raise HTTPException(status_code=400, detail=f"File size exceeds {MAX_FILE_SIZE // (1024*1024)}MB limit")
+        # Validate file type and content using multi-format validator
+        validation_result = multi_format_validator.validate_file(file.filename, content)
+        
+        if validation_result.result.value != "valid":
+            raise HTTPException(
+                status_code=400, 
+                detail=f"File validation failed: {validation_result.error_message}"
+            )
         
         # Validate PDF content
         if not is_valid_pdf(content):
@@ -6949,6 +6962,359 @@ async def get_ragie_document_chunks(document_id: str, limit: int = 10):
             "document_id": document_id,
             "timestamp": datetime.datetime.now().isoformat()
         }
+
+# ========================================
+# QSR-Optimized Endpoints (Comprehensive Philosophy Implementation)
+# ========================================
+
+@app.post("/qsr/assistance", response_model=QSRTaskResponse)
+async def get_qsr_structured_assistance(request: QSRSearchRequest):
+    """
+    Get comprehensive QSR assistance with structured response
+    
+    Implements the full philosophy with:
+    - Structured QSR response models
+    - Safety warnings with severity levels
+    - Equipment specifications
+    - Step-by-step procedures
+    - Visual aid references
+    - Type-safe PydanticAI integration
+    """
+    try:
+        logger.info(f"🔍 QSR assistance request: {request.query}")
+        
+        if PYDANTIC_AI_AVAILABLE and qsr_ragie_service.is_available():
+            # Use comprehensive QSR agent
+            result = await get_qsr_assistance(
+                user_query=request.query,
+                user_id="api_user",
+                restaurant_id="default"
+            )
+            logger.info(f"✅ QSR agent response generated with {len(result.steps)} steps")
+            return result
+        
+        elif qsr_ragie_service.is_available():
+            # Fallback to direct service call
+            logger.info("Using direct QSR service (PydanticAI not available)")
+            result = await qsr_ragie_service.get_structured_qsr_response(request)
+            return result
+        
+        else:
+            # Ultimate fallback to basic response
+            logger.warning("QSR services not available, using basic fallback")
+            return QSRTaskResponse(
+                task_title=f"Basic Response: {request.query}",
+                steps=[],
+                estimated_time="Unknown",
+                confidence_level=0.0,
+                procedure_type='training',
+                source_documents=[]
+            )
+            
+    except Exception as e:
+        logger.error(f"❌ QSR assistance failed: {e}")
+        raise HTTPException(status_code=500, detail=f"QSR assistance failed: {str(e)}")
+
+@app.post("/qsr/upload")
+async def upload_qsr_document(
+    file: UploadFile = File(...),
+    equipment_types: str = None,
+    procedure_types: str = None,
+    safety_level: str = None,
+    document_type: str = "manual"
+):
+    """
+    Upload document with QSR-specific metadata classification
+    
+    Implements multi-format upload strategy from philosophy:
+    - PDF, DOCX, XLSX, PPTX, JPG, PNG, MP4, TXT support
+    - Automatic QSR metadata classification
+    - Hi-res processing for visual content
+    - MongoDB-style metadata for filtering
+    """
+    try:
+        if not qsr_ragie_service.is_available():
+            raise HTTPException(status_code=503, detail="QSR Ragie service not available")
+        
+        # Read file content
+        file_content = await file.read()
+        
+        # Parse metadata from form parameters
+        metadata = QSRUploadMetadata(
+            original_filename=file.filename,
+            file_type=Path(file.filename).suffix.lower().lstrip('.'),
+            equipment_types=equipment_types.split(',') if equipment_types else [],
+            procedure_types=procedure_types.split(',') if procedure_types else [],
+            safety_level=safety_level,
+            document_type=document_type,
+            uploaded_by="api_user"
+        )
+        
+        logger.info(f"📤 Uploading QSR document: {file.filename}")
+        
+        # Upload with QSR metadata
+        result = await qsr_ragie_service.upload_qsr_document(
+            file_content=file_content,
+            filename=file.filename, 
+            metadata=metadata
+        )
+        
+        if result["success"]:
+            logger.info(f"✅ Successfully uploaded {file.filename} with ID: {result['document_id']}")
+            return {
+                "success": True,
+                "document_id": result["document_id"],
+                "filename": file.filename,
+                "metadata": result.get("metadata", {}),
+                "processing_mode": result.get("processing_mode", "fast")
+            }
+        else:
+            raise HTTPException(status_code=400, detail=result["error"])
+            
+    except Exception as e:
+        logger.error(f"❌ QSR document upload failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+@app.post("/qsr/search")
+async def search_qsr_procedures(request: QSRSearchRequest):
+    """
+    Search QSR procedures with MongoDB-style metadata filtering
+    
+    Implements comprehensive search strategy:
+    - Equipment type filtering
+    - Procedure type filtering  
+    - Safety level filtering
+    - Visual content prioritization
+    - Structured result format
+    """
+    try:
+        if not qsr_ragie_service.is_available():
+            raise HTTPException(status_code=503, detail="QSR Ragie service not available")
+        
+        logger.info(f"🔍 QSR procedure search: {request.query}")
+        
+        # Perform structured search
+        results = await qsr_ragie_service.search_qsr_procedures(request)
+        
+        logger.info(f"✅ Found {len(results)} QSR procedure results")
+        
+        return {
+            "success": True,
+            "query": request.query,
+            "results": [result.dict() for result in results],
+            "total_results": len(results),
+            "filters_applied": {
+                "equipment_type": request.equipment_type,
+                "procedure_type": request.procedure_type,
+                "safety_level": request.safety_level,
+                "include_images": request.include_images
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ QSR procedure search failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+
+@app.get("/qsr/status")
+async def get_qsr_system_status():
+    """
+    Get comprehensive QSR system status
+    
+    Shows availability of all components in the philosophy implementation:
+    - Ragie SDK integration
+    - PydanticAI agent system
+    - Multi-format upload support
+    - Structured response models
+    """
+    try:
+        status = {
+            "qsr_ragie_service": {
+                "available": qsr_ragie_service.is_available(),
+                "supported_formats": list(qsr_ragie_service.SUPPORTED_FORMATS.keys()),
+                "partition": qsr_ragie_service.partition
+            },
+            "pydantic_ai_agent": {
+                "available": PYDANTIC_AI_AVAILABLE,
+                "features": ["structured_responses", "type_safe_tools", "dependency_injection"] if PYDANTIC_AI_AVAILABLE else []
+            },
+            "structured_models": {
+                "available": True,
+                "response_model": "QSRTaskResponse", 
+                "search_model": "QSRSearchRequest",
+                "upload_model": "QSRUploadMetadata"
+            },
+            "philosophy_implementation": {
+                "ragie_sdk_patterns": qsr_ragie_service.is_available(),
+                "structured_responses": True,
+                "metadata_filtering": qsr_ragie_service.is_available(),
+                "multi_format_upload": qsr_ragie_service.is_available(),
+                "pydantic_ai_tools": PYDANTIC_AI_AVAILABLE,
+                "type_safety": True,
+                "production_ready": qsr_ragie_service.is_available() and PYDANTIC_AI_AVAILABLE
+            }
+        }
+        
+        return status
+        
+    except Exception as e:
+        logger.error(f"❌ QSR status check failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Status check failed: {str(e)}")
+
+@app.get("/qsr/supported-formats")
+async def get_supported_formats():
+    """Get list of supported file formats for QSR document upload"""
+    return {
+        "supported_formats": qsr_ragie_service.SUPPORTED_FORMATS,
+        "format_categories": {
+            "documents": ["pdf", "docx", "xlsx", "pptx", "txt"],
+            "images": ["jpg", "jpeg", "png"],
+            "videos": ["mp4"],
+            "office": ["docx", "xlsx", "pptx", "docm", "xlsm"]
+        },
+        "processing_modes": {
+            "hi_res": "For documents with images, diagrams, complex layouts",
+            "fast": "For text-only documents"
+        }
+    }
+
+@app.post("/qsr/stepcard-format")
+async def get_stepcard_formatted_response(request: QSRSearchRequest):
+    """
+    Get procedure formatted specifically for StepCard component
+    
+    Demonstrates the complete post-processing pipeline:
+    1. Ragie search
+    2. Response cleaning and normalization
+    3. StepCard-specific formatting
+    4. Mobile and voice optimization
+    """
+    try:
+        if not qsr_ragie_service.is_available():
+            raise HTTPException(status_code=503, detail="QSR Ragie service not available")
+        
+        logger.info(f"📱 StepCard formatting request: {request.query}")
+        
+        # Search with QSR service
+        ragie_results = await qsr_ragie_service.search_qsr_procedures(request)
+        
+        if not ragie_results:
+            logger.warning("No Ragie results found, creating demo response")
+            # Create a demo response for testing
+            demo_response = {
+                'title': f"Demo: {request.query}",
+                'steps': [
+                    {
+                        'step_number': 1,
+                        'title': 'Prepare Equipment',
+                        'time_estimate': '5 minutes',
+                        'tasks': [
+                            'Turn off the fryer and allow it to cool completely',
+                            'Gather cleaning supplies including degreaser and brushes',
+                            'Put on safety gloves and protective eyewear'
+                        ],
+                        'verification': 'Fryer is cool to touch and supplies are ready',
+                        'safety_warning': '⚠️ Never clean a hot fryer - burns can occur',
+                        'equipment_needed': ['fryer', 'cleaning supplies'],
+                        'tools_needed': ['gloves', 'brushes', 'degreaser']
+                    },
+                    {
+                        'step_number': 2,
+                        'title': 'Remove Oil',
+                        'time_estimate': '10 minutes',
+                        'tasks': [
+                            'Place drain container under fryer drain valve',
+                            'Open drain valve slowly to prevent splashing',
+                            'Allow all oil to drain completely'
+                        ],
+                        'verification': 'All oil has been drained from fryer',
+                        'safety_warning': '⚠️ Oil may still be warm - handle carefully',
+                        'equipment_needed': ['drain container'],
+                        'tools_needed': ['drain valve key']
+                    },
+                    {
+                        'step_number': 3,
+                        'title': 'Clean Interior',
+                        'time_estimate': '15 minutes',
+                        'tasks': [
+                            'Spray interior with degreaser solution',
+                            'Scrub walls and bottom with cleaning brush',
+                            'Rinse thoroughly with hot water',
+                            'Dry completely with clean towels'
+                        ],
+                        'verification': 'Interior is clean and completely dry',
+                        'safety_warning': None,
+                        'equipment_needed': ['hot water source'],
+                        'tools_needed': ['degreaser', 'brush', 'towels']
+                    }
+                ],
+                'overall_time': '30 minutes',
+                'safety_notes': [
+                    {
+                        'level': 'critical',
+                        'message': 'Never clean a hot fryer - severe burns can occur',
+                        'keywords': ['hot', 'burns', 'safety']
+                    }
+                ],
+                'verification_points': [
+                    {
+                        'checkpoint': 'Fryer is completely cool before starting',
+                        'step_reference': 1
+                    },
+                    {
+                        'checkpoint': 'All oil has been properly drained',
+                        'step_reference': 2
+                    },
+                    {
+                        'checkpoint': 'Interior is clean and dry before refilling',
+                        'step_reference': 3
+                    }
+                ],
+                'media_references': [],
+                'procedure_type': 'cleaning',
+                'difficulty_level': 'intermediate',
+                'frequency': 'daily',
+                'prerequisites': ['Fryer must be turned off', 'Cleaning supplies available'],
+                'confidence_score': 0.9,
+                'source_documents': ['Demo Fryer Manual']
+            }
+            
+            # Process through cleaning pipeline
+            from models.qsr_response import CleanedQSRResponse
+            from utils.stepcard_formatter import stepcard_formatter
+            
+            cleaned_response = CleanedQSRResponse(**demo_response)
+            
+        else:
+            # Use real results through cleaning pipeline
+            from services.response_processor import response_cleaner
+            from models.qsr_response import CleanedQSRResponse
+            from utils.stepcard_formatter import stepcard_formatter
+            
+            logger.info(f"🧹 Processing {len(ragie_results)} results through cleaning pipeline")
+            processed_data = response_cleaner.process_ragie_chunks(ragie_results)
+            cleaned_response = CleanedQSRResponse(**processed_data)
+        
+        # Format for StepCard component
+        stepcard_formatted = stepcard_formatter.format_for_stepcard(cleaned_response)
+        
+        logger.info(f"📱 Generated StepCard format with {len(stepcard_formatted['steps'])} steps")
+        
+        return {
+            'success': True,
+            'formatting_pipeline': 'complete',
+            'stepcard_data': stepcard_formatted,
+            'processing_metadata': {
+                'ragie_results_count': len(ragie_results) if ragie_results else 0,
+                'demo_mode': len(ragie_results) == 0,
+                'steps_formatted': len(stepcard_formatted['steps']),
+                'mobile_optimized': True,
+                'voice_enabled': True
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ StepCard formatting failed: {e}")
+        raise HTTPException(status_code=500, detail=f"StepCard formatting failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
