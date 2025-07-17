@@ -131,23 +131,26 @@ class EnhancedRagieService:
             return []
             
         try:
+            # Sanitize query to prevent encoding issues
+            sanitized_query = self._sanitize_query(query)
+            
             # Check cache first
-            cache_key = f"{query}:{hash(str(qsr_context))}"
+            cache_key = f"{sanitized_query}:{hash(str(qsr_context))}"
             cached_result = self._get_from_cache(cache_key)
             if cached_result:
-                logger.info(f"🎯 Cache hit for query: {query[:50]}...")
+                logger.info(f"🎯 Cache hit for query: {sanitized_query[:50]}...")
                 return cached_result
             
             # Detect QSR intent if context not provided
             if not qsr_context:
-                qsr_context = self._detect_qsr_context(query)
+                qsr_context = self._detect_qsr_context(sanitized_query)
             
             # Build search filters
             filters = self._build_search_filters(qsr_context)
             
-            # Perform Ragie search
+            # Perform Ragie search with sanitized query
             response = self.client.retrievals.retrieve(request={
-                "query": query,
+                "query": sanitized_query,
                 "partition": self.partition,
                 "top_k": top_k,
                 "filter": filters if filters else {},
@@ -177,7 +180,7 @@ class EnhancedRagieService:
             # Cache results
             self._cache_results(cache_key, results)
             
-            logger.info(f"📚 Retrieved {len(results)} QSR-optimized chunks for: {query[:50]}...")
+            logger.info(f"📚 Retrieved {len(results)} QSR-optimized chunks for: {sanitized_query[:50]}...")
             return results
             
         except Exception as e:
@@ -252,8 +255,36 @@ class EnhancedRagieService:
         
         return citations
     
+    def _sanitize_query(self, query: str) -> str:
+        """Sanitize query to handle Unicode and encoding issues"""
+        try:
+            # Ensure we have a string
+            if not isinstance(query, str):
+                query = str(query)
+            
+            # Replace problematic Unicode characters with ASCII equivalents
+            query = query.replace('"', '"').replace('"', '"')  # Smart quotes
+            query = query.replace(''', "'").replace(''', "'")  # Smart apostrophes  
+            query = query.replace('—', '-').replace('–', '-')  # Em/en dashes
+            query = query.replace('…', '...')  # Ellipsis
+            
+            # Encode to ASCII, replacing problematic characters
+            query = query.encode('ascii', 'ignore').decode('ascii')
+            
+            # Clean up extra whitespace
+            query = ' '.join(query.split())
+            
+            return query
+        except Exception as e:
+            logger.warning(f"Query sanitization failed: {e}, using fallback")
+            # Fallback: keep only alphanumeric, spaces, and basic punctuation
+            import re
+            return re.sub(r'[^\w\s\-\.\,\?\!]', '', str(query))
+
     def _detect_qsr_context(self, query: str) -> QSRContext:
         """Detect QSR context from query text"""
+        # Sanitize query first to prevent encoding errors
+        query = self._sanitize_query(query)
         query_lower = query.lower()
         
         # Detect equipment
