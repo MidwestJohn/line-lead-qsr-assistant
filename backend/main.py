@@ -1045,9 +1045,9 @@ async def health_check(request: Request):
         except ImportError:
             memory_info = {"status": "psutil_not_available"}
         
-        # Determine if search services are ready (for frontend compatibility)
+        # Determine if core chat services are ready (for frontend compatibility)
+        # Chat should work as long as PydanticAI orchestration is healthy
         search_ready = (
-            service_health.get("search_engine", {}).get("status") == "healthy" and
             service_health.get("pydantic_orchestration", {}).get("status") == "healthy"
         )
         
