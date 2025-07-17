@@ -69,17 +69,20 @@ class ProductionErrorHandler:
     
     def setup_render_vercel_cors(self):
         """Optimized CORS for Render ↔ Vercel deployment"""
+        allowed_origins = [
+            "https://app.linelead.io",  # Production domain
+            "https://linelead.io",  # Root domain  
+            "https://line-lead-qsr-assistant.vercel.app",  # Default Vercel URL
+            "http://localhost:3000",  # Development
+            "http://localhost:3001",  # Alternative dev port
+        ]
+        
+        logger.info(f"🌐 Render ↔ Vercel CORS configured with origins: {allowed_origins}")
+        
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=[
-                "https://app.linelead.io",  # Production domain
-                "https://linelead.io",  # Root domain
-                "https://*.vercel.app",  # Vercel wildcard
-                "https://line-lead-qsr-assistant.vercel.app",  # Default Vercel URL
-                "https://line-lead-qsr-assistant-*.vercel.app",  # Preview deployments
-                "http://localhost:3000",  # Development
-                "http://localhost:3001",  # Alternative dev port
-            ],
+            allow_origins=allowed_origins,
+            allow_origin_regex=r"https://line-lead-qsr-assistant-.*\.vercel\.app",  # Preview deployments
             allow_credentials=True,
             allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             allow_headers=[
