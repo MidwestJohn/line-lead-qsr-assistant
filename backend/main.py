@@ -1045,6 +1045,12 @@ async def health_check(request: Request):
         except ImportError:
             memory_info = {"status": "psutil_not_available"}
         
+        # Determine if search services are ready (for frontend compatibility)
+        search_ready = (
+            service_health.get("search_engine", {}).get("status") == "healthy" and
+            service_health.get("pydantic_orchestration", {}).get("status") == "healthy"
+        )
+        
         response_data = {
             "status": overall_status,
             "timestamp": start_time.isoformat(),
@@ -1052,6 +1058,7 @@ async def health_check(request: Request):
             "deployment": "line-lead-qsr-backend",
             "services": service_health,
             "degraded_services": degraded_services,
+            "search_ready": search_ready,  # Frontend expects this field
             "performance": {
                 "total_response_time_ms": round(total_response_time, 2),
                 "target_response_time": "< 1000ms",
