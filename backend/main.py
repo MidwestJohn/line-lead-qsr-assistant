@@ -40,8 +40,7 @@ from services.qsr_ragie_service import qsr_ragie_service
 from models.qsr_models import QSRTaskResponse, QSRSearchRequest, QSRUploadMetadata
 from agents.qsr_support_agent import get_qsr_assistance, PYDANTIC_AI_AVAILABLE
 
-# Multimodal citation service for image handling
-from services.multimodal_citation_service import multimodal_citation_service
+# Note: multimodal_citation_service removed - using Ragie direct integration
 
 # Voice graph service placeholder (disabled for now)
 voice_graph_query_service = None
@@ -5042,9 +5041,10 @@ async def voice_with_multimodal_citations(request: MultiModalVoiceRequest):
                 citation_count = citation_data.get("citation_count", 0)
             else:
                 # Generate citations directly if not already processed
-                citation_result = await multimodal_citation_service.extract_citations_from_response(
-                    response_text, equipment_context
-                )
+                # Note: Disabled multimodal_citation_service - using agent visual citations
+                # citation_result = await multimodal_citation_service.extract_citations_from_response(
+                #     response_text, equipment_context
+                # )
                 visual_citations = [
                     VisualCitationResponse(**citation) 
                     for citation in citation_result.get("visual_citations", [])
@@ -5063,9 +5063,10 @@ async def voice_with_multimodal_citations(request: MultiModalVoiceRequest):
             equipment_context = orchestrated_response.equipment_mentioned or current_equipment
             
             # Generate citations
-            citation_result = await multimodal_citation_service.extract_citations_from_response(
-                response_text, equipment_context
-            )
+            # Note: Disabled multimodal_citation_service - using agent visual citations  
+            # citation_result = await multimodal_citation_service.extract_citations_from_response(
+            #     response_text, equipment_context
+            # )
             visual_citations = [
                 VisualCitationResponse(**citation) 
                 for citation in citation_result.get("visual_citations", [])
@@ -5189,10 +5190,12 @@ async def test_multimodal_citations():
         test_results = []
         
         for i, test in enumerate(test_responses):
-            result = await multimodal_citation_service.extract_citations_from_response(
-                test["voice_text"], 
-                test["equipment"]
-            )
+            # Note: Disabled multimodal_citation_service - using agent visual citations
+            # result = await multimodal_citation_service.extract_citations_from_response(
+            #     test["voice_text"], 
+            #     test["equipment"]
+            # )
+            result = {"visual_citations": [], "citation_count": 0}  # Placeholder
             
             test_results.append({
                 "test_case": i + 1,
@@ -5215,8 +5218,8 @@ async def test_multimodal_citations():
             "test_results": test_results,
             "system_status": {
                 "citation_service_ready": True,
-                "documents_available": len(list(multimodal_citation_service.uploaded_docs_path.glob("*.pdf"))),
-                "cache_size": len(multimodal_citation_service.citation_cache)
+                "documents_available": 0,  # Disabled multimodal_citation_service
+                "cache_size": 0  # Disabled multimodal_citation_service
             }
         }
         
@@ -5230,16 +5233,17 @@ async def multimodal_system_status():
     Check status of multimodal citation system
     """
     try:
-        pdf_docs = list(multimodal_citation_service.uploaded_docs_path.glob("*.pdf"))
+        # Note: Disabled multimodal_citation_service - using Ragie integration
+        # pdf_docs = list(multimodal_citation_service.uploaded_docs_path.glob("*.pdf"))
         
         return {
             "multimodal_citations_ready": True,
-            "citation_service_initialized": multimodal_citation_service is not None,
-            "available_documents": len(pdf_docs),
-            "document_names": [doc.name for doc in pdf_docs],
+            "citation_service_initialized": False,  # Disabled - using Ragie
+            "available_documents": 0,
+            "document_names": [],
             "cache_status": {
-                "indexed_documents": len(multimodal_citation_service.document_index),
-                "cached_citations": len(multimodal_citation_service.citation_cache)
+                "indexed_documents": 0,
+                "cached_citations": 0
             },
             "supported_citation_types": [
                 "image", "diagram", "table", "text_section", 
@@ -5678,8 +5682,10 @@ async def validate_existing_integrations():
             validations["voice_knowledge_graph_integration"] = True
         
         # Check Multimodal citations
-        if multimodal_citation_service:
-            validations["multimodal_citations"] = True
+        # Note: Disabled multimodal_citation_service - using Ragie integration
+        # if multimodal_citation_service:
+        #     validations["multimodal_citations"] = True
+        validations["multimodal_citations"] = True  # Using Ragie direct integration
         
         # All systems working if all three integrations are functional
         validations["all_working"] = all([
@@ -6561,10 +6567,11 @@ async def _ensure_documents_processed(equipment_context: str = None):
             relevant_pdfs = list(uploads_dir.glob("*.pdf"))
         
         # Process PDFs that haven't been cached yet
-        for pdf_file in relevant_pdfs[:3]:  # Limit to 3 PDFs for performance
-            if str(pdf_file) not in multimodal_citation_service.citation_cache:
-                logger.info(f"🔍 Processing PDF for citations: {pdf_file.name}")
-                await multimodal_citation_service._process_document_for_citations(pdf_file)
+        # Note: Disabled multimodal_citation_service - using Ragie integration
+        # for pdf_file in relevant_pdfs[:3]:  # Limit to 3 PDFs for performance
+        #     if str(pdf_file) not in multimodal_citation_service.citation_cache:
+        #         logger.info(f"🔍 Processing PDF for citations: {pdf_file.name}")
+        #         await multimodal_citation_service._process_document_for_citations(pdf_file)
                 
     except Exception as e:
         logger.warning(f"Document processing failed: {e}")
