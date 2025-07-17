@@ -663,10 +663,26 @@ Respond with valid JSON only.
         return orchestrator
 
 
+# Global orchestrator cache for performance optimization
+_orchestrator_cache = None
+_cache_lock = asyncio.Lock()
+
+async def get_cached_qsr_orchestrator(**kwargs) -> QSROrchestrator:
+    """Get cached orchestrator instance for performance optimization"""
+    global _orchestrator_cache
+    
+    async with _cache_lock:
+        if _orchestrator_cache is None:
+            logging.info("🚀 Creating and caching QSR orchestrator...")
+            _orchestrator_cache = await QSROrchestrator.create(**kwargs)
+            logging.info("✅ QSR orchestrator cached successfully")
+        
+        return _orchestrator_cache
+
 # Factory function for easy instantiation
 async def create_qsr_orchestrator(**kwargs) -> QSROrchestrator:
     """Create and initialize a QSR orchestrator instance"""
-    return await QSROrchestrator.create(**kwargs)
+    return await get_cached_qsr_orchestrator(**kwargs)
 
 
 if __name__ == "__main__":

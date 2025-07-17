@@ -12,6 +12,9 @@ const ServiceStatus = ({ onStatusChange }) => {
   });
 
   const checkHealth = async (retryAttempt = 0) => {
+    let controller;
+    let timeoutId;
+    
     try {
       setStatus(prev => ({ 
         ...prev, 
@@ -19,17 +22,23 @@ const ServiceStatus = ({ onStatusChange }) => {
         retryCount: retryAttempt 
       }));
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+      controller = new AbortController();
+      timeoutId = setTimeout(() => {
+        if (!controller.signal.aborted) {
+          controller.abort();
+        }
+      }, 15000); // 15s timeout for slower health checks
 
       const response = await fetch(`${API_BASE_URL}/health`, {
         signal: controller.signal,
         headers: {
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache',
+          'X-Health-Check': 'basic',
+          'X-Session-ID': 'service-status'
         }
       });
 
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`Health check failed: ${response.status}`);
@@ -37,15 +46,33 @@ const ServiceStatus = ({ onStatusChange }) => {
 
       const healthData = await response.json();
       
-      setStatus({
-        overall: healthData.status,
-        services: healthData.services || {},
-        documentCount: healthData.document_count || 0,
-        searchReady: healthData.search_ready || false,
-        lastCheck: new Date(),
-        error: null,
-        retryCount: 0
-      });
+      // Handle both old and new BaseChat enterprise health format
+      const isNewFormat = healthData.platform === 'render' && healthData.services;
+      
+      if (isNewFormat) {
+        // New BaseChat enterprise format
+        setStatus({
+          overall: healthData.status,
+          services: healthData.services || {},
+          degradedServices: healthData.degraded_services || [],
+          performance: healthData.performance || {},
+          platform: healthData.platform,
+          lastCheck: new Date(),
+          error: null,
+          retryCount: 0
+        });
+      } else {
+        // Legacy format fallback
+        setStatus({
+          overall: healthData.status,
+          services: healthData.services || {},
+          documentCount: healthData.document_count || 0,
+          searchReady: healthData.search_ready || false,
+          lastCheck: new Date(),
+          error: null,
+          retryCount: 0
+        });
+      }
 
       // Notify parent component of status change
       if (onStatusChange) {
@@ -58,6 +85,9 @@ const ServiceStatus = ({ onStatusChange }) => {
 
     } catch (error) {
       console.error('Health check failed:', error);
+      
+      // Cleanup
+      if (timeoutId) clearTimeout(timeoutId);
       
       const isNetworkError = error.name === 'AbortError' || 
                            error.name === 'TypeError' ||
@@ -107,6 +137,17 @@ const ServiceStatus = ({ onStatusChange }) => {
   }, []);
 
   const getStatusColor = (serviceStatus) => {
+    // Handle both old string format and new object format
+    if (typeof serviceStatus === 'object') {
+      // New BaseChat enterprise format
+      if (serviceStatus.status === 'healthy' && !serviceStatus.degraded) return '#10b981'; // green
+      if (serviceStatus.status === 'healthy' && serviceStatus.degraded) return '#f59e0b'; // yellow
+      if (serviceStatus.status === 'error') return '#ef4444'; // red
+      if (serviceStatus.status === 'unavailable') return '#ef4444'; // red
+      return '#6b7280'; // gray
+    }
+    
+    // Legacy string format
     switch (serviceStatus) {
       case 'ready': return '#10b981'; // green
       case 'initializing': return '#f59e0b'; // yellow
@@ -126,8 +167,9 @@ const ServiceStatus = ({ onStatusChange }) => {
 
   const getOverallStatusText = () => {
     switch (status.overall) {
-      case 'healthy': return 'Services Ready';
-      case 'degraded': return 'Limited Service';
+      case 'healthy': return 'All Services Ready';
+      case 'degraded': return `Limited Service${status.degradedServices ? ` (${status.degradedServices.length} affected)` : ''}`;
+      case 'unhealthy': return 'Multiple Service Issues';
       case 'error': return 'Service Error';
       case 'checking': return 'Checking Services...';
       default: return 'Unknown Status';
@@ -170,7 +212,32 @@ const ServiceStatus = ({ onStatusChange }) => {
         </div>
       )}
 
-      {status.overall === 'healthy' && status.documentCount > 0 && (
+      {/* Enhanced info display for new BaseChat format */}
+      {status.platform === 'render' && (
+        <div className="enhanced-info">
+          {status.overall === 'healthy' && (
+            <span className="status-detail">All services operational</span>
+          )}
+          {status.overall === 'degraded' && status.degradedServices && (
+            <span className="status-detail degraded">
+              {status.degradedServices.join(', ')} degraded
+            </span>
+          )}
+          {status.performance && status.performance.total_response_time_ms && (
+            <span className="status-detail">
+              • Response: {Math.round(status.performance.total_response_time_ms)}ms
+            </span>
+          )}
+          {status.performance && status.performance.memory && (
+            <span className="status-detail">
+              • Memory: {status.performance.memory.percent_used}%
+            </span>
+          )}
+        </div>
+      )}
+      
+      {/* Legacy info display */}
+      {status.overall === 'healthy' && status.documentCount > 0 && !status.platform && (
         <div className="ready-info">
           {status.documentCount} documents ready • Search enabled
         </div>
@@ -181,16 +248,26 @@ const ServiceStatus = ({ onStatusChange }) => {
         <details className="service-details">
           <summary>Service Details</summary>
           <div className="services-list">
-            {Object.entries(status.services).map(([service, serviceStatus]) => (
-              <div key={service} className="service-item">
-                <div 
-                  className="service-dot"
-                  style={{ backgroundColor: getStatusColor(serviceStatus) }}
-                />
-                <span className="service-name">{service.replace('_', ' ')}</span>
-                <span className="service-status">{serviceStatus}</span>
-              </div>
-            ))}
+            {Object.entries(status.services).map(([service, serviceStatus]) => {
+              // Handle both old string format and new object format
+              const displayStatus = typeof serviceStatus === 'object' ? 
+                `${serviceStatus.status}${serviceStatus.degraded ? ' (degraded)' : ''}` : 
+                serviceStatus;
+              
+              const responseTime = typeof serviceStatus === 'object' && serviceStatus.response_time_ms ? 
+                ` (${Math.round(serviceStatus.response_time_ms)}ms)` : '';
+              
+              return (
+                <div key={service} className="service-item">
+                  <div 
+                    className="service-dot"
+                    style={{ backgroundColor: getStatusColor(serviceStatus) }}
+                  />
+                  <span className="service-name">{service.replace(/_/g, ' ')}</span>
+                  <span className="service-status">{displayStatus}{responseTime}</span>
+                </div>
+              );
+            })}
           </div>
         </details>
       )}

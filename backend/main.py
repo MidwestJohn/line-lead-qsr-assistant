@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from typing import Dict, List, Optional, Any
 import logging
-import datetime
+from datetime import datetime
 import json
 import asyncio
 import os
@@ -29,11 +29,31 @@ from openai_integration import qsr_assistant
 from voice_service import voice_service
 from voice_agent import voice_orchestrator, VoiceState, ConversationIntent
 
+# Image request handling
+from services.image_request_handler import image_request_handler
+
 # Clean Ragie integration
 from services.ragie_service_clean import clean_ragie_service
 
+# QSR-optimized Ragie integration following comprehensive philosophy
+from services.qsr_ragie_service import qsr_ragie_service
+from models.qsr_models import QSRTaskResponse, QSRSearchRequest, QSRUploadMetadata
+from agents.qsr_support_agent import get_qsr_assistance, PYDANTIC_AI_AVAILABLE
+
+# Multimodal citation service for image handling
+from services.multimodal_citation_service import multimodal_citation_service
+
+# Voice graph service placeholder (disabled for now)
+voice_graph_query_service = None
+
 import uuid
 from dotenv import load_dotenv
+
+# Production error handling (BaseChat pattern)
+from error_handling.production_errors_v3 import setup_production_error_handling
+
+# Multi-format validation
+from services.multi_format_validator import multi_format_validator
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -48,8 +68,18 @@ ALLOWED_EXTENSIONS = {".pdf"}
 # Ensure upload directory exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# Initialize FastAPI app
+app = FastAPI(
+    title="Line Lead QSR Assistant API",
+    description="Production QSR assistant with PydanticAI orchestration and Ragie enhancement",
+    version="3.0.0"
+)
+
+# Setup production error handling (BaseChat pattern)
+error_handler = setup_production_error_handling(app)
+
 # Track application startup time for monitoring
-app_start_time = datetime.datetime.now()
+app_start_time = datetime.now()
 
 # Utility functions
 def load_documents_db():
@@ -262,12 +292,7 @@ def is_valid_pdf(content: bytes) -> bool:
     except:
         return False
 
-# Initialize FastAPI app
-app = FastAPI(
-    title="Line Lead QSR Assistant API",
-    description="Backend API for QSR maintenance assistant with automatic LightRAG → Neo4j integration",
-    version="2.0.0"
-)
+# FastAPI app already initialized above with production error handling
 
 # Import and include enhanced upload endpoints
 try:
@@ -280,10 +305,21 @@ try:
     app.include_router(websocket_router)
     logger.info("✅ Enhanced upload endpoints with automatic processing enabled")
     logger.info("✅ Robust WebSocket progress tracking enabled with error protection")
+    
 except ImportError as e:
     logger.warning(f"Enhanced upload endpoints not available: {e}")
 except Exception as e:
     logger.error(f"Failed to load enhanced upload endpoints: {e}")
+
+# Include document source endpoints (separate from enhanced upload endpoints)
+try:
+    from endpoints.document_source_endpoints import document_source_router
+    app.include_router(document_source_router, prefix="/api")
+    logger.info("✅ Document source endpoints enabled")
+except ImportError as e:
+    logger.warning(f"Document source endpoints not available: {e}")
+except Exception as e:
+    logger.error(f"Failed to load document source endpoints: {e}")
 
 # Include QSR optimization router
 try:
@@ -344,8 +380,17 @@ async def simple_upload(file: UploadFile = File(...)):
         # Ensure upload directory exists
         os.makedirs("uploaded_docs", exist_ok=True)
         
-        # Read and save file content
+        # Read and validate file content
         content = await file.read()
+        
+        # Validate file type and content
+        validation_result = multi_format_validator.validate_file(file.filename, content)
+        
+        if validation_result.result.value != "valid":
+            raise HTTPException(
+                status_code=400, 
+                detail=f"File validation failed: {validation_result.error_message}"
+            )
         
         with open(file_path, "wb") as f:
             f.write(content)
@@ -517,7 +562,7 @@ async def simple_background_process(process_id: str, file_path: str, filename: s
                         "original_filename": filename,
                         "file_size": len(file_content),
                         "pages_count": pages_count,
-                        "upload_timestamp": datetime.datetime.now().isoformat(),
+                        "upload_timestamp": datetime.now().isoformat(),
                         "equipment_type": "general",  # Could be enhanced with AI detection
                         "document_type": "qsr_manual"
                     }
@@ -537,7 +582,7 @@ async def simple_background_process(process_id: str, file_path: str, filename: s
                     "id": doc_id,
                     "filename": os.path.basename(file_path),
                     "original_filename": filename,
-                    "upload_timestamp": datetime.datetime.now().isoformat(),
+                    "upload_timestamp": datetime.now().isoformat(),
                     "file_size": len(file_content),
                     "pages_count": pages_count,
                     "text_content": text_content,
@@ -614,42 +659,44 @@ CORS_ORIGINS = [
 ]
 
 # Debug: Log CORS origins for troubleshooting
-logger.info(f"CORS origins configured: {CORS_ORIGINS}")
+# CORS middleware configured by production error handler (BaseChat pattern)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Simple startup event for clean Ragie implementation
+# Enhanced startup with agent pre-initialization
 @app.on_event("startup")
-async def startup_clean_ragie():
-    """Initialize reliability infrastructure first"""
+async def startup_with_agent_optimization():
+    """Initialize services and pre-load PydanticAI agents for optimal performance"""
+    logger.info("🚀 Starting Line Lead QSR backend with optimizations...")
+    
+    # 1. Initialize PydanticAI agents at startup
     try:
-        from reliability_infrastructure import circuit_breaker, transaction_manager, dead_letter_queue
-        from enhanced_neo4j_service import enhanced_neo4j_service
+        from agents.startup_optimizer import initialize_agents_at_startup
         
-        logger.info("🛡️ Initializing reliability infrastructure...")
+        logger.info("🤖 Pre-initializing PydanticAI agents...")
+        agent_init_success = await initialize_agents_at_startup()
         
-        # Test enhanced Neo4j service
-        connection_success = await enhanced_neo4j_service.connect()
-        if connection_success:
-            logger.info("✅ Enhanced Neo4j service connected")
+        if agent_init_success:
+            logger.info("✅ PydanticAI agents pre-initialized successfully")
         else:
-            logger.warning("⚠️ Enhanced Neo4j service connection failed, will retry with circuit breaker")
+            logger.warning("⚠️ Agent pre-initialization failed - will initialize on-demand")
+            
+    except Exception as e:
+        logger.error(f"❌ Agent startup optimization failed: {e}")
+    
+    # 2. Initialize reliability infrastructure (if available)
+    # Note: Reliability infrastructure disabled - using clean Ragie service
+    logger.info("🛡️ Using clean Ragie service (reliability infrastructure disabled)")
+    try:
+        # Test clean Ragie service availability
+        if clean_ragie_service.is_available():
+            logger.info("✅ Clean Ragie service is available")
+        else:
+            logger.warning("⚠️ Clean Ragie service not available")
         
-        # Test reliability features
-        reliability_test = await enhanced_neo4j_service.test_reliability_features()
-        logger.info(f"🧪 Reliability features test: {reliability_test}")
-        
-        logger.info("✅ Reliability infrastructure ready")
+        logger.info("✅ Basic reliability checks complete")
         
     except Exception as e:
-        logger.error(f"❌ Reliability infrastructure initialization failed: {e}")
-        # Don't fail startup - fallback to existing services
+        logger.error(f"❌ Reliability check failed: {e}")
+        # Don't fail startup - continue with available services
 
 # Removed RAG-Anything startup event
 
@@ -671,6 +718,7 @@ async def startup_event():
 class ChatMessage(BaseModel):
     message: str
     conversation_id: Optional[str] = "default"
+    session_id: Optional[str] = None  # For context persistence
 
 class ChatResponse(BaseModel):
     response: str
@@ -689,13 +737,31 @@ class ChatResponse(BaseModel):
         """Include null fields in JSON output"""
         exclude_none = False
 
-class HealthResponse(BaseModel):
+class ServiceHealth(BaseModel):
     status: str
+    response_time_ms: Optional[float] = None
+    degraded: bool = False
+    error: Optional[str] = None
+
+class PerformanceMetrics(BaseModel):
+    total_response_time_ms: float
+    target_response_time: str
+    memory: Dict[str, Any] = {}
+
+class VersionInfo(BaseModel):
+    commit_hash: str
+    architecture: str
+
+class HealthResponse(BaseModel):
+    status: str  # "healthy", "degraded", "unhealthy", "error"
     timestamp: str
-    version: str
-    services: Dict[str, str]
-    document_count: int
-    search_ready: bool
+    platform: str = "render"
+    deployment: str = "line-lead-qsr-backend"
+    services: Dict[str, Any] = {}
+    degraded_services: List[str] = []
+    performance: Dict[str, Any] = {}
+    version: Optional[Dict[str, str]] = None
+    error: Optional[str] = None
 
 class UploadResponse(BaseModel):
     success: bool
@@ -796,67 +862,226 @@ async def debug_cors():
     """Debug endpoint to check CORS configuration"""
     return {
         "cors_origins": CORS_ORIGINS,
-        "timestamp": datetime.datetime.now().isoformat(),
+        "timestamp": datetime.now().isoformat(),
         "commit_hash": "624bb5b",
         "cors_middleware_active": True
     }
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check(request: Request):
-    """Comprehensive health check with connection monitoring and keep-alive"""
+    """Enhanced health check following BaseChat enterprise patterns"""
     try:
-        start_time = datetime.datetime.now()
+        start_time = datetime.now()
         
-        # Extract session and monitoring headers
+        # Extract monitoring headers (BaseChat pattern)
         session_id = request.headers.get('X-Session-ID', 'anonymous')
         is_heartbeat = request.headers.get('X-Heartbeat') == 'true'
         health_check_type = request.headers.get('X-Health-Check', 'basic')
         
-        # Log connection for monitoring
         if not is_heartbeat:
-            logger.info(f"Health check requested by session {session_id[:12]}... (type: {health_check_type})")
+            logger.info(f"🩺 Health check requested by session {session_id[:12]}... (type: {health_check_type})")
         
-        # Basic service checks - only count Neo4j-verified documents for data integrity
-        documents_db = load_documents()
-        doc_count = len(documents_db)
+        # Initialize service health tracking
+        service_health = {}
+        overall_status = "healthy"
+        degraded_services = []
         
-        # Clean document status check
-        if doc_count > 0:
-            logger.info(f"📋 Document Status: {doc_count} documents available")
-        
-        # Enhanced search engine check
-        search_ready = search_engine is not None and hasattr(search_engine, 'model')
-        search_status = "ready" if search_ready else "initializing"
-        
-        # AI service health with timeout
-        ai_status = "ready"
-        ai_response_time = None
+        # 1. PydanticAI Orchestration Health (Optimized - no agent recreation)
         try:
-            ai_check_start = datetime.datetime.now()
-            from openai_integration import qsr_assistant
-            ai_status = "ready" if qsr_assistant else "unavailable"
-            ai_response_time = (datetime.datetime.now() - ai_check_start).total_seconds() * 1000
+            from agents.startup_optimizer import health_check_fast
             
-            # Additional AI connectivity test for full health check
-            if health_check_type == 'full' and ai_status == "ready":
-                try:
-                    # Quick test call to verify AI is responsive
-                    import asyncio
-                    test_future = asyncio.wait_for(
-                        asyncio.create_task(test_ai_connection()), 
-                        timeout=3.0
-                    )
-                    ai_test_result = await test_future
-                    if not ai_test_result:
-                        ai_status = "degraded"
-                except asyncio.TimeoutError:
-                    ai_status = "slow"
-                except Exception:
-                    ai_status = "error"
-                    
+            pydantic_health = await health_check_fast()
+            service_health["pydantic_orchestration"] = pydantic_health
+            
+            if pydantic_health["degraded"]:
+                degraded_services.append("pydantic_orchestration")
+                
         except Exception as e:
-            logger.warning(f"AI health check failed: {e}")
-            ai_status = "error"
+            service_health["pydantic_orchestration"] = {
+                "status": "error",
+                "error": str(e),
+                "degraded": True,
+                "note": "Agent optimization system error"
+            }
+            degraded_services.append("pydantic_orchestration")
+            overall_status = "degraded"
+        
+        # 2. Safe Ragie Enhancement Health
+        try:
+            ragie_start = time.time()
+            from services.safe_ragie_enhancement import safe_ragie_enhancement
+            
+            # Test Ragie enhancement (proven working)
+            ragie_result = await safe_ragie_enhancement.enhance_query_safely(
+                "health check fryer test"
+            )
+            
+            ragie_response_time = (time.time() - ragie_start) * 1000
+            
+            service_health["ragie_enhancement"] = {
+                "status": "healthy" if ragie_result.ragie_enhanced else "degraded",
+                "response_time_ms": round(ragie_response_time, 2),
+                "enhancement_available": ragie_result.ragie_enhanced,
+                "degraded": ragie_response_time > 2000 or not ragie_result.ragie_enhanced,
+                "target_response_time": "< 800ms"
+            }
+            
+            if ragie_response_time > 2000 or not ragie_result.ragie_enhanced:
+                degraded_services.append("ragie_enhancement")
+                
+        except Exception as e:
+            service_health["ragie_enhancement"] = {
+                "status": "error",
+                "error": str(e),
+                "degraded": True,
+                "fallback_available": True
+            }
+            degraded_services.append("ragie_enhancement")
+        
+        # 3. Document Storage Health
+        try:
+            doc_start = time.time()
+            documents_db = load_documents()
+            doc_count = len(documents_db)
+            doc_response_time = (time.time() - doc_start) * 1000
+            
+            service_health["document_storage"] = {
+                "status": "healthy",
+                "response_time_ms": round(doc_response_time, 2),
+                "document_count": doc_count,
+                "degraded": doc_response_time > 1000
+            }
+            
+            if doc_response_time > 1000:
+                degraded_services.append("document_storage")
+                
+        except Exception as e:
+            service_health["document_storage"] = {
+                "status": "error",
+                "error": str(e),
+                "degraded": True
+            }
+            degraded_services.append("document_storage")
+        
+        # 4. Voice Processing Health (if available)
+        try:
+            voice_start = time.time()
+            # Test voice service availability more thoroughly
+            voice_available = (hasattr(voice_orchestrator, 'process_voice_input') or 
+                             hasattr(voice_orchestrator, 'process_voice_message'))
+            
+            # Additional check for voice service initialization
+            if voice_available and hasattr(voice_service, 'is_available'):
+                voice_available = voice_service.is_available()
+            
+            voice_response_time = (time.time() - voice_start) * 1000
+            
+            service_health["voice_processing"] = {
+                "status": "healthy" if voice_available else "maintenance",
+                "response_time_ms": round(voice_response_time, 2),
+                "feature_available": voice_available,
+                "degraded": not voice_available,
+                "fallback": "text_chat_available",
+                "note": "Voice features under development" if not voice_available else None
+            }
+            
+            if not voice_available:
+                degraded_services.append("voice_processing")
+                
+        except Exception as e:
+            service_health["voice_processing"] = {
+                "status": "maintenance",
+                "error": "Voice service initialization in progress",
+                "degraded": True,
+                "fallback": "text_chat_available",
+                "note": "Voice features coming soon"
+            }
+            degraded_services.append("voice_processing")
+        
+        # 5. Search Engine Health
+        try:
+            search_start = time.time()
+            search_ready = search_engine is not None and hasattr(search_engine, 'model')
+            search_response_time = (time.time() - search_start) * 1000
+            
+            service_health["search_engine"] = {
+                "status": "healthy" if search_ready else "initializing",
+                "response_time_ms": round(search_response_time, 2),
+                "engine_ready": search_ready,
+                "degraded": not search_ready
+            }
+            
+            if not search_ready:
+                degraded_services.append("search_engine")
+                
+        except Exception as e:
+            service_health["search_engine"] = {
+                "status": "error",
+                "error": str(e),
+                "degraded": True
+            }
+            degraded_services.append("search_engine")
+        
+        # Calculate overall status based on BaseChat patterns
+        if len(degraded_services) == 0:
+            overall_status = "healthy"
+        elif len(degraded_services) <= 2:
+            overall_status = "degraded"
+        else:
+            overall_status = "unhealthy"
+        
+        # Performance metrics (Render-specific)
+        total_response_time = (datetime.now() - start_time).total_seconds() * 1000
+        
+        # Memory usage (if available)
+        memory_info = {}
+        try:
+            import psutil
+            memory = psutil.virtual_memory()
+            memory_info = {
+                "total_mb": round(memory.total / 1024 / 1024, 2),
+                "available_mb": round(memory.available / 1024 / 1024, 2),
+                "percent_used": memory.percent
+            }
+        except ImportError:
+            memory_info = {"status": "psutil_not_available"}
+        
+        response_data = {
+            "status": overall_status,
+            "timestamp": start_time.isoformat(),
+            "platform": "render",
+            "deployment": "line-lead-qsr-backend",
+            "services": service_health,
+            "degraded_services": degraded_services,
+            "performance": {
+                "total_response_time_ms": round(total_response_time, 2),
+                "target_response_time": "< 1000ms",
+                "memory": memory_info
+            },
+            "version": {
+                "commit_hash": "624bb5b",
+                "architecture": "proven_pydantic_ai_ragie"
+            }
+        }
+        
+        # Log degraded services for monitoring
+        if degraded_services:
+            logger.warning(f"⚠️ Degraded services detected: {degraded_services}")
+        
+        return HealthResponse(**response_data)
+        
+    except Exception as e:
+        logger.error(f"💥 Health check failed: {str(e)}")
+        error_response = {
+            "status": "error",
+            "timestamp": datetime.now().isoformat(),
+            "platform": "render",
+            "error": str(e),
+            "services": {},
+            "degraded_services": ["health_check_system"],
+            "performance": {}
+        }
+        return HealthResponse(**error_response)
         
         # File system checks
         file_upload_status = "ready" if os.path.exists(UPLOAD_DIR) else "error"
@@ -869,10 +1094,10 @@ async def health_check(request: Request):
         db_status = "ready"
         db_response_time = None
         try:
-            db_check_start = datetime.datetime.now()
+            db_check_start = datetime.now()
             # Test database read
             test_documents = load_documents_db()
-            db_response_time = (datetime.datetime.now() - db_check_start).total_seconds() * 1000
+            db_response_time = (datetime.now() - db_check_start).total_seconds() * 1000
             if len(test_documents) != doc_count:
                 db_status = "inconsistent"
         except Exception as e:
@@ -892,7 +1117,7 @@ async def health_check(request: Request):
         # Add performance metrics for full health check
         performance_metrics = None
         if health_check_type == 'full':
-            total_response_time = (datetime.datetime.now() - start_time).total_seconds() * 1000
+            total_response_time = (datetime.now() - start_time).total_seconds() * 1000
             performance_metrics = {
                 "total_response_time_ms": round(total_response_time, 2),
                 "db_response_time_ms": round(db_response_time, 2) if db_response_time else None,
@@ -915,7 +1140,7 @@ async def health_check(request: Request):
         
         response_data = {
             "status": overall_status,
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "version": "1.0.0",
             "services": services,
             "document_count": doc_count,
@@ -936,7 +1161,7 @@ async def health_check(request: Request):
         logger.error(f"Health check failed: {e}")
         return HealthResponse(
             status="error",
-            timestamp=datetime.datetime.now().isoformat(),
+            timestamp=datetime.now().isoformat(),
             version="1.0.0",
             services={"error": str(e)},
             document_count=0,
@@ -1012,8 +1237,8 @@ async def keep_alive():
     """Keep-alive endpoint to prevent Render cold starts"""
     return {
         "status": "alive",
-        "timestamp": datetime.datetime.now().isoformat(),
-        "uptime_seconds": (datetime.datetime.now() - app_start_time).total_seconds() if 'app_start_time' in globals() else 0
+        "timestamp": datetime.now().isoformat(),
+        "uptime_seconds": (datetime.now() - app_start_time).total_seconds() if 'app_start_time' in globals() else 0
     }
 
 # Warm-up endpoint for faster cold start recovery
@@ -1045,11 +1270,11 @@ async def warm_up():
         except Exception as e:
             logger.warning(f"AI assistant check failed during warm-up: {e}")
         
-        warm_up_time = (datetime.datetime.now() - app_start_time).total_seconds() if 'app_start_time' in globals() else 0
+        warm_up_time = (datetime.now() - app_start_time).total_seconds() if 'app_start_time' in globals() else 0
         
         return {
             "status": "warmed_up",
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "services_initialized": {
                 "documents": doc_count,
                 "search_engine": search_engine is not None,
@@ -1063,8 +1288,87 @@ async def warm_up():
         return {
             "status": "warm_up_failed",
             "error": str(e),
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
+
+# Fallback text processing function
+async def _fallback_text_processing(user_message: str) -> ChatResponse:
+    """Fallback text processing when voice orchestrator fails"""
+    try:
+        # Simple search with Ragie
+        relevant_content = []
+        search_method = "fallback"
+        
+        if clean_ragie_service.is_available():
+            try:
+                ragie_results = await clean_ragie_service.search(user_message, limit=5)
+                if ragie_results:
+                    search_method = "ragie_fallback"
+                    for result in ragie_results:
+                        relevant_content.append({
+                            "content": result.text,
+                            "score": result.score,
+                            "source": result.metadata.get("original_filename", "Unknown"),
+                            "document_id": result.document_id
+                        })
+            except Exception as e:
+                logger.warning(f"Ragie fallback failed: {e}")
+        
+        # Generate simple response
+        context_text = ""
+        if relevant_content:
+            context_text = "\n\n".join([
+                f"From {item['source']}: {item['content']}" 
+                for item in relevant_content[:3]
+            ])
+        
+        enhanced_prompt = f"""You are Line Lead, a QSR assistant. 
+
+User Question: {user_message}
+
+Context: {context_text if context_text else "No specific context found."}
+
+Provide practical QSR guidance focusing on safety, efficiency, and compliance."""
+        
+        # Use simple OpenAI generation
+        ai_response = await qsr_assistant.generate_response(enhanced_prompt, relevant_content)
+        response_text = ai_response.get("response", "I apologize, but I encountered an issue processing your request.")
+        
+        # Create basic response
+        manual_references = []
+        for item in relevant_content:
+            if item.get('source') != 'Unknown':
+                manual_references.append({
+                    "title": item['source'],
+                    "relevance_score": item['score'],
+                    "content_preview": item['content'][:200] + "..." if len(item['content']) > 200 else item['content']
+                })
+        
+        return ChatResponse(
+            response=response_text,
+            timestamp=datetime.now().isoformat(),
+            parsed_steps=None,
+            visual_citations=None,
+            manual_references=manual_references if manual_references else None,
+            document_context=None,
+            hierarchical_path=None,
+            contextual_recommendations=None,
+            retrieval_method=search_method
+        )
+    
+    except Exception as e:
+        logger.error(f"Fallback processing failed: {e}")
+        return ChatResponse(
+            response="I apologize, but I'm experiencing technical difficulties. Please try again in a moment.",
+            timestamp=datetime.now().isoformat(),
+            parsed_steps=None,
+            visual_citations=None,
+            manual_references=None,
+            document_context=None,
+            hierarchical_path=None,
+            contextual_recommendations=None,
+            retrieval_method="error"
+        )
 
 # Chat endpoint
 @app.post("/chat", response_model=ChatResponse)
@@ -1078,7 +1382,226 @@ async def chat_endpoint(chat_message: ChatMessage):
         
         logger.info(f"Received chat message: {user_message}")
         
-        # Enhanced search with Ragie integration
+        # Generate consistent session ID for context persistence
+        if chat_message.session_id:
+            session_id = chat_message.session_id
+        else:
+            # Use a simple approach: hash the user's IP and current hour for session grouping
+            import hashlib
+            from datetime import datetime
+            session_seed = f"text_chat_{datetime.now().hour}"
+            session_id = hashlib.md5(session_seed.encode()).hexdigest()[:8]
+        
+        # Use the advanced voice orchestrator system for text chat
+        # This provides the same multi-agent capabilities as voice chat
+        try:
+            logger.info(f"🤖 Using advanced voice orchestrator for text chat (session: {session_id})")
+            
+            # The voice orchestrator has a process_message method designed for both text and voice
+            voice_response = await voice_orchestrator.process_message(
+                message=user_message,
+                relevant_docs=None,  # Let the orchestrator handle document search
+                session_id=session_id,  # Use consistent session ID
+                message_type="text"
+            )
+            
+            # Convert VoiceResponse to ChatResponse format
+            # Extract visual citations from voice response
+            visual_citations = []
+            
+            # COMPREHENSIVE visual citations extraction
+            logger.info(f"🔍 Voice response type: {type(voice_response)}")
+            logger.info(f"🔍 Voice response attributes: {dir(voice_response)}")
+            
+            # Method 1: Check for direct visual citations in response
+            if hasattr(voice_response, 'visual_citations') and voice_response.visual_citations:
+                logger.info(f"🔍 Found direct visual citations: {len(voice_response.visual_citations)}")
+                for citation in voice_response.visual_citations:
+                    # Handle both dict and object citations
+                    if isinstance(citation, dict):
+                        visual_citations.append({
+                            "document_id": citation.get("document_id", ""),
+                            "title": citation.get("title", ""),
+                            "content_preview": citation.get("content_preview", ""),
+                            "media_type": citation.get("media_type", "text"),
+                            "relevance_score": citation.get("relevance_score", 0.0)
+                        })
+                    else:
+                        # Handle object citations
+                        visual_citations.append({
+                            "document_id": getattr(citation, "document_id", ""),
+                            "title": getattr(citation, "title", ""),
+                            "content_preview": getattr(citation, "content_preview", ""),
+                            "media_type": getattr(citation, "media_type", "text"),
+                            "relevance_score": getattr(citation, "relevance_score", 0.0)
+                        })
+            
+            # Method 2: Check specialized insights for visual citations (PydanticAI tool pattern)
+            if hasattr(voice_response, 'specialized_insights') and voice_response.specialized_insights:
+                insights = voice_response.specialized_insights
+                logger.info(f"🔍 Specialized insights keys: {list(insights.keys()) if isinstance(insights, dict) else 'Not a dict'}")
+                
+                if isinstance(insights, dict) and 'visual_citations' in insights:
+                    logger.info(f"🔍 Found tool visual citations in insights: {len(insights['visual_citations'])}")
+                    for citation in insights['visual_citations']:
+                        # Handle both dict and object citations from tools
+                        if isinstance(citation, dict):
+                            visual_citations.append({
+                                "document_id": citation.get("document_id", citation.get("id", "")),
+                                "title": citation.get("title", citation.get("name", "")),
+                                "content_preview": citation.get("content_preview", citation.get("content", ""))[:200],
+                                "media_type": citation.get("media_type", "image"),
+                                "relevance_score": citation.get("relevance_score", citation.get("score", 0.0))
+                            })
+                        else:
+                            # Handle object citations
+                            visual_citations.append({
+                                "document_id": getattr(citation, "document_id", getattr(citation, "id", "")),
+                                "title": getattr(citation, "title", getattr(citation, "name", "")),
+                                "content_preview": getattr(citation, "content_preview", getattr(citation, "content", ""))[:200],
+                                "media_type": getattr(citation, "media_type", "image"),
+                                "relevance_score": getattr(citation, "relevance_score", getattr(citation, "score", 0.0))
+                            })
+            
+            # Method 3: Check for image request context
+            if hasattr(voice_response, 'user_intent') and voice_response.user_intent == "image_request":
+                logger.info("🔍 Detected image request context")
+                
+                # Look for equipment context or specialized insights
+                if hasattr(voice_response, 'equipment_context') and voice_response.equipment_context:
+                    logger.info(f"🔍 Found equipment context: {voice_response.equipment_context}")
+            
+            # Method 4: Check for global tool citations (fallback)
+            try:
+                from .voice_agent import _last_tool_visual_citations
+                if _last_tool_visual_citations:
+                    logger.info(f"🔍 Found global tool visual citations: {len(_last_tool_visual_citations)}")
+                    for citation in _last_tool_visual_citations:
+                        visual_citations.append({
+                            "document_id": citation.get("document_id", citation.get("id", "")),
+                            "title": citation.get("title", citation.get("name", "")),
+                            "content_preview": citation.get("content_preview", citation.get("content", ""))[:200],
+                            "media_type": citation.get("media_type", "image"),
+                            "relevance_score": citation.get("relevance_score", citation.get("score", 0.0))
+                        })
+            except ImportError:
+                pass
+            
+            logger.info(f"🔍 Total visual citations extracted: {len(visual_citations)}")
+            
+            # Debug: Print the full voice response structure if no citations found
+            if not visual_citations:
+                logger.info(f"🔍 No visual citations found. Voice response structure: {voice_response}")
+                if hasattr(voice_response, '__dict__'):
+                    logger.info(f"🔍 Voice response dict: {voice_response.__dict__}")
+                    
+            # Log final visual citations for debugging
+            if visual_citations:
+                logger.info(f"🔍 Final visual citations: {visual_citations}")
+            
+            # Extract manual references
+            manual_references = []
+            if hasattr(voice_response, 'manual_references') and voice_response.manual_references:
+                for ref in voice_response.manual_references:
+                    manual_references.append({
+                        "title": ref.get("title", ""),
+                        "relevance_score": ref.get("relevance_score", 0.0),
+                        "content_preview": ref.get("content_preview", "")
+                    })
+            
+            # Extract document context
+            document_context = None
+            if hasattr(voice_response, 'equipment_context') and voice_response.equipment_context:
+                document_context = {
+                    "equipment_name": voice_response.equipment_context,
+                    "user_intent": getattr(voice_response, 'user_intent', 'general'),
+                    "safety_priority": getattr(voice_response, 'safety_priority', False)
+                }
+            
+            # Extract contextual recommendations
+            contextual_recommendations = []
+            if hasattr(voice_response, 'specialized_insights') and voice_response.specialized_insights:
+                insights = voice_response.specialized_insights
+                if isinstance(insights, dict):
+                    for key, value in insights.items():
+                        if isinstance(value, list):
+                            contextual_recommendations.extend(value)
+                        elif isinstance(value, str):
+                            contextual_recommendations.append(value)
+            
+            # Extract parsed steps and convert to dict if needed
+            parsed_steps = getattr(voice_response, 'parsed_steps', None)
+            if parsed_steps and hasattr(parsed_steps, '__dict__'):
+                # Convert ParsedStepsResponse to dict
+                parsed_steps = {
+                    "has_steps": getattr(parsed_steps, 'has_steps', False),
+                    "total_steps": getattr(parsed_steps, 'total_steps', 0),
+                    "procedure_title": getattr(parsed_steps, 'procedure_title', ''),
+                    "steps": getattr(parsed_steps, 'steps', []),
+                    "safety_level": getattr(parsed_steps, 'safety_level', 'low'),
+                    "original_text": getattr(parsed_steps, 'original_text', '')
+                }
+            elif not isinstance(parsed_steps, dict):
+                parsed_steps = None
+            
+            # Determine retrieval method
+            retrieval_method = "multi_agent"
+            if hasattr(voice_response, 'user_intent'):
+                if voice_response.user_intent == "image_request":
+                    retrieval_method = "image_search"
+                elif hasattr(voice_response, 'specialized_insights') and voice_response.specialized_insights:
+                    if 'equipment' in voice_response.specialized_insights:
+                        retrieval_method = "equipment_specialist"
+                    elif 'safety' in voice_response.specialized_insights:
+                        retrieval_method = "safety_specialist"
+                    elif 'procedures' in voice_response.specialized_insights:
+                        retrieval_method = "procedures_specialist"
+            
+            response = ChatResponse(
+                response=voice_response.text_response,
+                timestamp=datetime.now().isoformat(),
+                parsed_steps=parsed_steps,
+                visual_citations=visual_citations if visual_citations else None,
+                manual_references=manual_references if manual_references else None,
+                document_context=document_context,
+                hierarchical_path=None,  # Could be enhanced with graph context
+                contextual_recommendations=contextual_recommendations if contextual_recommendations else None,
+                retrieval_method=retrieval_method
+            )
+            
+            logger.info(f"✅ Advanced text chat response generated using {retrieval_method} method")
+            return response
+            
+        except Exception as orchestrator_error:
+            logger.error(f"Voice orchestrator failed for text chat: {orchestrator_error}")
+            
+            # Fallback to simple processing
+            return await _fallback_text_processing(user_message)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        tb_lines = traceback.format_exc().split('\n')
+        logger.error(f"Error processing chat message: {str(e)}")
+        for i, line in enumerate(tb_lines):
+            if line.strip():
+                logger.error(f"TB[{i}]: {line}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+# Streaming chat endpoint
+@app.post("/chat/stream")
+async def chat_stream_endpoint(chat_message: ChatMessage):
+    """Process chat messages and return streaming AI-powered QSR assistant responses"""
+    try:
+        user_message = chat_message.message.strip()
+        
+        if not user_message:
+            raise HTTPException(status_code=400, detail="Message cannot be empty")
+        
+        logger.info(f"Received streaming chat message: {user_message}")
+        
+        # Enhanced search with Ragie integration (same as regular chat endpoint)
         relevant_content = []
         search_method = "fallback"
         
@@ -1121,121 +1644,14 @@ async def chat_endpoint(chat_message: ChatMessage):
             except Exception as e:
                 logger.warning(f"⚠️ Local search failed: {e}")
         
-        # Generate context-aware prompt
-        context_text = ""
-        if relevant_content:
-            context_text = "\n\n".join([
-                f"From {item['source']}: {item['content']}" 
-                for item in relevant_content[:3]  # Use top 3 results
-            ])
-        
-        enhanced_prompt = f"""You are Line Lead, a QSR (Quick Service Restaurant) assistant specialized in restaurant operations, equipment, and procedures.
-
-User Question: {user_message}
-
-Relevant Context:
-{context_text if context_text else "No specific context found - provide general QSR guidance."}
-
-Instructions:
-- Provide practical, actionable advice for QSR operations
-- Focus on safety, efficiency, and compliance
-- Include specific steps when applicable
-- If equipment is mentioned, provide operational guidance
-- Be concise but comprehensive
-
-Response:"""
-        
-        # Generate AI response using OpenAI
-        try:
-            logger.info("🤖 Generating AI response...")
-            
-            # Use OpenAI directly with the enhanced prompt
-            ai_response = await qsr_assistant.get_response(
-                enhanced_prompt,
-                relevant_context=relevant_content
-            )
-            
-            response_text = ai_response.get("response", "I apologize, but I encountered an issue processing your request.")
-            
-            logger.info(f"✅ Generated AI response ({len(response_text)} characters)")
-            
-        except Exception as ai_error:
-            logger.error(f"AI response generation failed: {ai_error}")
-            response_text = "I apologize, but I'm experiencing technical difficulties. Please try again in a moment."
-        
-        # Add source information if available
-        if relevant_content:
-            source_info = "\n\n📚 Sources consulted: " + ", ".join([
-                f"{item['source']} ({item['score']:.2f})" 
-                for item in relevant_content[:3]
-            ])
-            response_text += source_info
-        
-        # Log response info
-        logger.info(f"Sending response using {search_method} search method")
-        
-        # Simple citation extraction from relevant content
-        visual_citations = []
-        manual_references = []
-        
-        # Extract manual references from relevant content
+        # Convert to format expected by voice orchestrator
+        relevant_chunks = []
         for item in relevant_content:
-            if item.get('source') != 'Unknown':
-                manual_references.append({
-                    "title": item['source'],
-                    "relevance_score": item['score'],
-                    "content_preview": item['content'][:200] + "..." if len(item['content']) > 200 else item['content']
-                })
-                
-                # Extract hierarchical paths
-                hierarchy_results = hybrid_results.get("hierarchical_paths", [])
-                if hierarchy_results:
-                    first_hierarchy = hierarchy_results[0]
-                    hierarchical_path_info = [
-                        first_hierarchy.get("document", ""),
-                        first_hierarchy.get("section", ""),
-                        first_hierarchy.get("entity", "")
-                    ]
-        # Create clean response
-        response = ChatResponse(
-            response=response_text,
-            timestamp=datetime.datetime.now().isoformat(),
-            parsed_steps=None,  # Can be enhanced later
-            visual_citations=visual_citations if visual_citations else None,
-            manual_references=manual_references if manual_references else None,
-            document_context=None,  # Simplified for now
-            hierarchical_path=None,  # Simplified for now
-            contextual_recommendations=None,  # Simplified for now
-            retrieval_method=search_method
-        )
-        
-        return response
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        import traceback
-        tb_lines = traceback.format_exc().split('\n')
-        logger.error(f"Error processing chat message: {str(e)}")
-        for i, line in enumerate(tb_lines):
-            if line.strip():
-                logger.error(f"TB[{i}]: {line}")
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
-# Streaming chat endpoint
-@app.post("/chat/stream")
-async def chat_stream_endpoint(chat_message: ChatMessage):
-    """Process chat messages and return streaming AI-powered QSR assistant responses"""
-    try:
-        user_message = chat_message.message.strip()
-        
-        if not user_message:
-            raise HTTPException(status_code=400, detail="Message cannot be empty")
-        
-        logger.info(f"Received streaming chat message: {user_message}")
-        
-        # Search for relevant document chunks
-        relevant_chunks = search_engine.search(user_message, top_k=3)
+            relevant_chunks.append({
+                "text": item["content"],
+                "metadata": {"filename": item["source"]},
+                "similarity": item["score"]
+            })
         
         async def generate_stream():
             try:
@@ -1247,6 +1663,19 @@ async def chat_stream_endpoint(chat_message: ChatMessage):
                 )
                 
                 complete_response = orchestrated_response.text_response
+                
+                # SEND VISUAL CITATIONS FIRST if they exist
+                visual_citations = orchestrated_response.visual_citations or []
+                if visual_citations:
+                    # Send visual citations immediately in first chunk
+                    first_chunk_data = {
+                        'chunk': '',  # Empty text chunk
+                        'done': False,
+                        'visual_citations': visual_citations
+                    }
+                    yield f"data: {json.dumps(first_chunk_data)}\n\n"
+                    await asyncio.sleep(0.1)  # Small delay to ensure frontend processes images first
+                
                 # Natural speech conversion is already applied in the orchestrator
                         
                 # Re-stream the orchestrated response preserving spacing and formatting
@@ -1273,8 +1702,12 @@ async def chat_stream_endpoint(chat_message: ChatMessage):
                         if paragraph != paragraphs[-1]:  # Not the last paragraph
                             yield f"data: {json.dumps({'chunk': ' ', 'done': False})}\n\n"
                 
-                # Send final completion signal
-                yield f"data: {json.dumps({'chunk': '', 'done': True})}\n\n"
+                # Send final completion signal (visual citations already sent at start)
+                final_data = {
+                    'chunk': '', 
+                    'done': True
+                }
+                yield f"data: {json.dumps(final_data)}\n\n"
                     
             except Exception as e:
                 logger.error(f"Error in streaming response: {e}")
@@ -1631,16 +2064,17 @@ async def upload_file(background_tasks: BackgroundTasks, file: UploadFile = File
 async def upload_file_original(file: UploadFile = File(...)):
     """Upload and process PDF manual files"""
     try:
-        # Validate file type
-        if not file.filename.lower().endswith('.pdf'):
-            raise HTTPException(status_code=400, detail="Only PDF files are allowed")
-        
         # Read file content
         content = await file.read()
         
-        # Validate file size
-        if len(content) > MAX_FILE_SIZE:
-            raise HTTPException(status_code=400, detail=f"File size exceeds {MAX_FILE_SIZE // (1024*1024)}MB limit")
+        # Validate file type and content using multi-format validator
+        validation_result = multi_format_validator.validate_file(file.filename, content)
+        
+        if validation_result.result.value != "valid":
+            raise HTTPException(
+                status_code=400, 
+                detail=f"File validation failed: {validation_result.error_message}"
+            )
         
         # Validate PDF content
         if not is_valid_pdf(content):
@@ -1668,7 +2102,7 @@ async def upload_file_original(file: UploadFile = File(...)):
             "id": doc_id,
             "filename": safe_filename,
             "original_filename": file.filename,
-            "upload_timestamp": datetime.datetime.now().isoformat(),
+            "upload_timestamp": datetime.now().isoformat(),
             "file_size": len(content),
             "pages_count": pages_count,
             "text_content": extracted_text,
@@ -1972,7 +2406,7 @@ async def chat_with_voice(request: ChatVoiceRequest):
         return ChatVoiceResponse(
             response=ai_response,
             audio_available=voice_available,
-            timestamp=datetime.datetime.now().isoformat()
+            timestamp=datetime.now().isoformat()
         )
     except Exception as e:
         logger.error(f"Error in chat with voice: {str(e)}")
@@ -2032,7 +2466,7 @@ async def chat_with_voice_and_audio(request: ChatVoiceRequest):
             audio_data=audio_data,
             audio_available=audio_available,
             sources=sources,
-            timestamp=datetime.datetime.now().isoformat(),
+            timestamp=datetime.now().isoformat(),
             # PydanticAI orchestration data
             detected_intent=orchestrated_response.detected_intent.value,
             should_continue_listening=orchestrated_response.should_continue_listening,
@@ -2050,7 +2484,7 @@ async def chat_with_voice_and_audio(request: ChatVoiceRequest):
             audio_data=None,
             audio_available=False,
             sources=[],
-            timestamp=datetime.datetime.now().isoformat(),
+            timestamp=datetime.now().isoformat(),
             detected_intent=ConversationIntent.ERROR_RECOVERY.value,
             should_continue_listening=True,
             next_voice_state=VoiceState.ERROR_RECOVERY.value,
@@ -2094,7 +2528,7 @@ async def chat_voice_direct(request: ChatVoiceRequest):
                 "audio_type": "direct_single_file",
                 "bypass_streaming": True,
                 "audio_available": True,
-                "timestamp": datetime.datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat()
             }
         else:
             logger.error("🧪 DIAGNOSTIC: Audio generation failed")
@@ -4494,7 +4928,7 @@ async def voice_with_graph_context(chat_message: ChatMessage):
         
         response = ChatResponse(
             response=response_text,
-            timestamp=datetime.datetime.now().isoformat(),
+            timestamp=datetime.now().isoformat(),
             parsed_steps=parsed_steps_dict
         )
         
@@ -4649,7 +5083,7 @@ async def voice_with_multimodal_citations(request: MultiModalVoiceRequest):
         
         return MultiModalVoiceResponse(
             response=response_text,
-            timestamp=datetime.datetime.now().isoformat(),
+            timestamp=datetime.now().isoformat(),
             visual_citations=visual_citations,
             manual_references=manual_references,
             citation_count=citation_count,
@@ -4667,23 +5101,59 @@ async def voice_with_multimodal_citations(request: MultiModalVoiceRequest):
 @app.get("/citation-content/{citation_id}")
 async def get_citation_content(citation_id: str):
     """
-    Retrieve visual content for a specific citation
+    Retrieve visual content for a specific citation from Ragie
     """
     try:
-        content_data = await multimodal_citation_service.get_citation_content(citation_id)
+        import httpx
+        import os
         
-        if not content_data:
-            raise HTTPException(status_code=404, detail="Citation content not found")
+        # Get Ragie API key and partition
+        ragie_api_key = os.getenv("RAGIE_API_KEY")
+        ragie_partition = os.getenv("RAGIE_PARTITION", "qsr_manuals")
         
-        # Return image content with appropriate headers
-        return Response(
-            content=content_data,
-            media_type="image/png",
-            headers={
-                "Cache-Control": "public, max-age=3600",
-                "Content-Disposition": f"inline; filename=citation_{citation_id}.png"
-            }
-        )
+        if not ragie_api_key:
+            raise HTTPException(status_code=500, detail="Ragie API key not configured")
+        
+        # Make request to Ragie's document source endpoint with partition
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            response = await client.get(
+                f"https://api.ragie.ai/documents/{citation_id}/source",
+                headers={
+                    "accept": "application/octet-stream",
+                    "authorization": f"Bearer {ragie_api_key}"
+                },
+                params={"partition": ragie_partition},
+                timeout=30.0
+            )
+            
+            # Log response details for debugging
+            logger.info(f"Ragie API response: {response.status_code}")
+            logger.info(f"Response headers: {dict(response.headers)}")
+            logger.info(f"Final URL: {response.url}")
+            
+            if response.status_code == 404:
+                raise HTTPException(status_code=404, detail="Document not found in Ragie")
+            elif response.status_code == 307:
+                # Handle redirect manually if needed
+                redirect_url = response.headers.get("location")
+                logger.error(f"Ragie API redirect to: {redirect_url}")
+                raise HTTPException(status_code=500, detail="Ragie API returned redirect - contact support")
+            elif response.status_code != 200:
+                logger.error(f"Ragie API error: {response.status_code} - {response.text}")
+                raise HTTPException(status_code=500, detail=f"Failed to retrieve document from Ragie (HTTP {response.status_code})")
+            
+            # Determine content type from response headers or default to image
+            content_type = response.headers.get("content-type", "image/png")
+            
+            # Return the binary content with appropriate headers
+            return Response(
+                content=response.content,
+                media_type=content_type,
+                headers={
+                    "Cache-Control": "public, max-age=3600",
+                    "Content-Disposition": f"inline; filename=document_{citation_id}"
+                }
+            )
         
     except HTTPException:
         raise
@@ -5068,7 +5538,7 @@ async def fix_extraction_preserving_integrations():
 async def create_graph_backup():
     """Create backup of current graph before enhancement."""
     try:
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_path = f"./backups/graph_backup_{timestamp}.json"
         
         if not neo4j_service or not neo4j_service.connected:
@@ -5921,7 +6391,7 @@ async def upload_optimized_qsr(file: UploadFile = File(...)):
                 "target_achieved": extraction_result.get('total_entities', 0) >= 200
             },
             "optimization_config": optimization_report,
-            "processing_timestamp": datetime.datetime.now().isoformat()
+            "processing_timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
@@ -5950,7 +6420,7 @@ async def query_optimized_qsr(query_data: Dict[str, Any]):
             "query": query,
             "result": result,
             "optimization_applied": True,
-            "query_timestamp": datetime.datetime.now().isoformat()
+            "query_timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
@@ -5980,7 +6450,7 @@ async def get_optimization_report():
                 "target_achieved": graph_stats.get('total_nodes', 0) >= 200,
                 "improvement_factor": graph_stats.get('total_nodes', 0) / max(35, 1)
             },
-            "report_timestamp": datetime.datetime.now().isoformat()
+            "report_timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
@@ -6018,7 +6488,7 @@ async def test_extraction_optimization():
             "test_output": result.stdout,
             "test_errors": result.stderr,
             "comparison_report": comparison_report,
-            "test_timestamp": datetime.datetime.now().isoformat()
+            "test_timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
@@ -6182,7 +6652,7 @@ async def enterprise_verify_documents():
                         "file_size": doc_info.get("file_size", 0),
                         "pages_count": doc_info.get("pages_count", 0),
                         "status": "verified",
-                        "verification_timestamp": datetime.datetime.now().isoformat()
+                        "verification_timestamp": datetime.now().isoformat()
                     }
         
         # Update the Neo4j verification file
@@ -6210,12 +6680,854 @@ async def enterprise_verify_documents():
             "neo4j_entities": neo4j_entity_count,
             "neo4j_relationships": neo4j_relationship_count,
             "message": f"Enterprise Bridge verified {len(verified_docs)} documents with {neo4j_entity_count} entities",
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
         logger.error(f"Enterprise Bridge document verification failed: {e}")
         return {"error": str(e), "success": False}
+
+# ===========================================
+# SERVICE DEGRADATION MANAGEMENT (BaseChat Pattern)
+# ===========================================
+
+@app.get("/health/startup")
+async def startup_optimization_metrics():
+    """Get agent startup optimization metrics"""
+    try:
+        from agents.startup_optimizer import get_startup_metrics
+        
+        metrics = await get_startup_metrics()
+        
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "startup_optimization": metrics,
+            "service": "line-lead-agent-startup-optimizer"
+        }
+        
+    except Exception as e:
+        logger.error(f"Startup metrics failed: {e}")
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "startup_optimization": {
+                "error": str(e),
+                "optimization_available": False
+            }
+        }
+
+@app.get("/health/degradation")
+async def service_degradation_status():
+    """Get service degradation status following BaseChat patterns"""
+    try:
+        from resilience.service_degradation import degradation_manager
+        
+        system_status = degradation_manager.get_system_status()
+        
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "degradation_management": system_status,
+            "service": "line-lead-degradation-manager"
+        }
+        
+    except Exception as e:
+        logger.error(f"Service degradation status failed: {e}")
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "degradation_management": {
+                "overall_status": "unknown",
+                "error": str(e)
+            }
+        }
+
+@app.get("/health/degradation/history")
+async def service_degradation_history():
+    """Get service degradation history"""
+    try:
+        from resilience.service_degradation import degradation_manager
+        
+        history = degradation_manager.get_degradation_history(limit=100)
+        
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "degradation_history": history,
+            "service": "line-lead-degradation-history"
+        }
+        
+    except Exception as e:
+        logger.error(f"Degradation history failed: {e}")
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "degradation_history": [],
+            "error": str(e)
+        }
+
+# ===========================================
+# DATABASE HEALTH ENDPOINTS (BaseChat Pattern)
+# ===========================================
+
+@app.get("/health/database")
+async def database_health_check():
+    """Database health check following BaseChat patterns"""
+    try:
+        from database.render_database_health import render_db_health
+        
+        logger.info("🗄️ Running database health check...")
+        health_result = await render_db_health.check_database_health()
+        
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "database_health": health_result,
+            "service": "line-lead-qsr-database"
+        }
+        
+    except Exception as e:
+        logger.error(f"Database health check failed: {e}")
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "database_health": {
+                "status": "error",
+                "error": str(e),
+                "fallback": "file_based_storage"
+            },
+            "service": "line-lead-qsr-database"
+        }
+
+@app.get("/health/conversation-storage")
+async def conversation_storage_health():
+    """Conversation storage specific health check"""
+    try:
+        from database.render_database_health import render_db_health
+        
+        storage_health = await render_db_health.get_conversation_storage_health()
+        
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "conversation_storage": storage_health,
+            "service": "line-lead-conversation-storage"
+        }
+        
+    except Exception as e:
+        logger.error(f"Conversation storage health check failed: {e}")
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "conversation_storage": {
+                "status": "error",
+                "error": str(e)
+            }
+        }
+
+@app.post("/database/optimize")
+async def optimize_database_for_render():
+    """Apply Render-specific database optimizations"""
+    try:
+        from database.render_database_health import render_db_health
+        
+        logger.info("🚀 Applying Render database optimizations...")
+        optimization_result = await render_db_health.optimize_for_render()
+        
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "optimization": optimization_result,
+            "service": "line-lead-database-optimization"
+        }
+        
+    except Exception as e:
+        logger.error(f"Database optimization failed: {e}")
+        return {
+            "timestamp": datetime.now().isoformat(),
+            "optimization": {
+                "status": "error",
+                "error": str(e)
+            }
+        }
+
+# ===========================================
+# RAGIE VERIFICATION ENDPOINTS
+# ===========================================
+
+@app.get("/health/ragie")
+async def ragie_health_check():
+    """Comprehensive Ragie health check to verify API connectivity"""
+    try:
+        from services.ragie_verification_service import ragie_verification
+        from services.enhanced_ragie_service import enhanced_ragie_service
+        
+        logger.info("🩺 Running Ragie health check...")
+        
+        health_result = await ragie_verification.health_check_ragie(enhanced_ragie_service)
+        
+        return {
+            "status": "healthy" if health_result["ragie_accessible"] else "error",
+            "ragie_api_accessible": health_result["ragie_accessible"],
+            "api_response_time_ms": round(health_result["api_response_time"] * 1000, 2) if health_result["api_response_time"] else None,
+            "test_results_found": health_result.get("test_results_found", 0),
+            "error": health_result.get("error"),
+            "timestamp": health_result["timestamp"]
+        }
+        
+    except Exception as e:
+        logger.error(f"Ragie health check failed: {e}")
+        return {
+            "status": "error",
+            "ragie_api_accessible": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.get("/verification/ragie")
+async def ragie_verification_status():
+    """Get current Ragie verification statistics"""
+    try:
+        from services.ragie_verification_service import ragie_verification
+        
+        return {
+            "status": "success",
+            "verification_data": ragie_verification.get_verification_summary(),
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.post("/verification/ragie/comprehensive")
+async def run_comprehensive_ragie_verification():
+    """Run comprehensive Ragie verification test suite"""
+    try:
+        from services.ragie_verification_service import ragie_verification
+        from services.enhanced_ragie_service import enhanced_ragie_service
+        
+        logger.info("🧪 Running comprehensive Ragie verification...")
+        
+        verification_results = await ragie_verification.run_comprehensive_verification(enhanced_ragie_service)
+        
+        return {
+            "status": "completed",
+            "verification_results": verification_results,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Comprehensive Ragie verification failed: {e}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.post("/test/ragie/query")
+async def test_ragie_with_query(request: dict):
+    """Test Ragie with a specific query and detailed logging"""
+    try:
+        query = request.get("query", "test equipment safety")
+        
+        from services.safe_ragie_enhancement import safe_ragie_enhancement
+        
+        logger.info(f"🧪 Testing Ragie with query: {query}")
+        
+        result = await safe_ragie_enhancement.enhance_query_safely(query, "test_verification")
+        
+        return {
+            "status": "completed",
+            "query": query,
+            "enhanced_query": result.enhanced_query,
+            "ragie_enhanced": result.ragie_enhanced,
+            "visual_citations_count": len(result.visual_citations),
+            "processing_time": result.processing_time,
+            "equipment_context": result.equipment_context,
+            "procedure_context": result.procedure_context,
+            "error": result.error,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Ragie query test failed: {e}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
+
+# ================================================================================================
+# RAGIE ENTITY MANAGEMENT ENDPOINTS
+# ================================================================================================
+
+@app.get("/ragie/entities/instructions")
+async def list_ragie_instructions():
+    """List all Ragie entity extraction instructions"""
+    try:
+        from services.ragie_entity_manager import ragie_entity_manager
+        
+        instructions = await ragie_entity_manager.list_instructions()
+        
+        return {
+            "status": "success",
+            "instructions": instructions,
+            "count": len(instructions),
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to list Ragie instructions: {e}")
+        return {
+            "status": "error",
+            "message": f"Failed to list instructions: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.post("/ragie/entities/setup")
+async def setup_ragie_entity_extraction():
+    """Setup Ragie entity extraction instructions for equipment searchability"""
+    try:
+        from services.ragie_entity_manager import ragie_entity_manager
+        
+        logger.info("🔧 Setting up Ragie entity extraction for equipment searchability...")
+        
+        results = await ragie_entity_manager.setup_equipment_searchability()
+        
+        return {
+            "status": "success" if results["success"] else "error",
+            "message": results["message"],
+            "equipment_instruction_id": results["equipment_instruction_id"],
+            "general_instruction_id": results["general_instruction_id"],
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to setup Ragie entity extraction: {e}")
+        return {
+            "status": "error",
+            "message": f"Setup failed: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.post("/ragie/entities/reprocess/{document_id}")
+async def reprocess_document_for_entities(document_id: str):
+    """Trigger reprocessing of a specific document to extract entities"""
+    try:
+        from services.ragie_entity_manager import ragie_entity_manager
+        
+        logger.info(f"🔄 Triggering entity extraction for document: {document_id}")
+        
+        success = await ragie_entity_manager.trigger_document_reprocessing(document_id)
+        
+        if success:
+            return {
+                "status": "success",
+                "message": f"Document {document_id} queued for entity extraction",
+                "document_id": document_id,
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"Failed to queue document {document_id} for reprocessing",
+                "document_id": document_id,
+                "timestamp": datetime.now().isoformat()
+            }
+    except Exception as e:
+        logger.error(f"Failed to reprocess document {document_id}: {e}")
+        return {
+            "status": "error",
+            "message": f"Reprocessing failed: {str(e)}",
+            "document_id": document_id,
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.get("/ragie/entities/document/{document_id}")
+async def get_document_entities(document_id: str):
+    """Get all extracted entities for a specific document"""
+    try:
+        from services.ragie_entity_manager import ragie_entity_manager
+        
+        entities = await ragie_entity_manager.get_document_entities(document_id)
+        
+        return {
+            "status": "success",
+            "document_id": document_id,
+            "entities": entities,
+            "entity_count": len(entities),
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get entities for document {document_id}: {e}")
+        return {
+            "status": "error",
+            "message": f"Failed to get entities: {str(e)}",
+            "document_id": document_id,
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.get("/ragie/documents/{document_id}")
+async def get_ragie_document_details(document_id: str):
+    """Get complete document details including status and metadata"""
+    try:
+        from services.ragie_entity_manager import ragie_entity_manager
+        
+        details = await ragie_entity_manager.get_document_details(document_id)
+        
+        if details:
+            return {
+                "status": "success",
+                "document": details,
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"Document {document_id} not found",
+                "document_id": document_id,
+                "timestamp": datetime.now().isoformat()
+            }
+    except Exception as e:
+        logger.error(f"Failed to get document details for {document_id}: {e}")
+        return {
+            "status": "error",
+            "message": f"Failed to get document details: {str(e)}",
+            "document_id": document_id,
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.get("/ragie/documents/{document_id}/content")
+async def get_ragie_document_content(document_id: str):
+    """Get document content with metadata"""
+    try:
+        from services.ragie_entity_manager import ragie_entity_manager
+        
+        content = await ragie_entity_manager.get_document_content(document_id)
+        
+        if content:
+            return {
+                "status": "success",
+                "document_id": document_id,
+                "content": content,
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"Content for document {document_id} not found",
+                "document_id": document_id,
+                "timestamp": datetime.now().isoformat()
+            }
+    except Exception as e:
+        logger.error(f"Failed to get document content for {document_id}: {e}")
+        return {
+            "status": "error",
+            "message": f"Failed to get document content: {str(e)}",
+            "document_id": document_id,
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.get("/ragie/documents/{document_id}/summary")
+async def get_ragie_document_summary(document_id: str):
+    """Get LLM-generated summary of the document"""
+    try:
+        from services.ragie_entity_manager import ragie_entity_manager
+        
+        summary = await ragie_entity_manager.get_document_summary(document_id)
+        
+        if summary:
+            return {
+                "status": "success",
+                "document_id": document_id,
+                "summary": summary,
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"Summary for document {document_id} not available",
+                "document_id": document_id,
+                "timestamp": datetime.now().isoformat()
+            }
+    except Exception as e:
+        logger.error(f"Failed to get document summary for {document_id}: {e}")
+        return {
+            "status": "error",
+            "message": f"Failed to get document summary: {str(e)}",
+            "document_id": document_id,
+            "timestamp": datetime.now().isoformat()
+        }
+
+@app.get("/ragie/documents/{document_id}/chunks")
+async def get_ragie_document_chunks(document_id: str, limit: int = 10):
+    """Get document chunks with pagination"""
+    try:
+        from services.ragie_entity_manager import ragie_entity_manager
+        
+        chunks = await ragie_entity_manager.get_document_chunks(document_id, limit)
+        
+        return {
+            "status": "success",
+            "document_id": document_id,
+            "chunks": chunks,
+            "chunk_count": len(chunks),
+            "limit": limit,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Failed to get document chunks for {document_id}: {e}")
+        return {
+            "status": "error",
+            "message": f"Failed to get document chunks: {str(e)}",
+            "document_id": document_id,
+            "timestamp": datetime.now().isoformat()
+        }
+
+# ========================================
+# QSR-Optimized Endpoints (Comprehensive Philosophy Implementation)
+# ========================================
+
+@app.post("/qsr/assistance", response_model=QSRTaskResponse)
+async def get_qsr_structured_assistance(request: QSRSearchRequest):
+    """
+    Get comprehensive QSR assistance with structured response
+    
+    Implements the full philosophy with:
+    - Structured QSR response models
+    - Safety warnings with severity levels
+    - Equipment specifications
+    - Step-by-step procedures
+    - Visual aid references
+    - Type-safe PydanticAI integration
+    """
+    try:
+        logger.info(f"🔍 QSR assistance request: {request.query}")
+        
+        if PYDANTIC_AI_AVAILABLE and qsr_ragie_service.is_available():
+            # Use comprehensive QSR agent
+            result = await get_qsr_assistance(
+                user_query=request.query,
+                user_id="api_user",
+                restaurant_id="default"
+            )
+            logger.info(f"✅ QSR agent response generated with {len(result.steps)} steps")
+            return result
+        
+        elif qsr_ragie_service.is_available():
+            # Fallback to direct service call
+            logger.info("Using direct QSR service (PydanticAI not available)")
+            result = await qsr_ragie_service.get_structured_qsr_response(request)
+            return result
+        
+        else:
+            # Ultimate fallback to basic response
+            logger.warning("QSR services not available, using basic fallback")
+            return QSRTaskResponse(
+                task_title=f"Basic Response: {request.query}",
+                steps=[],
+                estimated_time="Unknown",
+                confidence_level=0.0,
+                procedure_type='training',
+                source_documents=[]
+            )
+            
+    except Exception as e:
+        logger.error(f"❌ QSR assistance failed: {e}")
+        raise HTTPException(status_code=500, detail=f"QSR assistance failed: {str(e)}")
+
+@app.post("/qsr/upload")
+async def upload_qsr_document(
+    file: UploadFile = File(...),
+    equipment_types: str = None,
+    procedure_types: str = None,
+    safety_level: str = None,
+    document_type: str = "manual"
+):
+    """
+    Upload document with QSR-specific metadata classification
+    
+    Implements multi-format upload strategy from philosophy:
+    - PDF, DOCX, XLSX, PPTX, JPG, PNG, MP4, TXT support
+    - Automatic QSR metadata classification
+    - Hi-res processing for visual content
+    - MongoDB-style metadata for filtering
+    """
+    try:
+        if not qsr_ragie_service.is_available():
+            raise HTTPException(status_code=503, detail="QSR Ragie service not available")
+        
+        # Read file content
+        file_content = await file.read()
+        
+        # Parse metadata from form parameters
+        metadata = QSRUploadMetadata(
+            original_filename=file.filename,
+            file_type=Path(file.filename).suffix.lower().lstrip('.'),
+            equipment_types=equipment_types.split(',') if equipment_types else [],
+            procedure_types=procedure_types.split(',') if procedure_types else [],
+            safety_level=safety_level,
+            document_type=document_type,
+            uploaded_by="api_user"
+        )
+        
+        logger.info(f"📤 Uploading QSR document: {file.filename}")
+        
+        # Upload with QSR metadata
+        result = await qsr_ragie_service.upload_qsr_document(
+            file_content=file_content,
+            filename=file.filename, 
+            metadata=metadata
+        )
+        
+        if result["success"]:
+            logger.info(f"✅ Successfully uploaded {file.filename} with ID: {result['document_id']}")
+            return {
+                "success": True,
+                "document_id": result["document_id"],
+                "filename": file.filename,
+                "metadata": result.get("metadata", {}),
+                "processing_mode": result.get("processing_mode", "fast")
+            }
+        else:
+            raise HTTPException(status_code=400, detail=result["error"])
+            
+    except Exception as e:
+        logger.error(f"❌ QSR document upload failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+@app.post("/qsr/search")
+async def search_qsr_procedures(request: QSRSearchRequest):
+    """
+    Search QSR procedures with MongoDB-style metadata filtering
+    
+    Implements comprehensive search strategy:
+    - Equipment type filtering
+    - Procedure type filtering  
+    - Safety level filtering
+    - Visual content prioritization
+    - Structured result format
+    """
+    try:
+        if not qsr_ragie_service.is_available():
+            raise HTTPException(status_code=503, detail="QSR Ragie service not available")
+        
+        logger.info(f"🔍 QSR procedure search: {request.query}")
+        
+        # Perform structured search
+        results = await qsr_ragie_service.search_qsr_procedures(request)
+        
+        logger.info(f"✅ Found {len(results)} QSR procedure results")
+        
+        return {
+            "success": True,
+            "query": request.query,
+            "results": [result.dict() for result in results],
+            "total_results": len(results),
+            "filters_applied": {
+                "equipment_type": request.equipment_type,
+                "procedure_type": request.procedure_type,
+                "safety_level": request.safety_level,
+                "include_images": request.include_images
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ QSR procedure search failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+
+@app.get("/qsr/status")
+async def get_qsr_system_status():
+    """
+    Get comprehensive QSR system status
+    
+    Shows availability of all components in the philosophy implementation:
+    - Ragie SDK integration
+    - PydanticAI agent system
+    - Multi-format upload support
+    - Structured response models
+    """
+    try:
+        status = {
+            "qsr_ragie_service": {
+                "available": qsr_ragie_service.is_available(),
+                "supported_formats": list(qsr_ragie_service.SUPPORTED_FORMATS.keys()),
+                "partition": qsr_ragie_service.partition
+            },
+            "pydantic_ai_agent": {
+                "available": PYDANTIC_AI_AVAILABLE,
+                "features": ["structured_responses", "type_safe_tools", "dependency_injection"] if PYDANTIC_AI_AVAILABLE else []
+            },
+            "structured_models": {
+                "available": True,
+                "response_model": "QSRTaskResponse", 
+                "search_model": "QSRSearchRequest",
+                "upload_model": "QSRUploadMetadata"
+            },
+            "philosophy_implementation": {
+                "ragie_sdk_patterns": qsr_ragie_service.is_available(),
+                "structured_responses": True,
+                "metadata_filtering": qsr_ragie_service.is_available(),
+                "multi_format_upload": qsr_ragie_service.is_available(),
+                "pydantic_ai_tools": PYDANTIC_AI_AVAILABLE,
+                "type_safety": True,
+                "production_ready": qsr_ragie_service.is_available() and PYDANTIC_AI_AVAILABLE
+            }
+        }
+        
+        return status
+        
+    except Exception as e:
+        logger.error(f"❌ QSR status check failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Status check failed: {str(e)}")
+
+@app.get("/qsr/supported-formats")
+async def get_supported_formats():
+    """Get list of supported file formats for QSR document upload"""
+    return {
+        "supported_formats": qsr_ragie_service.SUPPORTED_FORMATS,
+        "format_categories": {
+            "documents": ["pdf", "docx", "xlsx", "pptx", "txt"],
+            "images": ["jpg", "jpeg", "png"],
+            "videos": ["mp4"],
+            "office": ["docx", "xlsx", "pptx", "docm", "xlsm"]
+        },
+        "processing_modes": {
+            "hi_res": "For documents with images, diagrams, complex layouts",
+            "fast": "For text-only documents"
+        }
+    }
+
+@app.post("/qsr/stepcard-format")
+async def get_stepcard_formatted_response(request: QSRSearchRequest):
+    """
+    Get procedure formatted specifically for StepCard component
+    
+    Demonstrates the complete post-processing pipeline:
+    1. Ragie search
+    2. Response cleaning and normalization
+    3. StepCard-specific formatting
+    4. Mobile and voice optimization
+    """
+    try:
+        if not qsr_ragie_service.is_available():
+            raise HTTPException(status_code=503, detail="QSR Ragie service not available")
+        
+        logger.info(f"📱 StepCard formatting request: {request.query}")
+        
+        # Search with QSR service
+        ragie_results = await qsr_ragie_service.search_qsr_procedures(request)
+        
+        if not ragie_results:
+            logger.warning("No Ragie results found, creating demo response")
+            # Create a demo response for testing
+            demo_response = {
+                'title': f"Demo: {request.query}",
+                'steps': [
+                    {
+                        'step_number': 1,
+                        'title': 'Prepare Equipment',
+                        'time_estimate': '5 minutes',
+                        'tasks': [
+                            'Turn off the fryer and allow it to cool completely',
+                            'Gather cleaning supplies including degreaser and brushes',
+                            'Put on safety gloves and protective eyewear'
+                        ],
+                        'verification': 'Fryer is cool to touch and supplies are ready',
+                        'safety_warning': '⚠️ Never clean a hot fryer - burns can occur',
+                        'equipment_needed': ['fryer', 'cleaning supplies'],
+                        'tools_needed': ['gloves', 'brushes', 'degreaser']
+                    },
+                    {
+                        'step_number': 2,
+                        'title': 'Remove Oil',
+                        'time_estimate': '10 minutes',
+                        'tasks': [
+                            'Place drain container under fryer drain valve',
+                            'Open drain valve slowly to prevent splashing',
+                            'Allow all oil to drain completely'
+                        ],
+                        'verification': 'All oil has been drained from fryer',
+                        'safety_warning': '⚠️ Oil may still be warm - handle carefully',
+                        'equipment_needed': ['drain container'],
+                        'tools_needed': ['drain valve key']
+                    },
+                    {
+                        'step_number': 3,
+                        'title': 'Clean Interior',
+                        'time_estimate': '15 minutes',
+                        'tasks': [
+                            'Spray interior with degreaser solution',
+                            'Scrub walls and bottom with cleaning brush',
+                            'Rinse thoroughly with hot water',
+                            'Dry completely with clean towels'
+                        ],
+                        'verification': 'Interior is clean and completely dry',
+                        'safety_warning': None,
+                        'equipment_needed': ['hot water source'],
+                        'tools_needed': ['degreaser', 'brush', 'towels']
+                    }
+                ],
+                'overall_time': '30 minutes',
+                'safety_notes': [
+                    {
+                        'level': 'critical',
+                        'message': 'Never clean a hot fryer - severe burns can occur',
+                        'keywords': ['hot', 'burns', 'safety']
+                    }
+                ],
+                'verification_points': [
+                    {
+                        'checkpoint': 'Fryer is completely cool before starting',
+                        'step_reference': 1
+                    },
+                    {
+                        'checkpoint': 'All oil has been properly drained',
+                        'step_reference': 2
+                    },
+                    {
+                        'checkpoint': 'Interior is clean and dry before refilling',
+                        'step_reference': 3
+                    }
+                ],
+                'media_references': [],
+                'procedure_type': 'cleaning',
+                'difficulty_level': 'intermediate',
+                'frequency': 'daily',
+                'prerequisites': ['Fryer must be turned off', 'Cleaning supplies available'],
+                'confidence_score': 0.9,
+                'source_documents': ['Demo Fryer Manual']
+            }
+            
+            # Process through cleaning pipeline
+            from models.qsr_response import CleanedQSRResponse
+            from utils.stepcard_formatter import stepcard_formatter
+            
+            cleaned_response = CleanedQSRResponse(**demo_response)
+            
+        else:
+            # Use real results through cleaning pipeline
+            from services.response_processor import response_cleaner
+            from models.qsr_response import CleanedQSRResponse
+            from utils.stepcard_formatter import stepcard_formatter
+            
+            logger.info(f"🧹 Processing {len(ragie_results)} results through cleaning pipeline")
+            processed_data = response_cleaner.process_ragie_chunks(ragie_results)
+            cleaned_response = CleanedQSRResponse(**processed_data)
+        
+        # Format for StepCard component
+        stepcard_formatted = stepcard_formatter.format_for_stepcard(cleaned_response)
+        
+        logger.info(f"📱 Generated StepCard format with {len(stepcard_formatted['steps'])} steps")
+        
+        return {
+            'success': True,
+            'formatting_pipeline': 'complete',
+            'stepcard_data': stepcard_formatted,
+            'processing_metadata': {
+                'ragie_results_count': len(ragie_results) if ragie_results else 0,
+                'demo_mode': len(ragie_results) == 0,
+                'steps_formatted': len(stepcard_formatted['steps']),
+                'mobile_optimized': True,
+                'voice_enabled': True
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ StepCard formatting failed: {e}")
+        raise HTTPException(status_code=500, detail=f"StepCard formatting failed: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

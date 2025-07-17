@@ -9,9 +9,15 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
   // Debug logging for citation props
   console.log('🎯 MultiModalCitation received:', {
     citations: citations?.length || 0,
+    citationsData: citations,
     manualReferences: manualReferences?.length || 0,
     isVisible
   });
+  
+  // Debug: log first citation structure if available
+  if (citations?.length > 0) {
+    console.log('🔍 First citation structure:', citations[0]);
+  }
 
   // Enhanced citation type icons based on Ragie file_type metadata
   const getCitationIcon = (type) => {
@@ -39,7 +45,7 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
 
   // Load citation image content
   const loadCitationImage = async (citation) => {
-    const citationId = citation.citation_id || citation.url || citation.id;
+    const citationId = citation.document_id || citation.citation_id || citation.url || citation.id;
     
     if (imageCache[citationId]) {
       return imageCache[citationId];
@@ -71,7 +77,7 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
     setSelectedCitation(citation);
     
     // Check if citation has content (images, etc.)
-    const hasContent = citation.has_content || citation.url || citation.type === 'image';
+    const hasContent = citation.has_content || citation.url || citation.media_type === 'image' || citation.type === 'image';
     
     if (hasContent) {
       await loadCitationImage(citation);
@@ -95,7 +101,7 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
     } else if (type === 'video') {
       return `Video: ${reference || 'Video Content'} (${sourceStr}, ${pageStr})`;
     } else if (type === 'diagram') {
-      const equipmentStr = equipment_type ? ` - ${equipment_type.replace('_', ' ')}` : '';
+      const equipmentStr = equipment_type ? ` - ${equipment_type?.replace('_', ' ')}` : '';
       return `Diagram${equipmentStr} (${sourceStr}, ${pageStr})`;
     } else if (type === 'safety_warning') {
       return `Safety Guidelines (${sourceStr}, ${pageStr})`;
@@ -143,8 +149,8 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
           <div className="citation-grid">
             {citations.map((citation, index) => (
               <div
-                key={citation.citation_id || index}
-                className={`citation-card ${citation.type} ${selectedCitation?.citation_id === citation.citation_id ? 'selected' : ''}`}
+                key={citation.document_id || citation.citation_id || index}
+                className={`citation-card ${citation.media_type || citation.type || 'unknown'} ${selectedCitation?.document_id === citation.document_id ? 'selected' : ''}`}
                 role="button"
                 tabIndex={0}
                 onClick={() => handleCitationClick(citation)}
@@ -152,8 +158,8 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
                 style={{cursor: 'pointer'}}
               >
                 <div className="citation-header">
-                  {getCitationIcon(citation.type)}
-                  <span className="citation-type">{citation.type.replace('_', ' ')}</span>
+                  {getCitationIcon(citation.media_type || citation.type)}
+                  <span className="citation-type">{(citation.media_type || citation.type || 'unknown')?.replace('_', ' ')}</span>
                 </div>
                 <div className="citation-content">
                   <p className="citation-reference">
@@ -161,11 +167,11 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
                   </p>
                   
                   {/* Equipment and procedure badges for enhanced context */}
-                  {(citation.equipment_type || citation.procedure) && (
+                  {(citation.equipment_type || citation.equipment_name || citation.procedure) && (
                     <div className="citation-badges">
-                      {citation.equipment_type && (
+                      {(citation.equipment_type || citation.equipment_name) && (
                         <span className="badge equipment">
-                          {citation.equipment_type.replace('_', ' ')}
+                          {(citation.equipment_type || citation.equipment_name)?.replace('_', ' ')}
                         </span>
                       )}
                       {citation.procedure && (
@@ -274,11 +280,11 @@ const MultiModalCitation = ({ citations, manualReferences, isVisible = true, onC
               </div>
               
               {/* Equipment context in modal header */}
-              {(selectedCitation.equipment_type || selectedCitation.procedure) && (
+              {(selectedCitation.equipment_type || selectedCitation.equipment_name || selectedCitation.procedure) && (
                 <div className="modal-badges">
-                  {selectedCitation.equipment_type && (
+                  {(selectedCitation.equipment_type || selectedCitation.equipment_name) && (
                     <span className="modal-badge equipment">
-                      {selectedCitation.equipment_type.replace('_', ' ')}
+                      {(selectedCitation.equipment_type || selectedCitation.equipment_name)?.replace('_', ' ')}
                     </span>
                   )}
                   {selectedCitation.procedure && (

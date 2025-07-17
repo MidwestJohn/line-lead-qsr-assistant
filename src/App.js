@@ -6,7 +6,8 @@ import ServiceStatus from './ServiceStatus';
 import ErrorBoundary from './ErrorBoundary';
 import ChatService from './ChatService';
 import ProgressiveLoader from './components/ProgressiveLoader';
-import MultiModalCitation from './components/MultiModalCitation';
+import ImageCitation from './components/ImageCitation';
+
 import ProcessingDashboard from './components/ProcessingDashboard';
 import { AssistantRuntimeProvider, useLocalRuntime } from "@assistant-ui/react";
 import { Send, Square, MessageCircle, WifiOff, Copy, RefreshCw, Check, BookOpen, Mic, MicOff, Volume2, VolumeX, Headphones } from 'lucide-react';
@@ -14,9 +15,20 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 import { apiService } from './services/api';
+import Phase3IntegrationTest from './pages/Phase3IntegrationTest';
+import Phase4AudioTest from './pages/Phase4AudioTest';
 
 
 function App() {
+  
+  // Check for test mode
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('test') === 'phase3') {
+    return <Phase3IntegrationTest />;
+  }
+  if (urlParams.get('test') === 'phase4') {
+    return <Phase4AudioTest />;
+  }
   
   // Assistant UI Runtime - memoized to prevent infinite re-renders
   const onNewMessage = useCallback(async () => {
@@ -993,10 +1005,15 @@ function App() {
       console.log('🌐 Starting API call at:', apiCallStart);
       
       const result = await ChatService.sendMessageStream(messageText, {
-        onChunk: (chunk) => {
+        onChunk: (chunk, visualCitations = []) => {
           if (!messageCreated) {
             const firstChunkTime = performance.now();
             console.log('📨 First chunk received at:', firstChunkTime);
+            
+            // Log visual citations if received in first chunk
+            if (visualCitations && visualCitations.length > 0) {
+              console.log('🖼️ Visual citations received in first chunk:', visualCitations);
+            }
             
             // CRITICAL FIX: Clear inline loading state IMMEDIATELY when first chunk arrives
 
@@ -1017,7 +1034,8 @@ function App() {
               text: accumulatedText,
               sender: 'assistant',
               timestamp: new Date(),
-              isStreaming: true
+              isStreaming: true,
+              visualCitations: visualCitations  // Include visual citations from first chunk
             };
             setMessages(prev => [...prev, initialStreamingMessage]);
             messageCreated = true;
@@ -1055,8 +1073,17 @@ function App() {
             handleStreamingError(streamingMsgId, error, messageText);
           }
         },
-        onComplete: (metadata) => {
+        onComplete: (completionData) => {
           clearTimeout(streamingTimeoutRef.current);
+          
+          // Extract visual citations from completion data
+          const visualCitations = completionData?.visual_citations || [];
+          const metadata = completionData?.metadata;
+          
+          console.log('🔍 Stream completion with visual citations:', visualCitations?.length || 0);
+          if (visualCitations.length > 0) {
+            console.log('📊 Visual citations from stream:', visualCitations);
+          }
           
           // If no message was created (empty response), create a placeholder
           if (!messageCreated) {
@@ -1066,10 +1093,21 @@ function App() {
               sender: 'assistant',
               timestamp: new Date(),
               isError: true,
-              retryFunction: () => sendMessageWithRetry(messageText, Date.now())
+              retryFunction: () => sendMessageWithRetry(messageText, Date.now()),
+              visualCitations: visualCitations
             };
             setMessages(prev => [...prev, completedMessage]);
           } else {
+            // Update the existing message, preserving existing visual citations if new ones aren't provided
+            setMessages(prev => prev.map(msg => 
+              msg.id === streamingMsgId 
+                ? { 
+                    ...msg, 
+                    visualCitations: visualCitations?.length > 0 ? visualCitations : (msg.visualCitations || []), 
+                    isStreaming: false 
+                  }
+                : msg
+            ));
             completeStreaming(streamingMsgId, metadata);
           }
         }
@@ -2017,6 +2055,11 @@ function App() {
                   {/* Message Content */}
                   <div className="message-content-wrapper">
                     <div className="message-bubble aui-message-content">
+                      {/* Display Images First */}
+                      {message.sender === 'assistant' && message.visualCitations && (
+                        <ImageCitation visualCitations={message.visualCitations} />
+                      )}
+                      
                       <div className="message-text">
                         {message.sender === 'assistant' ? (
                           <ReactMarkdown 
@@ -2049,30 +2092,9 @@ function App() {
                         {message.isFallback && <span className="fallback-indicator"> (via fallback)</span>}
                       </div>
                       
-                      {/* Multimodal Citations */}
-                      {message.sender === 'assistant' && (message.visualCitations || message.manualReferences) && (
-                        <MultiModalCitation
-                          citations={message.visualCitations || []}
-                          manualReferences={message.manualReferences || []}
-                          isVisible={true}
-                          onCitationClick={(citation) => {
-                            console.log('Citation clicked:', citation);
-                            // Optional: Add analytics or other actions
-                          }}
-                        />
-                      )}
+
                       
-                      {/* Debug: Log when citation component should render */}
-                      {message.sender === 'assistant' && (() => {
-                        const shouldRender = !!(message.visualCitations || message.manualReferences);
-                        console.log(`🎯 Message ${message.id} citation render check:`, {
-                          shouldRender,
-                          visualCitations: message.visualCitations?.length || 0,
-                          manualReferences: message.manualReferences?.length || 0,
-                          messageObject: message
-                        });
-                        return null;
-                      })()}
+
                       
                       <div className="message-time">{formatTime(message.timestamp)}</div>
                       {message.isError && message.retryFunction && (
