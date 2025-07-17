@@ -72,9 +72,11 @@ class ProductionErrorHandler:
         self.app.add_middleware(
             CORSMiddleware,
             allow_origins=[
-                "https://*.vercel.app",
-                "https://line-lead-qsr.vercel.app",  # Production domain
-                "https://line-lead-qsr-*.vercel.app",  # Preview deployments
+                "https://app.linelead.io",  # Production domain
+                "https://linelead.io",  # Root domain
+                "https://*.vercel.app",  # Vercel wildcard
+                "https://line-lead-qsr-assistant.vercel.app",  # Default Vercel URL
+                "https://line-lead-qsr-assistant-*.vercel.app",  # Preview deployments
                 "http://localhost:3000",  # Development
                 "http://localhost:3001",  # Alternative dev port
             ],
