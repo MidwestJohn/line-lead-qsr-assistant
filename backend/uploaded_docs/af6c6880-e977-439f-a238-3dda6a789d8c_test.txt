@@ -1,0 +1,5 @@
+This is a test manual for equipment operation.
+
+Step 1: Turn on the equipment
+Step 2: Follow safety procedures
+Step 3: Monitor performance

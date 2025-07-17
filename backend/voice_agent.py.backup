@@ -793,9 +793,88 @@ class VoiceOrchestrator:
                 setattr(context, key, value)
     
     # ===============================================================================
-    # SIMPLIFIED ARCHITECTURE: Agent classification removed - single agent handles all queries
-    # Multi-agent coordination methods kept for backward compatibility but not used
+    # MULTI-AGENT COORDINATION METHODS
     # ===============================================================================
+    
+    # SIMPLIFIED ARCHITECTURE: Agent classification removed - single agent handles all queries
+    # All classification methods removed for single agent architecture
+    """
+    async def classify_query_for_agents(self, message: str, context: ConversationContext) -> AgentQueryClassification:
+        # Classify user query to determine appropriate agent routing
+        try:
+            if agent_classifier:
+                # Use PydanticAI classifier for intelligent routing
+                classification_prompt = f"""
+                QUERY: {message}
+                
+                CONVERSATION CONTEXT:
+                - Current equipment: {context.current_entity}
+                - Equipment history: {', '.join(context.entity_history[-3:]) if context.entity_history else 'None'}
+                - Recent topics: {', '.join(context.topics_covered[-3:]) if context.topics_covered else 'None'}
+                - User expertise: {context.user_expertise_level}
+                - Conversation duration: {(time.time() - context.conversation_start_time) / 60:.1f} minutes
+                
+                Classify this query for agent routing.
+                """
+                
+                result = await agent_classifier.run(user_prompt=classification_prompt)
+                return result.data
+            else:
+                # Fallback classification using keyword analysis
+                return self._fallback_query_classification(message, context)
+                
+        except Exception as e:
+            logger.error(f"Query classification failed: {e}")
+            return self._fallback_query_classification(message, context)
+    
+    def _fallback_query_classification(self, message: str, context: ConversationContext) -> AgentQueryClassification:
+        """Fallback query classification using keyword analysis"""
+        message_lower = message.lower()
+        
+        # Safety keywords get highest priority
+        safety_keywords = ['temperature', 'hot', 'burn', 'safe', 'danger', 'accident', 'contamination', 'allergic', 'sick']
+        if any(keyword in message_lower for keyword in safety_keywords):
+            return AgentQueryClassification(
+                primary_agent=AgentType.SAFETY,
+                confidence=0.9,
+                reasoning="Safety keywords detected",
+                safety_critical=True
+            )
+        
+        # Equipment keywords
+        equipment_keywords = ['fryer', 'grill', 'oven', 'ice machine', 'refrigerator', 'pos', 'computer', 'broken', 'not working']
+        if any(keyword in message_lower for keyword in equipment_keywords):
+            return AgentQueryClassification(
+                primary_agent=AgentType.EQUIPMENT,
+                confidence=0.8,
+                reasoning="Equipment mentioned"
+            )
+        
+        # Procedure keywords
+        procedure_keywords = ['how to', 'steps', 'procedure', 'opening', 'closing', 'prep', 'prepare', 'checklist']
+        if any(keyword in message_lower for keyword in procedure_keywords):
+            return AgentQueryClassification(
+                primary_agent=AgentType.PROCEDURE,
+                confidence=0.7,
+                reasoning="Procedure-related query"
+            )
+        
+        # Maintenance keywords
+        maintenance_keywords = ['clean', 'sanitize', 'maintenance', 'wash', 'filter', 'oil change', 'weekly', 'daily']
+        if any(keyword in message_lower for keyword in maintenance_keywords):
+            return AgentQueryClassification(
+                primary_agent=AgentType.MAINTENANCE,
+                confidence=0.7,
+                reasoning="Maintenance-related query"
+            )
+        
+        # Default to general agent
+        return AgentQueryClassification(
+            primary_agent=AgentType.GENERAL,
+            confidence=0.5,
+            reasoning="No specific domain detected"
+        )
+        """
     
     async def run_specialized_agent(
         self, 
@@ -1368,18 +1447,157 @@ class VoiceOrchestrator:
         context = self.get_context(session_id)
         session_id = session_id or self.default_session
         
-        # SIMPLIFIED ARCHITECTURE: Remove manual image detection and graph context
-        # Let the PydanticAI agent handle all intent detection and tool orchestration
+        # Initialize enhanced_context
+        enhanced_context = None
         
-        # STEP 1: Entity detection for context tracking
-        detected_entity = self._detect_entity_from_message(message)
-        is_entity_switch = self._detect_entity_switch(detected_entity, context)
+        # STEP 0: Check for image requests first
+        if image_request_handler and image_request_handler.is_image_request(message):
+            try:
+                equipment_name = image_request_handler.extract_equipment_name(message)
+                
+                # Get image results from Ragie or fallback
+                image_results = []
+                if hasattr(self, 'ragie_service'):
+                    try:
+                        # Try to get Ragie service for image search
+                        from services.ragie_service_clean import clean_ragie_service
+                        if clean_ragie_service.is_available():
+                            ragie_results = await clean_ragie_service.search(message, limit=10)
+                            # Filter for image files
+                            for result in ragie_results:
+                                filename = result.metadata.get("original_filename", "").lower()
+                                if filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
+                                    image_results.append({
+                                        "id": result.document_id,
+                                        "name": result.metadata.get("original_filename", "Unknown"),
+                                        "content": result.text,
+                                        "score": result.score
+                                    })
+                    except Exception as e:
+                        logger.warning(f"Ragie image search failed: {e}")
+                
+                # Fallback to known Baxter image if no results
+                if not image_results and equipment_name and "baxter" in equipment_name.lower():
+                    image_results.append({
+                        "id": "cefc0e1b-dcb6-41ca-bcbd-b787bacc8d0f",
+                        "name": "Baxter_OV520E1_Rotating_Single_Rack_Oven_Electric.png",
+                        "content": "Baxter OV520E1 Rotating Single Rack Oven Electric - Equipment diagram and control panel",
+                        "score": 0.9
+                    })
+                
+                # Generate image response
+                image_response = image_request_handler.generate_image_response(equipment_name, image_results)
+                
+                # Convert image results to visual citations
+                visual_citations = []
+                for img in image_results[:3]:  # Show up to 3 images
+                    visual_citations.append({
+                        "document_id": img["id"],
+                        "title": img["name"],
+                        "content_preview": img["content"][:200] if img["content"] else "Equipment image",
+                        "media_type": "image",
+                        "relevance_score": img["score"]
+                    })
+                
+                logger.info(f"🖼️ Image request detected for: {equipment_name}, found {len(visual_citations)} images")
+                
+                # Return specialized image response with visual citations
+                return VoiceResponse(
+                    text_response=image_response["response"],
+                    should_continue_listening=True,
+                    hands_free_recommendation=False,
+                    user_intent="image_request",
+                    equipment_context=equipment_name or "Unknown equipment",
+                    safety_priority=False,
+                    response_type="factual",
+                    detected_intent=ConversationIntent.EQUIPMENT_QUESTION,
+                    specialized_insights={"image_request": True, "equipment": equipment_name},
+                    visual_citations=visual_citations
+                )
+            except Exception as e:
+                logger.warning(f"Image request handler error: {e}")
+                # Continue with normal processing
+        
+        # STEP 1: Check for graph-specific voice commands first
+        graph_response = None
+        if self.voice_graph_service:
+            try:
+                graph_response = await self.voice_graph_service.process_voice_query_with_graph_context(
+                    message, session_id
+                )
+                
+                # If graph service found relevant content, use it as context for LLM processing
+                if graph_response and graph_response.get("context_maintained"):
+                    logger.info(f"Graph service found context for: {message[:50]}...")
+                    
+                    # Update conversation context with graph information
+                    if graph_response.get("equipment_context"):
+                        context.current_entity = graph_response["equipment_context"]
+                        if graph_response["equipment_context"] not in context.entity_history:
+                            context.entity_history.append(graph_response["equipment_context"])
+                    
+                    # Use graph response as enhanced context for LLM processing
+                    # Rather than returning raw content, we'll pass it to the LLM below
+                    enhanced_context = {
+                        "graph_context": graph_response.get("response", ""),
+                        "source_content": graph_response.get("source_content", []),
+                        "page_references": graph_response.get("page_references", []),
+                        "visual_citations": graph_response.get("visual_citations", []),
+                        "equipment_context": graph_response.get("equipment_context"),
+                        "query_type": graph_response.get("query_type", "general")
+                    }
+                    
+                    logger.info(f"Enhanced context prepared with {len(enhanced_context.get('source_content', []))} source chunks")
+                else:
+                    enhanced_context = None
+                    
+            except Exception as e:
+                logger.error(f"Graph service error: {e}")
+                # Fall back to regular processing
         
         # STEP 2: Add user message to conversation history
         context.conversation_history.append({
             "user": message,
+            "assistant": "",  # Will be filled after AI response
             "timestamp": time.time()
         })
+        
+        # Pre-process for topic/entity detection and context
+        detected_entity = self._extract_topic_entities(message, relevant_docs)
+        is_entity_switch = self._detect_entity_switch(detected_entity, context)
+        
+        # Prepare enhanced context for the agent
+        context_data = {
+            "current_message": message,
+            "conversation_history": context.conversation_history[-5:],  # Last 5 exchanges
+            "current_topic": context.current_topic,
+            "current_entity": context.current_entity,
+            "entity_history": context.entity_history,
+            "last_document": context.last_document_referenced,
+            "topics_covered": context.topics_covered,
+            "hands_free_active": context.hands_free_active,
+            "user_expertise": context.user_expertise_level,
+            "last_intent": context.last_intent,
+            "expecting_continuation": context.expecting_continuation,
+            "conversation_duration": time.time() - context.conversation_start_time,
+            "relevant_documents": relevant_docs or [],
+            
+            # NEW: Advanced context
+            "current_procedure_step": context.current_procedure_step,
+            "total_procedure_steps": context.total_procedure_steps,
+            "procedure_type": context.procedure_type,
+            "workflow_phase": context.workflow_phase,
+            "error_count": context.error_count,
+            "unclear_responses_count": context.unclear_responses_count,
+            "topic_switches": context.topic_switches,
+            "response_length_preference": context.response_length_preference,
+            "detected_entity": detected_entity,
+            "is_entity_switch": is_entity_switch,
+            
+            # Context references for memory
+            "context_references": self._build_context_references(context),
+            "conversation_flow_analysis": analyze_conversation_flow(context)
+        }
         
         try:
             logger.info(f"🤖 PydanticAI processing voice message: '{message[:50]}...'")
@@ -1390,41 +1608,70 @@ class VoiceOrchestrator:
                 logger.warning("PydanticAI voice agent not available, using fallback")
                 return self._fallback_response(message, context)
             
-            # Build simplified prompt - let the agent handle complexity
+            # Enhanced prompt with context and graph data
             enhanced_prompt = f"""
 VOICE MESSAGE: "{message}"
 
 CURRENT CONTEXT:
 - Current Entity/Topic: {context.current_entity or 'None'} 
+- Procedure: {context.procedure_type} (Step {context.current_procedure_step}/{context.total_procedure_steps})
+- Phase: {context.workflow_phase or 'Main conversation'}
+- Last intent: {context.last_intent}
+- Hands-free: {context.hands_free_active}
+- Error count: {context.error_count}
+
+DETECTED:
+- New entity/topic: {detected_entity}
+- Topic switch: {is_entity_switch}
+
+CONVERSATION CONTEXT:
+- Messages exchanged: {len(context.conversation_history)}
 - Entity history: {', '.join(context.entity_history) if context.entity_history else 'None'}
 - Topics covered: {', '.join(context.topics_covered) if context.topics_covered else 'None'}
+
+ENHANCED KNOWLEDGE BASE CONTEXT:
+{self._format_enhanced_context(enhanced_context) if enhanced_context else "No specific equipment documentation found."}
 
 RELEVANT DOCUMENTS:
 {json.dumps(relevant_docs or [], indent=2)}
 
-Process this QSR query using your comprehensive knowledge and call appropriate tools as needed.
+EXECUTE ALL FOUR CAPABILITIES:
+1. Smart Context Awareness - Track equipment, reference history
+2. Intelligent Conversation Management - Predict continuation needs  
+3. Advanced Voice Orchestration - Multi-phase workflows, conditional logic
+4. Hands-Free Optimization - Kitchen environment awareness
+
+RESPOND WITH ALL REQUIRED FIELDS INCLUDING:
+- equipment_mentioned, equipment_switch_detected
+- procedure_step_info, workflow_phase  
+- context_references, response_type
+- safety_priority, hands_free_recommendation
 """
             
+            # ===================================================================
+            # MULTI-AGENT PROCESSING - Enhanced with specialized QSR agents
+            # ===================================================================
+            
             # STEP 3: Single comprehensive QSR expert agent processing
+            # No classification needed - single agent handles all queries
             logger.info(f"🧠 Using comprehensive QSR expert agent for query: {message[:50]}...")
             
             # Process with single comprehensive agent
             if voice_agent:
+                    # Use general agent with enhanced context
+                    if voice_agent:
+                        # GET MESSAGE HISTORY FOR CONTEXT PERSISTENCE
+                        message_history = self.get_message_history(session_id)
+                        logger.info(f"🧠 Running general agent with {len(message_history)} previous messages")
                 # GET MESSAGE HISTORY FOR CONTEXT PERSISTENCE
                 message_history = self.get_message_history(session_id)
                 logger.info(f"🧠 Running comprehensive QSR expert agent with {len(message_history)} previous messages")
                 
                 result = await voice_agent.run(user_prompt=enhanced_prompt, message_history=message_history)
-                result_data = result.output
+                result_data = result.data
                 
                 # STORE UPDATED MESSAGE HISTORY
-                all_messages = result.all_messages()
-                logger.info(f"💾 Storing {len(all_messages)} messages (was {len(message_history)})")
-                self.store_message_history(session_id, all_messages)
-                
-                # Verify storage
-                stored_messages = self.get_message_history(session_id)
-                logger.info(f"✅ Verified: {len(stored_messages)} messages stored for session {session_id}")
+                self.store_message_history(session_id, result.all_messages())
                 
                 # Extract visual citations from tool usage
                 global _last_tool_visual_citations
@@ -1622,30 +1869,6 @@ Process this QSR query using your comprehensive knowledge and call appropriate t
                 for entity, keywords in qsr_entities.items():
                     if any(keyword in content for keyword in keywords):
                         return entity
-        
-        return None
-    
-    def _detect_entity_from_message(self, message: str) -> Optional[str]:
-        """Simple entity detection from message text"""
-        message_lower = message.lower()
-        
-        # Common QSR equipment
-        equipment_keywords = {
-            'fryer': ['fryer', 'frying', 'deep fry'],
-            'oven': ['oven', 'bake', 'baking'],
-            'grill': ['grill', 'grilling', 'grilled'],
-            'ice machine': ['ice machine', 'ice maker'],
-            'freezer': ['freezer', 'frozen'],
-            'refrigerator': ['refrigerator', 'fridge', 'cooling'],
-            'pos': ['pos', 'register', 'cash register'],
-            'baxter': ['baxter'],
-            'taylor': ['taylor'],
-            'hobart': ['hobart']
-        }
-        
-        for equipment, keywords in equipment_keywords.items():
-            if any(keyword in message_lower for keyword in keywords):
-                return equipment
         
         return None
     

@@ -210,10 +210,10 @@ Tag with equipment type (fryer, grill, oven) and procedure type (operation, main
         """
         query_lower = original_query.lower().strip()
         
-        # 1. PRIMARY: Image/Visual intent detection (highest priority)
-        image_intent_filter = self._detect_image_intent_filter(query_lower)
-        if image_intent_filter:
-            return image_intent_filter
+        # 1. PRIMARY: Image/Visual intent detection (DISABLED - Let PydanticAI handle)
+        # image_intent_filter = self._detect_image_intent_filter(query_lower)
+        # if image_intent_filter:
+        #     return image_intent_filter
         
         # 2. SECONDARY: Equipment-specific filters (for specific brand targeting)
         equipment_filters = self._get_equipment_filter(query_lower)
@@ -283,11 +283,10 @@ Tag with equipment type (fryer, grill, oven) and procedure type (operation, main
         )
         
         if is_image_intent:
-            # Modified approach: Since Ragie documents don't have rich metadata,
-            # we'll use content-based filtering and let Ragie's reranking handle relevance
-            # Return a special marker to indicate image intent was detected
-            logger.info(f"🎯 Image intent detected for query: '{query_lower}' - using content-based search")
-            return {"_image_intent": True}  # Special marker for image intent
+            # DISABLED: Let PydanticAI orchestration handle image requests
+            # logger.info(f"🎯 Image intent detected for query: '{query_lower}' - using content-based search")
+            # return {"_image_intent": True}  # Special marker for image intent
+            pass
         
         return None
     

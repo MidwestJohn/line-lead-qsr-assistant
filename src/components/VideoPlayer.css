@@ -1,0 +1,347 @@
+/* Video Player Component Styles */
+.video-player-container {
+  position: relative;
+  width: 100%;
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  overflow: hidden;
+}
+
+.video-element {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Loading State */
+.video-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: white;
+  z-index: 10;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top: 3px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* Video Title */
+.video-title {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 5;
+}
+
+/* Error State */
+.video-player-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+}
+
+.error-content {
+  text-align: center;
+  color: #6c757d;
+}
+
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.error-message {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.error-subtitle {
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+/* Controls */
+.video-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  padding: 16px;
+  color: white;
+  z-index: 10;
+}
+
+/* Progress Bar */
+.progress-container {
+  margin-bottom: 12px;
+}
+
+.progress-bar {
+  position: relative;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: height 0.2s ease;
+}
+
+.progress-bar:hover {
+  height: 6px;
+}
+
+.progress-bar.dragging {
+  height: 6px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #ff6b6b;
+  border-radius: 2px;
+  transition: width 0.1s ease;
+}
+
+.progress-handle {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  background: #ff6b6b;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.progress-bar:hover .progress-handle,
+.progress-bar.dragging .progress-handle {
+  opacity: 1;
+}
+
+.progress-handle:active {
+  cursor: grabbing;
+}
+
+/* Time Display */
+.time-display {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Control Buttons */
+.control-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.control-btn {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.control-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+.control-btn:active {
+  transform: scale(0.95);
+}
+
+.play-btn {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  margin: 0 8px;
+}
+
+.play-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Fullscreen */
+.video-player-container.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  border-radius: 0;
+}
+
+.video-player-container.fullscreen .video-wrapper {
+  padding-bottom: 0;
+  height: 100%;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .video-controls {
+    padding: 12px;
+  }
+  
+  .control-buttons {
+    gap: 4px;
+  }
+  
+  .control-btn {
+    padding: 6px;
+  }
+  
+  .play-btn {
+    padding: 10px;
+    margin: 0 4px;
+  }
+  
+  .video-title {
+    font-size: 12px;
+    padding: 6px 8px;
+    top: 12px;
+    left: 12px;
+  }
+  
+  .progress-bar {
+    height: 6px;
+  }
+  
+  .progress-handle {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Restaurant Environment Optimizations */
+@media (max-width: 480px) {
+  .video-controls {
+    padding: 8px;
+  }
+  
+  .control-buttons {
+    gap: 2px;
+  }
+  
+  .control-btn {
+    padding: 8px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .play-btn {
+    padding: 12px;
+    margin: 0 2px;
+  }
+  
+  .time-display {
+    font-size: 11px;
+  }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .progress-bar {
+    height: 8px;
+  }
+  
+  .progress-handle {
+    width: 20px;
+    height: 20px;
+    opacity: 1;
+  }
+  
+  .control-btn {
+    min-width: 48px;
+    min-height: 48px;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .video-controls {
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.95));
+  }
+  
+  .progress-fill {
+    background: #fff;
+  }
+  
+  .progress-handle {
+    background: #fff;
+    border: 2px solid #000;
+  }
+  
+  .control-btn {
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    animation: none;
+  }
+  
+  .control-btn,
+  .progress-bar,
+  .progress-handle {
+    transition: none;
+  }
+}

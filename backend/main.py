@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from typing import Dict, List, Optional, Any
 import logging
-import datetime
+from datetime import datetime
 import json
 import asyncio
 import os
@@ -29,6 +29,9 @@ from openai_integration import qsr_assistant
 from voice_service import voice_service
 from voice_agent import voice_orchestrator, VoiceState, ConversationIntent
 
+# Image request handling
+from services.image_request_handler import image_request_handler
+
 # Clean Ragie integration
 from services.ragie_service_clean import clean_ragie_service
 
@@ -36,6 +39,9 @@ from services.ragie_service_clean import clean_ragie_service
 from services.qsr_ragie_service import qsr_ragie_service
 from models.qsr_models import QSRTaskResponse, QSRSearchRequest, QSRUploadMetadata
 from agents.qsr_support_agent import get_qsr_assistance, PYDANTIC_AI_AVAILABLE
+
+# Multimodal citation service for image handling
+from services.multimodal_citation_service import multimodal_citation_service
 
 # Voice graph service placeholder (disabled for now)
 voice_graph_query_service = None
@@ -73,7 +79,7 @@ app = FastAPI(
 error_handler = setup_production_error_handling(app)
 
 # Track application startup time for monitoring
-app_start_time = datetime.datetime.now()
+app_start_time = datetime.now()
 
 # Utility functions
 def load_documents_db():
@@ -299,10 +305,21 @@ try:
     app.include_router(websocket_router)
     logger.info("✅ Enhanced upload endpoints with automatic processing enabled")
     logger.info("✅ Robust WebSocket progress tracking enabled with error protection")
+    
 except ImportError as e:
     logger.warning(f"Enhanced upload endpoints not available: {e}")
 except Exception as e:
     logger.error(f"Failed to load enhanced upload endpoints: {e}")
+
+# Include document source endpoints (separate from enhanced upload endpoints)
+try:
+    from endpoints.document_source_endpoints import document_source_router
+    app.include_router(document_source_router, prefix="/api")
+    logger.info("✅ Document source endpoints enabled")
+except ImportError as e:
+    logger.warning(f"Document source endpoints not available: {e}")
+except Exception as e:
+    logger.error(f"Failed to load document source endpoints: {e}")
 
 # Include QSR optimization router
 try:
@@ -545,7 +562,7 @@ async def simple_background_process(process_id: str, file_path: str, filename: s
                         "original_filename": filename,
                         "file_size": len(file_content),
                         "pages_count": pages_count,
-                        "upload_timestamp": datetime.datetime.now().isoformat(),
+                        "upload_timestamp": datetime.now().isoformat(),
                         "equipment_type": "general",  # Could be enhanced with AI detection
                         "document_type": "qsr_manual"
                     }
@@ -565,7 +582,7 @@ async def simple_background_process(process_id: str, file_path: str, filename: s
                     "id": doc_id,
                     "filename": os.path.basename(file_path),
                     "original_filename": filename,
-                    "upload_timestamp": datetime.datetime.now().isoformat(),
+                    "upload_timestamp": datetime.now().isoformat(),
                     "file_size": len(file_content),
                     "pages_count": pages_count,
                     "text_content": text_content,
@@ -701,6 +718,7 @@ async def startup_event():
 class ChatMessage(BaseModel):
     message: str
     conversation_id: Optional[str] = "default"
+    session_id: Optional[str] = None  # For context persistence
 
 class ChatResponse(BaseModel):
     response: str
@@ -844,7 +862,7 @@ async def debug_cors():
     """Debug endpoint to check CORS configuration"""
     return {
         "cors_origins": CORS_ORIGINS,
-        "timestamp": datetime.datetime.now().isoformat(),
+        "timestamp": datetime.now().isoformat(),
         "commit_hash": "624bb5b",
         "cors_middleware_active": True
     }
@@ -853,7 +871,7 @@ async def debug_cors():
 async def health_check(request: Request):
     """Enhanced health check following BaseChat enterprise patterns"""
     try:
-        start_time = datetime.datetime.now()
+        start_time = datetime.now()
         
         # Extract monitoring headers (BaseChat pattern)
         session_id = request.headers.get('X-Session-ID', 'anonymous')
@@ -1013,7 +1031,7 @@ async def health_check(request: Request):
             overall_status = "unhealthy"
         
         # Performance metrics (Render-specific)
-        total_response_time = (datetime.datetime.now() - start_time).total_seconds() * 1000
+        total_response_time = (datetime.now() - start_time).total_seconds() * 1000
         
         # Memory usage (if available)
         memory_info = {}
@@ -1056,7 +1074,7 @@ async def health_check(request: Request):
         logger.error(f"💥 Health check failed: {str(e)}")
         error_response = {
             "status": "error",
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "platform": "render",
             "error": str(e),
             "services": {},
@@ -1076,10 +1094,10 @@ async def health_check(request: Request):
         db_status = "ready"
         db_response_time = None
         try:
-            db_check_start = datetime.datetime.now()
+            db_check_start = datetime.now()
             # Test database read
             test_documents = load_documents_db()
-            db_response_time = (datetime.datetime.now() - db_check_start).total_seconds() * 1000
+            db_response_time = (datetime.now() - db_check_start).total_seconds() * 1000
             if len(test_documents) != doc_count:
                 db_status = "inconsistent"
         except Exception as e:
@@ -1099,7 +1117,7 @@ async def health_check(request: Request):
         # Add performance metrics for full health check
         performance_metrics = None
         if health_check_type == 'full':
-            total_response_time = (datetime.datetime.now() - start_time).total_seconds() * 1000
+            total_response_time = (datetime.now() - start_time).total_seconds() * 1000
             performance_metrics = {
                 "total_response_time_ms": round(total_response_time, 2),
                 "db_response_time_ms": round(db_response_time, 2) if db_response_time else None,
@@ -1122,7 +1140,7 @@ async def health_check(request: Request):
         
         response_data = {
             "status": overall_status,
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "version": "1.0.0",
             "services": services,
             "document_count": doc_count,
@@ -1143,7 +1161,7 @@ async def health_check(request: Request):
         logger.error(f"Health check failed: {e}")
         return HealthResponse(
             status="error",
-            timestamp=datetime.datetime.now().isoformat(),
+            timestamp=datetime.now().isoformat(),
             version="1.0.0",
             services={"error": str(e)},
             document_count=0,
@@ -1219,8 +1237,8 @@ async def keep_alive():
     """Keep-alive endpoint to prevent Render cold starts"""
     return {
         "status": "alive",
-        "timestamp": datetime.datetime.now().isoformat(),
-        "uptime_seconds": (datetime.datetime.now() - app_start_time).total_seconds() if 'app_start_time' in globals() else 0
+        "timestamp": datetime.now().isoformat(),
+        "uptime_seconds": (datetime.now() - app_start_time).total_seconds() if 'app_start_time' in globals() else 0
     }
 
 # Warm-up endpoint for faster cold start recovery
@@ -1252,11 +1270,11 @@ async def warm_up():
         except Exception as e:
             logger.warning(f"AI assistant check failed during warm-up: {e}")
         
-        warm_up_time = (datetime.datetime.now() - app_start_time).total_seconds() if 'app_start_time' in globals() else 0
+        warm_up_time = (datetime.now() - app_start_time).total_seconds() if 'app_start_time' in globals() else 0
         
         return {
             "status": "warmed_up",
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "services_initialized": {
                 "documents": doc_count,
                 "search_engine": search_engine is not None,
@@ -1270,8 +1288,87 @@ async def warm_up():
         return {
             "status": "warm_up_failed",
             "error": str(e),
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
+
+# Fallback text processing function
+async def _fallback_text_processing(user_message: str) -> ChatResponse:
+    """Fallback text processing when voice orchestrator fails"""
+    try:
+        # Simple search with Ragie
+        relevant_content = []
+        search_method = "fallback"
+        
+        if clean_ragie_service.is_available():
+            try:
+                ragie_results = await clean_ragie_service.search(user_message, limit=5)
+                if ragie_results:
+                    search_method = "ragie_fallback"
+                    for result in ragie_results:
+                        relevant_content.append({
+                            "content": result.text,
+                            "score": result.score,
+                            "source": result.metadata.get("original_filename", "Unknown"),
+                            "document_id": result.document_id
+                        })
+            except Exception as e:
+                logger.warning(f"Ragie fallback failed: {e}")
+        
+        # Generate simple response
+        context_text = ""
+        if relevant_content:
+            context_text = "\n\n".join([
+                f"From {item['source']}: {item['content']}" 
+                for item in relevant_content[:3]
+            ])
+        
+        enhanced_prompt = f"""You are Line Lead, a QSR assistant. 
+
+User Question: {user_message}
+
+Context: {context_text if context_text else "No specific context found."}
+
+Provide practical QSR guidance focusing on safety, efficiency, and compliance."""
+        
+        # Use simple OpenAI generation
+        ai_response = await qsr_assistant.generate_response(enhanced_prompt, relevant_content)
+        response_text = ai_response.get("response", "I apologize, but I encountered an issue processing your request.")
+        
+        # Create basic response
+        manual_references = []
+        for item in relevant_content:
+            if item.get('source') != 'Unknown':
+                manual_references.append({
+                    "title": item['source'],
+                    "relevance_score": item['score'],
+                    "content_preview": item['content'][:200] + "..." if len(item['content']) > 200 else item['content']
+                })
+        
+        return ChatResponse(
+            response=response_text,
+            timestamp=datetime.now().isoformat(),
+            parsed_steps=None,
+            visual_citations=None,
+            manual_references=manual_references if manual_references else None,
+            document_context=None,
+            hierarchical_path=None,
+            contextual_recommendations=None,
+            retrieval_method=search_method
+        )
+    
+    except Exception as e:
+        logger.error(f"Fallback processing failed: {e}")
+        return ChatResponse(
+            response="I apologize, but I'm experiencing technical difficulties. Please try again in a moment.",
+            timestamp=datetime.now().isoformat(),
+            parsed_steps=None,
+            visual_citations=None,
+            manual_references=None,
+            document_context=None,
+            hierarchical_path=None,
+            contextual_recommendations=None,
+            retrieval_method="error"
+        )
 
 # Chat endpoint
 @app.post("/chat", response_model=ChatResponse)
@@ -1285,138 +1382,201 @@ async def chat_endpoint(chat_message: ChatMessage):
         
         logger.info(f"Received chat message: {user_message}")
         
-        # Enhanced search with Ragie integration
-        relevant_content = []
-        search_method = "fallback"
+        # Generate consistent session ID for context persistence
+        if chat_message.session_id:
+            session_id = chat_message.session_id
+        else:
+            # Use a simple approach: hash the user's IP and current hour for session grouping
+            import hashlib
+            from datetime import datetime
+            session_seed = f"text_chat_{datetime.now().hour}"
+            session_id = hashlib.md5(session_seed.encode()).hexdigest()[:8]
         
-        # Try Ragie search first (if available)
-        if clean_ragie_service.is_available():
-            try:
-                logger.info("🔍 Using Ragie for enhanced search...")
-                ragie_results = await clean_ragie_service.search(user_message, limit=5)
-                
-                if ragie_results:
-                    search_method = "ragie"
-                    for result in ragie_results:
-                        relevant_content.append({
-                            "content": result.text,
-                            "score": result.score,
-                            "source": result.metadata.get("original_filename", "Unknown"),
-                            "document_id": result.document_id
-                        })
-                    logger.info(f"✅ Found {len(relevant_content)} results from Ragie")
-                else:
-                    logger.info("ℹ️ No results from Ragie, falling back to local search")
-            except Exception as e:
-                logger.warning(f"⚠️ Ragie search failed: {e}, falling back to local search")
-        
-        # Fallback to local search engine if Ragie not available or no results
-        if not relevant_content:
-            try:
-                logger.info("🔍 Using local search engine...")
-                search_results = search_engine.search(user_message, top_k=5)
-                search_method = "local"
-                
-                for result in search_results:
-                    relevant_content.append({
-                        "content": result.get("text", ""),
-                        "score": result.get("score", 0.0),
-                        "source": result.get("filename", "Unknown"),
-                        "document_id": result.get("doc_id", "unknown")
-                    })
-                logger.info(f"✅ Found {len(relevant_content)} results from local search")
-            except Exception as e:
-                logger.warning(f"⚠️ Local search failed: {e}")
-        
-        # Generate context-aware prompt
-        context_text = ""
-        if relevant_content:
-            context_text = "\n\n".join([
-                f"From {item['source']}: {item['content']}" 
-                for item in relevant_content[:3]  # Use top 3 results
-            ])
-        
-        enhanced_prompt = f"""You are Line Lead, a QSR (Quick Service Restaurant) assistant specialized in restaurant operations, equipment, and procedures.
-
-User Question: {user_message}
-
-Relevant Context:
-{context_text if context_text else "No specific context found - provide general QSR guidance."}
-
-Instructions:
-- Provide practical, actionable advice for QSR operations
-- Focus on safety, efficiency, and compliance
-- Include specific steps when applicable
-- If equipment is mentioned, provide operational guidance
-- Be concise but comprehensive
-
-Response:"""
-        
-        # Generate AI response using OpenAI
+        # Use the advanced voice orchestrator system for text chat
+        # This provides the same multi-agent capabilities as voice chat
         try:
-            logger.info("🤖 Generating AI response...")
+            logger.info(f"🤖 Using advanced voice orchestrator for text chat (session: {session_id})")
             
-            # Use OpenAI directly with the enhanced prompt
-            ai_response = await qsr_assistant.generate_response(
-                enhanced_prompt,
-                relevant_content
+            # The voice orchestrator has a process_message method designed for both text and voice
+            voice_response = await voice_orchestrator.process_message(
+                message=user_message,
+                relevant_docs=None,  # Let the orchestrator handle document search
+                session_id=session_id,  # Use consistent session ID
+                message_type="text"
             )
             
-            response_text = ai_response.get("response", "I apologize, but I encountered an issue processing your request.")
+            # Convert VoiceResponse to ChatResponse format
+            # Extract visual citations from voice response
+            visual_citations = []
             
-            logger.info(f"✅ Generated AI response ({len(response_text)} characters)")
+            # COMPREHENSIVE visual citations extraction
+            logger.info(f"🔍 Voice response type: {type(voice_response)}")
+            logger.info(f"🔍 Voice response attributes: {dir(voice_response)}")
             
-        except Exception as ai_error:
-            logger.error(f"AI response generation failed: {ai_error}")
-            response_text = "I apologize, but I'm experiencing technical difficulties. Please try again in a moment."
-        
-        # Add source information if available
-        if relevant_content:
-            source_info = "\n\n📚 Sources consulted: " + ", ".join([
-                f"{item['source']} ({item['score']:.2f})" 
-                for item in relevant_content[:3]
-            ])
-            response_text += source_info
-        
-        # Log response info
-        logger.info(f"Sending response using {search_method} search method")
-        
-        # Simple citation extraction from relevant content
-        visual_citations = []
-        manual_references = []
-        
-        # Extract manual references from relevant content
-        for item in relevant_content:
-            if item.get('source') != 'Unknown':
-                manual_references.append({
-                    "title": item['source'],
-                    "relevance_score": item['score'],
-                    "content_preview": item['content'][:200] + "..." if len(item['content']) > 200 else item['content']
-                })
+            # Method 1: Check for direct visual citations in response
+            if hasattr(voice_response, 'visual_citations') and voice_response.visual_citations:
+                logger.info(f"🔍 Found direct visual citations: {len(voice_response.visual_citations)}")
+                for citation in voice_response.visual_citations:
+                    # Handle both dict and object citations
+                    if isinstance(citation, dict):
+                        visual_citations.append({
+                            "document_id": citation.get("document_id", ""),
+                            "title": citation.get("title", ""),
+                            "content_preview": citation.get("content_preview", ""),
+                            "media_type": citation.get("media_type", "text"),
+                            "relevance_score": citation.get("relevance_score", 0.0)
+                        })
+                    else:
+                        # Handle object citations
+                        visual_citations.append({
+                            "document_id": getattr(citation, "document_id", ""),
+                            "title": getattr(citation, "title", ""),
+                            "content_preview": getattr(citation, "content_preview", ""),
+                            "media_type": getattr(citation, "media_type", "text"),
+                            "relevance_score": getattr(citation, "relevance_score", 0.0)
+                        })
+            
+            # Method 2: Check specialized insights for visual citations (PydanticAI tool pattern)
+            if hasattr(voice_response, 'specialized_insights') and voice_response.specialized_insights:
+                insights = voice_response.specialized_insights
+                logger.info(f"🔍 Specialized insights keys: {list(insights.keys()) if isinstance(insights, dict) else 'Not a dict'}")
                 
-                # Extract hierarchical paths
-                hierarchy_results = hybrid_results.get("hierarchical_paths", [])
-                if hierarchy_results:
-                    first_hierarchy = hierarchy_results[0]
-                    hierarchical_path_info = [
-                        first_hierarchy.get("document", ""),
-                        first_hierarchy.get("section", ""),
-                        first_hierarchy.get("entity", "")
-                    ]
-        # Create clean response
-        response = ChatResponse(
-            response=response_text,
-            timestamp=datetime.datetime.now().isoformat(),
-            parsed_steps=None,  # Can be enhanced later
-            visual_citations=visual_citations if visual_citations else None,
-            manual_references=manual_references if manual_references else None,
-            document_context=None,  # Simplified for now
-            hierarchical_path=None,  # Simplified for now
-            contextual_recommendations=None,  # Simplified for now
-            retrieval_method=search_method
-        )
-        
-        return response
+                if isinstance(insights, dict) and 'visual_citations' in insights:
+                    logger.info(f"🔍 Found tool visual citations in insights: {len(insights['visual_citations'])}")
+                    for citation in insights['visual_citations']:
+                        # Handle both dict and object citations from tools
+                        if isinstance(citation, dict):
+                            visual_citations.append({
+                                "document_id": citation.get("document_id", citation.get("id", "")),
+                                "title": citation.get("title", citation.get("name", "")),
+                                "content_preview": citation.get("content_preview", citation.get("content", ""))[:200],
+                                "media_type": citation.get("media_type", "image"),
+                                "relevance_score": citation.get("relevance_score", citation.get("score", 0.0))
+                            })
+                        else:
+                            # Handle object citations
+                            visual_citations.append({
+                                "document_id": getattr(citation, "document_id", getattr(citation, "id", "")),
+                                "title": getattr(citation, "title", getattr(citation, "name", "")),
+                                "content_preview": getattr(citation, "content_preview", getattr(citation, "content", ""))[:200],
+                                "media_type": getattr(citation, "media_type", "image"),
+                                "relevance_score": getattr(citation, "relevance_score", getattr(citation, "score", 0.0))
+                            })
+            
+            # Method 3: Check for image request context
+            if hasattr(voice_response, 'user_intent') and voice_response.user_intent == "image_request":
+                logger.info("🔍 Detected image request context")
+                
+                # Look for equipment context or specialized insights
+                if hasattr(voice_response, 'equipment_context') and voice_response.equipment_context:
+                    logger.info(f"🔍 Found equipment context: {voice_response.equipment_context}")
+            
+            # Method 4: Check for global tool citations (fallback)
+            try:
+                from .voice_agent import _last_tool_visual_citations
+                if _last_tool_visual_citations:
+                    logger.info(f"🔍 Found global tool visual citations: {len(_last_tool_visual_citations)}")
+                    for citation in _last_tool_visual_citations:
+                        visual_citations.append({
+                            "document_id": citation.get("document_id", citation.get("id", "")),
+                            "title": citation.get("title", citation.get("name", "")),
+                            "content_preview": citation.get("content_preview", citation.get("content", ""))[:200],
+                            "media_type": citation.get("media_type", "image"),
+                            "relevance_score": citation.get("relevance_score", citation.get("score", 0.0))
+                        })
+            except ImportError:
+                pass
+            
+            logger.info(f"🔍 Total visual citations extracted: {len(visual_citations)}")
+            
+            # Debug: Print the full voice response structure if no citations found
+            if not visual_citations:
+                logger.info(f"🔍 No visual citations found. Voice response structure: {voice_response}")
+                if hasattr(voice_response, '__dict__'):
+                    logger.info(f"🔍 Voice response dict: {voice_response.__dict__}")
+                    
+            # Log final visual citations for debugging
+            if visual_citations:
+                logger.info(f"🔍 Final visual citations: {visual_citations}")
+            
+            # Extract manual references
+            manual_references = []
+            if hasattr(voice_response, 'manual_references') and voice_response.manual_references:
+                for ref in voice_response.manual_references:
+                    manual_references.append({
+                        "title": ref.get("title", ""),
+                        "relevance_score": ref.get("relevance_score", 0.0),
+                        "content_preview": ref.get("content_preview", "")
+                    })
+            
+            # Extract document context
+            document_context = None
+            if hasattr(voice_response, 'equipment_context') and voice_response.equipment_context:
+                document_context = {
+                    "equipment_name": voice_response.equipment_context,
+                    "user_intent": getattr(voice_response, 'user_intent', 'general'),
+                    "safety_priority": getattr(voice_response, 'safety_priority', False)
+                }
+            
+            # Extract contextual recommendations
+            contextual_recommendations = []
+            if hasattr(voice_response, 'specialized_insights') and voice_response.specialized_insights:
+                insights = voice_response.specialized_insights
+                if isinstance(insights, dict):
+                    for key, value in insights.items():
+                        if isinstance(value, list):
+                            contextual_recommendations.extend(value)
+                        elif isinstance(value, str):
+                            contextual_recommendations.append(value)
+            
+            # Extract parsed steps and convert to dict if needed
+            parsed_steps = getattr(voice_response, 'parsed_steps', None)
+            if parsed_steps and hasattr(parsed_steps, '__dict__'):
+                # Convert ParsedStepsResponse to dict
+                parsed_steps = {
+                    "has_steps": getattr(parsed_steps, 'has_steps', False),
+                    "total_steps": getattr(parsed_steps, 'total_steps', 0),
+                    "procedure_title": getattr(parsed_steps, 'procedure_title', ''),
+                    "steps": getattr(parsed_steps, 'steps', []),
+                    "safety_level": getattr(parsed_steps, 'safety_level', 'low'),
+                    "original_text": getattr(parsed_steps, 'original_text', '')
+                }
+            elif not isinstance(parsed_steps, dict):
+                parsed_steps = None
+            
+            # Determine retrieval method
+            retrieval_method = "multi_agent"
+            if hasattr(voice_response, 'user_intent'):
+                if voice_response.user_intent == "image_request":
+                    retrieval_method = "image_search"
+                elif hasattr(voice_response, 'specialized_insights') and voice_response.specialized_insights:
+                    if 'equipment' in voice_response.specialized_insights:
+                        retrieval_method = "equipment_specialist"
+                    elif 'safety' in voice_response.specialized_insights:
+                        retrieval_method = "safety_specialist"
+                    elif 'procedures' in voice_response.specialized_insights:
+                        retrieval_method = "procedures_specialist"
+            
+            response = ChatResponse(
+                response=voice_response.text_response,
+                timestamp=datetime.now().isoformat(),
+                parsed_steps=parsed_steps,
+                visual_citations=visual_citations if visual_citations else None,
+                manual_references=manual_references if manual_references else None,
+                document_context=document_context,
+                hierarchical_path=None,  # Could be enhanced with graph context
+                contextual_recommendations=contextual_recommendations if contextual_recommendations else None,
+                retrieval_method=retrieval_method
+            )
+            
+            logger.info(f"✅ Advanced text chat response generated using {retrieval_method} method")
+            return response
+            
+        except Exception as orchestrator_error:
+            logger.error(f"Voice orchestrator failed for text chat: {orchestrator_error}")
+            
+            # Fallback to simple processing
+            return await _fallback_text_processing(user_message)
         
     except HTTPException:
         raise
@@ -1503,6 +1663,19 @@ async def chat_stream_endpoint(chat_message: ChatMessage):
                 )
                 
                 complete_response = orchestrated_response.text_response
+                
+                # SEND VISUAL CITATIONS FIRST if they exist
+                visual_citations = orchestrated_response.visual_citations or []
+                if visual_citations:
+                    # Send visual citations immediately in first chunk
+                    first_chunk_data = {
+                        'chunk': '',  # Empty text chunk
+                        'done': False,
+                        'visual_citations': visual_citations
+                    }
+                    yield f"data: {json.dumps(first_chunk_data)}\n\n"
+                    await asyncio.sleep(0.1)  # Small delay to ensure frontend processes images first
+                
                 # Natural speech conversion is already applied in the orchestrator
                         
                 # Re-stream the orchestrated response preserving spacing and formatting
@@ -1529,8 +1702,12 @@ async def chat_stream_endpoint(chat_message: ChatMessage):
                         if paragraph != paragraphs[-1]:  # Not the last paragraph
                             yield f"data: {json.dumps({'chunk': ' ', 'done': False})}\n\n"
                 
-                # Send final completion signal
-                yield f"data: {json.dumps({'chunk': '', 'done': True})}\n\n"
+                # Send final completion signal (visual citations already sent at start)
+                final_data = {
+                    'chunk': '', 
+                    'done': True
+                }
+                yield f"data: {json.dumps(final_data)}\n\n"
                     
             except Exception as e:
                 logger.error(f"Error in streaming response: {e}")
@@ -1925,7 +2102,7 @@ async def upload_file_original(file: UploadFile = File(...)):
             "id": doc_id,
             "filename": safe_filename,
             "original_filename": file.filename,
-            "upload_timestamp": datetime.datetime.now().isoformat(),
+            "upload_timestamp": datetime.now().isoformat(),
             "file_size": len(content),
             "pages_count": pages_count,
             "text_content": extracted_text,
@@ -2229,7 +2406,7 @@ async def chat_with_voice(request: ChatVoiceRequest):
         return ChatVoiceResponse(
             response=ai_response,
             audio_available=voice_available,
-            timestamp=datetime.datetime.now().isoformat()
+            timestamp=datetime.now().isoformat()
         )
     except Exception as e:
         logger.error(f"Error in chat with voice: {str(e)}")
@@ -2289,7 +2466,7 @@ async def chat_with_voice_and_audio(request: ChatVoiceRequest):
             audio_data=audio_data,
             audio_available=audio_available,
             sources=sources,
-            timestamp=datetime.datetime.now().isoformat(),
+            timestamp=datetime.now().isoformat(),
             # PydanticAI orchestration data
             detected_intent=orchestrated_response.detected_intent.value,
             should_continue_listening=orchestrated_response.should_continue_listening,
@@ -2307,7 +2484,7 @@ async def chat_with_voice_and_audio(request: ChatVoiceRequest):
             audio_data=None,
             audio_available=False,
             sources=[],
-            timestamp=datetime.datetime.now().isoformat(),
+            timestamp=datetime.now().isoformat(),
             detected_intent=ConversationIntent.ERROR_RECOVERY.value,
             should_continue_listening=True,
             next_voice_state=VoiceState.ERROR_RECOVERY.value,
@@ -2351,7 +2528,7 @@ async def chat_voice_direct(request: ChatVoiceRequest):
                 "audio_type": "direct_single_file",
                 "bypass_streaming": True,
                 "audio_available": True,
-                "timestamp": datetime.datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat()
             }
         else:
             logger.error("🧪 DIAGNOSTIC: Audio generation failed")
@@ -4751,7 +4928,7 @@ async def voice_with_graph_context(chat_message: ChatMessage):
         
         response = ChatResponse(
             response=response_text,
-            timestamp=datetime.datetime.now().isoformat(),
+            timestamp=datetime.now().isoformat(),
             parsed_steps=parsed_steps_dict
         )
         
@@ -4906,7 +5083,7 @@ async def voice_with_multimodal_citations(request: MultiModalVoiceRequest):
         
         return MultiModalVoiceResponse(
             response=response_text,
-            timestamp=datetime.datetime.now().isoformat(),
+            timestamp=datetime.now().isoformat(),
             visual_citations=visual_citations,
             manual_references=manual_references,
             citation_count=citation_count,
@@ -4924,23 +5101,59 @@ async def voice_with_multimodal_citations(request: MultiModalVoiceRequest):
 @app.get("/citation-content/{citation_id}")
 async def get_citation_content(citation_id: str):
     """
-    Retrieve visual content for a specific citation
+    Retrieve visual content for a specific citation from Ragie
     """
     try:
-        content_data = await multimodal_citation_service.get_citation_content(citation_id)
+        import httpx
+        import os
         
-        if not content_data:
-            raise HTTPException(status_code=404, detail="Citation content not found")
+        # Get Ragie API key and partition
+        ragie_api_key = os.getenv("RAGIE_API_KEY")
+        ragie_partition = os.getenv("RAGIE_PARTITION", "qsr_manuals")
         
-        # Return image content with appropriate headers
-        return Response(
-            content=content_data,
-            media_type="image/png",
-            headers={
-                "Cache-Control": "public, max-age=3600",
-                "Content-Disposition": f"inline; filename=citation_{citation_id}.png"
-            }
-        )
+        if not ragie_api_key:
+            raise HTTPException(status_code=500, detail="Ragie API key not configured")
+        
+        # Make request to Ragie's document source endpoint with partition
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            response = await client.get(
+                f"https://api.ragie.ai/documents/{citation_id}/source",
+                headers={
+                    "accept": "application/octet-stream",
+                    "authorization": f"Bearer {ragie_api_key}"
+                },
+                params={"partition": ragie_partition},
+                timeout=30.0
+            )
+            
+            # Log response details for debugging
+            logger.info(f"Ragie API response: {response.status_code}")
+            logger.info(f"Response headers: {dict(response.headers)}")
+            logger.info(f"Final URL: {response.url}")
+            
+            if response.status_code == 404:
+                raise HTTPException(status_code=404, detail="Document not found in Ragie")
+            elif response.status_code == 307:
+                # Handle redirect manually if needed
+                redirect_url = response.headers.get("location")
+                logger.error(f"Ragie API redirect to: {redirect_url}")
+                raise HTTPException(status_code=500, detail="Ragie API returned redirect - contact support")
+            elif response.status_code != 200:
+                logger.error(f"Ragie API error: {response.status_code} - {response.text}")
+                raise HTTPException(status_code=500, detail=f"Failed to retrieve document from Ragie (HTTP {response.status_code})")
+            
+            # Determine content type from response headers or default to image
+            content_type = response.headers.get("content-type", "image/png")
+            
+            # Return the binary content with appropriate headers
+            return Response(
+                content=response.content,
+                media_type=content_type,
+                headers={
+                    "Cache-Control": "public, max-age=3600",
+                    "Content-Disposition": f"inline; filename=document_{citation_id}"
+                }
+            )
         
     except HTTPException:
         raise
@@ -5325,7 +5538,7 @@ async def fix_extraction_preserving_integrations():
 async def create_graph_backup():
     """Create backup of current graph before enhancement."""
     try:
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_path = f"./backups/graph_backup_{timestamp}.json"
         
         if not neo4j_service or not neo4j_service.connected:
@@ -6178,7 +6391,7 @@ async def upload_optimized_qsr(file: UploadFile = File(...)):
                 "target_achieved": extraction_result.get('total_entities', 0) >= 200
             },
             "optimization_config": optimization_report,
-            "processing_timestamp": datetime.datetime.now().isoformat()
+            "processing_timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
@@ -6207,7 +6420,7 @@ async def query_optimized_qsr(query_data: Dict[str, Any]):
             "query": query,
             "result": result,
             "optimization_applied": True,
-            "query_timestamp": datetime.datetime.now().isoformat()
+            "query_timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
@@ -6237,7 +6450,7 @@ async def get_optimization_report():
                 "target_achieved": graph_stats.get('total_nodes', 0) >= 200,
                 "improvement_factor": graph_stats.get('total_nodes', 0) / max(35, 1)
             },
-            "report_timestamp": datetime.datetime.now().isoformat()
+            "report_timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
@@ -6275,7 +6488,7 @@ async def test_extraction_optimization():
             "test_output": result.stdout,
             "test_errors": result.stderr,
             "comparison_report": comparison_report,
-            "test_timestamp": datetime.datetime.now().isoformat()
+            "test_timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
@@ -6439,7 +6652,7 @@ async def enterprise_verify_documents():
                         "file_size": doc_info.get("file_size", 0),
                         "pages_count": doc_info.get("pages_count", 0),
                         "status": "verified",
-                        "verification_timestamp": datetime.datetime.now().isoformat()
+                        "verification_timestamp": datetime.now().isoformat()
                     }
         
         # Update the Neo4j verification file
@@ -6467,7 +6680,7 @@ async def enterprise_verify_documents():
             "neo4j_entities": neo4j_entity_count,
             "neo4j_relationships": neo4j_relationship_count,
             "message": f"Enterprise Bridge verified {len(verified_docs)} documents with {neo4j_entity_count} entities",
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
@@ -6487,7 +6700,7 @@ async def startup_optimization_metrics():
         metrics = await get_startup_metrics()
         
         return {
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "startup_optimization": metrics,
             "service": "line-lead-agent-startup-optimizer"
         }
@@ -6495,7 +6708,7 @@ async def startup_optimization_metrics():
     except Exception as e:
         logger.error(f"Startup metrics failed: {e}")
         return {
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "startup_optimization": {
                 "error": str(e),
                 "optimization_available": False
@@ -6511,7 +6724,7 @@ async def service_degradation_status():
         system_status = degradation_manager.get_system_status()
         
         return {
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "degradation_management": system_status,
             "service": "line-lead-degradation-manager"
         }
@@ -6519,7 +6732,7 @@ async def service_degradation_status():
     except Exception as e:
         logger.error(f"Service degradation status failed: {e}")
         return {
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "degradation_management": {
                 "overall_status": "unknown",
                 "error": str(e)
@@ -6535,7 +6748,7 @@ async def service_degradation_history():
         history = degradation_manager.get_degradation_history(limit=100)
         
         return {
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "degradation_history": history,
             "service": "line-lead-degradation-history"
         }
@@ -6543,7 +6756,7 @@ async def service_degradation_history():
     except Exception as e:
         logger.error(f"Degradation history failed: {e}")
         return {
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "degradation_history": [],
             "error": str(e)
         }
@@ -6562,7 +6775,7 @@ async def database_health_check():
         health_result = await render_db_health.check_database_health()
         
         return {
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "database_health": health_result,
             "service": "line-lead-qsr-database"
         }
@@ -6570,7 +6783,7 @@ async def database_health_check():
     except Exception as e:
         logger.error(f"Database health check failed: {e}")
         return {
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "database_health": {
                 "status": "error",
                 "error": str(e),
@@ -6588,7 +6801,7 @@ async def conversation_storage_health():
         storage_health = await render_db_health.get_conversation_storage_health()
         
         return {
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "conversation_storage": storage_health,
             "service": "line-lead-conversation-storage"
         }
@@ -6596,7 +6809,7 @@ async def conversation_storage_health():
     except Exception as e:
         logger.error(f"Conversation storage health check failed: {e}")
         return {
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "conversation_storage": {
                 "status": "error",
                 "error": str(e)
@@ -6613,7 +6826,7 @@ async def optimize_database_for_render():
         optimization_result = await render_db_health.optimize_for_render()
         
         return {
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "optimization": optimization_result,
             "service": "line-lead-database-optimization"
         }
@@ -6621,7 +6834,7 @@ async def optimize_database_for_render():
     except Exception as e:
         logger.error(f"Database optimization failed: {e}")
         return {
-            "timestamp": datetime.datetime.now().isoformat(),
+            "timestamp": datetime.now().isoformat(),
             "optimization": {
                 "status": "error",
                 "error": str(e)
@@ -6658,7 +6871,7 @@ async def ragie_health_check():
             "status": "error",
             "ragie_api_accessible": False,
             "error": str(e),
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
 
 @app.get("/verification/ragie")
@@ -6670,14 +6883,14 @@ async def ragie_verification_status():
         return {
             "status": "success",
             "verification_data": ragie_verification.get_verification_summary(),
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
         return {
             "status": "error",
             "error": str(e),
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
 
 @app.post("/verification/ragie/comprehensive")
@@ -6694,7 +6907,7 @@ async def run_comprehensive_ragie_verification():
         return {
             "status": "completed",
             "verification_results": verification_results,
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
@@ -6702,7 +6915,7 @@ async def run_comprehensive_ragie_verification():
         return {
             "status": "error",
             "error": str(e),
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
 
 @app.post("/test/ragie/query")
@@ -6727,7 +6940,7 @@ async def test_ragie_with_query(request: dict):
             "equipment_context": result.equipment_context,
             "procedure_context": result.procedure_context,
             "error": result.error,
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
         
     except Exception as e:
@@ -6735,7 +6948,7 @@ async def test_ragie_with_query(request: dict):
         return {
             "status": "error",
             "error": str(e),
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
 
 # ================================================================================================
@@ -6754,14 +6967,14 @@ async def list_ragie_instructions():
             "status": "success",
             "instructions": instructions,
             "count": len(instructions),
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
         logger.error(f"Failed to list Ragie instructions: {e}")
         return {
             "status": "error",
             "message": f"Failed to list instructions: {str(e)}",
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
 
 @app.post("/ragie/entities/setup")
@@ -6779,14 +6992,14 @@ async def setup_ragie_entity_extraction():
             "message": results["message"],
             "equipment_instruction_id": results["equipment_instruction_id"],
             "general_instruction_id": results["general_instruction_id"],
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
         logger.error(f"Failed to setup Ragie entity extraction: {e}")
         return {
             "status": "error",
             "message": f"Setup failed: {str(e)}",
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
 
 @app.post("/ragie/entities/reprocess/{document_id}")
@@ -6804,14 +7017,14 @@ async def reprocess_document_for_entities(document_id: str):
                 "status": "success",
                 "message": f"Document {document_id} queued for entity extraction",
                 "document_id": document_id,
-                "timestamp": datetime.datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat()
             }
         else:
             return {
                 "status": "error",
                 "message": f"Failed to queue document {document_id} for reprocessing",
                 "document_id": document_id,
-                "timestamp": datetime.datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat()
             }
     except Exception as e:
         logger.error(f"Failed to reprocess document {document_id}: {e}")
@@ -6819,7 +7032,7 @@ async def reprocess_document_for_entities(document_id: str):
             "status": "error",
             "message": f"Reprocessing failed: {str(e)}",
             "document_id": document_id,
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
 
 @app.get("/ragie/entities/document/{document_id}")
@@ -6835,7 +7048,7 @@ async def get_document_entities(document_id: str):
             "document_id": document_id,
             "entities": entities,
             "entity_count": len(entities),
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
         logger.error(f"Failed to get entities for document {document_id}: {e}")
@@ -6843,7 +7056,7 @@ async def get_document_entities(document_id: str):
             "status": "error",
             "message": f"Failed to get entities: {str(e)}",
             "document_id": document_id,
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
 
 @app.get("/ragie/documents/{document_id}")
@@ -6858,14 +7071,14 @@ async def get_ragie_document_details(document_id: str):
             return {
                 "status": "success",
                 "document": details,
-                "timestamp": datetime.datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat()
             }
         else:
             return {
                 "status": "error",
                 "message": f"Document {document_id} not found",
                 "document_id": document_id,
-                "timestamp": datetime.datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat()
             }
     except Exception as e:
         logger.error(f"Failed to get document details for {document_id}: {e}")
@@ -6873,7 +7086,7 @@ async def get_ragie_document_details(document_id: str):
             "status": "error",
             "message": f"Failed to get document details: {str(e)}",
             "document_id": document_id,
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
 
 @app.get("/ragie/documents/{document_id}/content")
@@ -6889,14 +7102,14 @@ async def get_ragie_document_content(document_id: str):
                 "status": "success",
                 "document_id": document_id,
                 "content": content,
-                "timestamp": datetime.datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat()
             }
         else:
             return {
                 "status": "error",
                 "message": f"Content for document {document_id} not found",
                 "document_id": document_id,
-                "timestamp": datetime.datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat()
             }
     except Exception as e:
         logger.error(f"Failed to get document content for {document_id}: {e}")
@@ -6904,7 +7117,7 @@ async def get_ragie_document_content(document_id: str):
             "status": "error",
             "message": f"Failed to get document content: {str(e)}",
             "document_id": document_id,
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
 
 @app.get("/ragie/documents/{document_id}/summary")
@@ -6920,14 +7133,14 @@ async def get_ragie_document_summary(document_id: str):
                 "status": "success",
                 "document_id": document_id,
                 "summary": summary,
-                "timestamp": datetime.datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat()
             }
         else:
             return {
                 "status": "error",
                 "message": f"Summary for document {document_id} not available",
                 "document_id": document_id,
-                "timestamp": datetime.datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat()
             }
     except Exception as e:
         logger.error(f"Failed to get document summary for {document_id}: {e}")
@@ -6935,7 +7148,7 @@ async def get_ragie_document_summary(document_id: str):
             "status": "error",
             "message": f"Failed to get document summary: {str(e)}",
             "document_id": document_id,
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
 
 @app.get("/ragie/documents/{document_id}/chunks")
@@ -6952,7 +7165,7 @@ async def get_ragie_document_chunks(document_id: str, limit: int = 10):
             "chunks": chunks,
             "chunk_count": len(chunks),
             "limit": limit,
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
     except Exception as e:
         logger.error(f"Failed to get document chunks for {document_id}: {e}")
@@ -6960,7 +7173,7 @@ async def get_ragie_document_chunks(document_id: str, limit: int = 10):
             "status": "error",
             "message": f"Failed to get document chunks: {str(e)}",
             "document_id": document_id,
-            "timestamp": datetime.datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat()
         }
 
 # ========================================

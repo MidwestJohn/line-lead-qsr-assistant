@@ -255,12 +255,18 @@ class ChatService {
                 
                 if (data.done) {
                   clearTimeout(timeoutId);
-                  if (onComplete) onComplete(data.metadata);
-                  return { success: true, metadata: data.metadata };
+                  // Pass visual citations and other data in completion
+                  const completionData = {
+                    visual_citations: data.visual_citations || [],
+                    metadata: data.metadata
+                  };
+                  if (onComplete) onComplete(completionData);
+                  return { success: true, visual_citations: data.visual_citations, metadata: data.metadata };
                 }
                 
-                if (data.chunk && onChunk) {
-                  onChunk(data.chunk);
+                if (data.chunk !== undefined && onChunk) {
+                  // Pass both chunk and visual citations to onChunk handler
+                  onChunk(data.chunk, data.visual_citations || []);
                 }
                 
               } catch (parseError) {
