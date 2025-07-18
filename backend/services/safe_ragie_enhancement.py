@@ -152,7 +152,18 @@ class SafeRagieEnhancement:
             text_snippet = result.text[:200] + "..." if len(result.text) > 200 else result.text
             context_parts.append(text_snippet)
             
-            # Collect visual citations
+            # Collect visual citations based on document IDs
+            # For QSR use case, create citations that can be resolved by citation endpoint
+            if result.document_id and result.score > 0.1:  # Only high-quality matches
+                visual_citations.append({
+                    "document_id": result.document_id,
+                    "title": result.metadata.get("filename", "Equipment Manual"),
+                    "media_type": "image",
+                    "equipment_name": qsr_context.equipment_type if qsr_context else None,
+                    "relevance_score": result.score
+                })
+            
+            # Also collect traditional image citations if available
             if result.images:
                 visual_citations.extend([{
                     "type": "image",

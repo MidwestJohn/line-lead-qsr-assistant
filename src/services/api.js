@@ -171,7 +171,15 @@ class APIService {
     }
 
     async getHealth() {
+        console.log('🩺 Making health check request...');
         const result = await this.get('/health');
+        console.log('🩺 Health check result:', {
+            success: result.success,
+            status: result.data?.status,
+            search_ready: result.data?.search_ready,
+            services: Object.keys(result.data?.services || {})
+        });
+        
         if (!result.success) {
             return { status: 'error', error: result.error };
         }

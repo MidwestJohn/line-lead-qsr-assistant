@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frontend Debug Test</title>
+</head>
+<body>
+    <h1>Frontend Debug Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testFrontendAPI() {
+            const results = document.getElementById('results');
+            
+            try {
+                console.log('🔍 Testing frontend API...');
+                
+                // Test direct fetch to health endpoint
+                const response = await fetch('http://localhost:8000/health');
+                const data = await response.json();
+                
+                console.log('✅ Direct fetch result:', data);
+                
+                const html = `
+                    <h2>Direct API Test Results</h2>
+                    <p><strong>Status:</strong> ${data.status}</p>
+                    <p><strong>Search Ready:</strong> ${data.search_ready}</p>
+                    <p><strong>Services:</strong> ${Object.keys(data.services || {}).join(', ')}</p>
+                    <p><strong>Response Keys:</strong> ${Object.keys(data).join(', ')}</p>
+                    
+                    <h3>Full Response:</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+                results.innerHTML = html;
+                
+            } catch (error) {
+                console.error('❌ Test failed:', error);
+                results.innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Run test when page loads
+        window.addEventListener('load', testFrontendAPI);
+    </script>
+</body>
+</html>

@@ -758,6 +758,7 @@ class HealthResponse(BaseModel):
     deployment: str = "line-lead-qsr-backend"
     services: Dict[str, Any] = {}
     degraded_services: List[str] = []
+    search_ready: bool = False  # Frontend compatibility - indicates if chat is ready
     performance: Dict[str, Any] = {}
     version: Optional[Dict[str, str]] = None
     error: Optional[str] = None

@@ -316,16 +316,18 @@ class EnhancedRagieService:
     
     def _build_search_filters(self, qsr_context: QSRContext) -> Dict[str, Any]:
         """Build Ragie search filters from QSR context"""
+        # TEMP FIX: Disable restrictive filters that block results
+        # The documents don't have structured metadata, so filters are too restrictive
+        # Instead, rely on the query text matching and QSR context for ranking
         filters = {}
         
-        if qsr_context.equipment_type:
-            filters["equipment_type"] = qsr_context.equipment_type
-        
-        if qsr_context.procedure_type:
-            filters["procedure_type"] = qsr_context.procedure_type
-            
-        if qsr_context.safety_level:
-            filters["safety_level"] = qsr_context.safety_level
+        # TODO: Re-enable filters once document metadata is properly structured
+        # if qsr_context.equipment_type:
+        #     filters["equipment_type"] = qsr_context.equipment_type
+        # if qsr_context.procedure_type:
+        #     filters["procedure_type"] = qsr_context.procedure_type
+        # if qsr_context.safety_level:
+        #     filters["safety_level"] = qsr_context.safety_level
         
         return filters
     

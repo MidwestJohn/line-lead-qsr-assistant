@@ -64,6 +64,11 @@ function App() {
     isReady: false,
     error: null
   });
+  
+  // Debug service status changes
+  useEffect(() => {
+    console.log('🔄 Service status changed:', serviceStatus);
+  }, [serviceStatus]);
   const [messageStatus, setMessageStatus] = useState({
     isLoading: false,
     isRetrying: false,
@@ -380,11 +385,20 @@ function App() {
     const checkServices = async () => {
       try {
         const healthData = await apiService.getHealth();
-        setServiceStatus({
+        console.log('🔍 Health data received:', {
+          status: healthData.status,
+          search_ready: healthData.search_ready,
+          services: Object.keys(healthData.services || {})
+        });
+        
+        const newServiceStatus = {
           isHealthy: healthData.status === 'healthy',
           isReady: healthData.search_ready,
           services: healthData.services
-        });
+        };
+        
+        console.log('📊 Setting service status:', newServiceStatus);
+        setServiceStatus(newServiceStatus);
       } catch (error) {
         console.error('Service check failed:', error);
         setServiceStatus({
@@ -395,8 +409,11 @@ function App() {
       }
     };
     
-    // Initial check
-    checkServices();
+    // Initial check with a small delay to ensure connection is established
+    setTimeout(() => {
+      console.log('🚀 Starting initial service check...');
+      checkServices();
+    }, 1000);
     
     // Periodic check every 30 seconds
     const interval = setInterval(checkServices, 30000);
@@ -1913,6 +1930,13 @@ function App() {
 
   // Get loading text based on current state
   const getLoadingText = () => {
+    console.log('🔤 getLoadingText called with serviceStatus:', {
+      isHealthy: serviceStatus.isHealthy,
+      isReady: serviceStatus.isReady,
+      isOnline: isOnline,
+      messageStatus: messageStatus.isLoading
+    });
+    
     if (messageStatus.isRetrying) {
       return `Retrying connection (${messageStatus.retryAttempt}/3)...`;
     }
@@ -1926,6 +1950,7 @@ function App() {
       return "Preparing response...";
     }
     if (!serviceStatus.isReady) {
+      console.log('⚠️ Services not ready - showing startup message. serviceStatus:', serviceStatus);
       return "Services starting up...";
     }
     if (!isOnline) {
@@ -1934,7 +1959,17 @@ function App() {
     return "Ask me anything...";
   };
 
-  const isInputDisabled = (messageStatus.isLoading || isStreaming || isThinking || isWaitingForResponse) || !serviceStatus.isHealthy || !isOnline;
+  const isInputDisabled = (messageStatus.isLoading || isStreaming || isThinking || isWaitingForResponse) || !serviceStatus.isReady || !isOnline;
+  
+  console.log('🔐 Input disabled check:', {
+    messageStatus: messageStatus.isLoading,
+    isStreaming,
+    isThinking,
+    isWaitingForResponse,
+    isHealthy: serviceStatus.isHealthy,
+    isOnline,
+    finalDisabled: isInputDisabled
+  });
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
