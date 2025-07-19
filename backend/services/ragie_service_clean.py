@@ -59,6 +59,15 @@ class CleanRagieService:
         self.api_key = os.getenv("RAGIE_API_KEY")
         self.partition = os.getenv("RAGIE_PARTITION", "qsr_manuals")
         
+        # Sanitize API key for HTTP headers to prevent Unicode encoding errors
+        if self.api_key:
+            try:
+                self.api_key = self.api_key.encode('ascii', 'ignore').decode('ascii').strip()
+                logger.info(f"🧹 Clean Ragie API key sanitized for HTTP headers")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to sanitize clean Ragie API key: {e}")
+                self.api_key = None
+        
         if not self.api_key:
             logger.error("RAGIE_API_KEY not found in environment variables")
             self.client = None

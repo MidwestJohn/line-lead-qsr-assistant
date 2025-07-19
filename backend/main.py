@@ -5130,6 +5130,14 @@ async def get_citation_content(citation_id: str):
             logger.error("❌ RAGIE_API_KEY environment variable not set")
             raise HTTPException(status_code=500, detail="Ragie API key not configured")
         
+        # Sanitize API key for HTTP headers (remove any Unicode characters)
+        try:
+            ragie_api_key = ragie_api_key.encode('ascii', 'ignore').decode('ascii').strip()
+            logger.info(f"🧹 API key sanitized for HTTP headers")
+        except Exception as e:
+            logger.error(f"❌ Failed to sanitize API key: {e}")
+            raise HTTPException(status_code=500, detail="Invalid API key format")
+        
         # Make request to Ragie's document source endpoint with partition
         request_url = f"https://api.ragie.ai/documents/{citation_id}/source"
         request_params = {"partition": ragie_partition}

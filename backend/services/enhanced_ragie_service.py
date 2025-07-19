@@ -80,6 +80,16 @@ class EnhancedRagieService:
         """Initialize service with QSR optimization"""
         self.api_key = os.getenv("RAGIE_API_KEY")
         self.partition = os.getenv("RAGIE_PARTITION", "qsr_manuals")
+        
+        # Sanitize API key for HTTP headers to prevent Unicode encoding errors
+        if self.api_key:
+            try:
+                self.api_key = self.api_key.encode('ascii', 'ignore').decode('ascii').strip()
+                logger.info(f"🧹 Ragie API key sanitized for HTTP headers")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to sanitize API key: {e}")
+                self.api_key = None
+        
         self.available = RAGIE_AVAILABLE and bool(self.api_key)
         
         if self.available:
