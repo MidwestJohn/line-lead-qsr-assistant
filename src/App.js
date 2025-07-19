@@ -392,7 +392,7 @@ function App() {
         });
         
         const newServiceStatus = {
-          isHealthy: healthData.status === 'healthy',
+          isHealthy: healthData.status === 'healthy' || healthData.status === 'degraded',
           isReady: healthData.search_ready,
           services: healthData.services
         };

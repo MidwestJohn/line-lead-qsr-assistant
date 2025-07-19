@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../config';
 import './ImageCitation.css';
 
 const ImageCitation = ({ visualCitations }) => {
   const [imageUrls, setImageUrls] = useState({});
   const [loading, setLoading] = useState({});
+  const [errors, setErrors] = useState({});
 
   const loadImage = async (citation) => {
     const citationId = citation.document_id || citation.citation_id;
@@ -15,17 +17,21 @@ const ImageCitation = ({ visualCitations }) => {
 
     try {
       // Use the backend endpoint that proxies to Ragie
-      const response = await fetch(`http://localhost:8000/citation-content/${citationId}`);
+      const response = await fetch(`${API_BASE_URL}/citation-content/${citationId}`);
       if (response.ok) {
         const blob = await response.blob();
         const imageUrl = URL.createObjectURL(blob);
         setImageUrls(prev => ({ ...prev, [citationId]: imageUrl }));
         console.log(`✅ Image loaded from Ragie via backend proxy`);
       } else {
+        const errorMsg = `Failed to load image: ${response.status} ${response.statusText}`;
         console.warn(`Failed to load image for citation ${citationId}:`, response.status);
+        setErrors(prev => ({ ...prev, [citationId]: errorMsg }));
       }
     } catch (error) {
+      const errorMsg = `Network error: ${error.message}`;
       console.error(`Error loading image for citation ${citationId}:`, error);
+      setErrors(prev => ({ ...prev, [citationId]: errorMsg }));
     } finally {
       setLoading(prev => ({ ...prev, [citationId]: false }));
     }
@@ -57,6 +63,7 @@ const ImageCitation = ({ visualCitations }) => {
         const citationId = citation.document_id || citation.citation_id;
         const imageUrl = imageUrls[citationId];
         const isLoading = loading[citationId];
+        const error = errors[citationId];
 
         return (
           <div key={citationId || index} className="image-citation">
@@ -78,7 +85,19 @@ const ImageCitation = ({ visualCitations }) => {
                   }}
                 />
               )}
-              {!isLoading && !imageUrl && (
+              {!isLoading && !imageUrl && error && (
+                <div className="image-error">
+                  <div className="error-icon">⚠️</div>
+                  <div className="error-text">
+                    <strong>Image temporarily unavailable</strong>
+                    <br />
+                    <span>{citation.title || citation.equipment_name}</span>
+                    <br />
+                    <small>{error}</small>
+                  </div>
+                </div>
+              )}
+              {!isLoading && !imageUrl && !error && (
                 <div className="image-placeholder">
                   <div className="placeholder-icon">🔧</div>
                   <div className="placeholder-text">
