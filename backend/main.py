@@ -5116,29 +5116,48 @@ async def get_citation_content(citation_id: str):
         import httpx
         import os
         
+        logger.info(f"🖼️ Citation content request for ID: {citation_id}")
+        
         # Get Ragie API key and partition
         ragie_api_key = os.getenv("RAGIE_API_KEY")
         ragie_partition = os.getenv("RAGIE_PARTITION", "qsr_manuals")
         
+        logger.info(f"🔑 API key available: {bool(ragie_api_key)}")
+        logger.info(f"📁 Partition: {ragie_partition}")
+        
         if not ragie_api_key:
+            logger.error("❌ RAGIE_API_KEY environment variable not set")
             raise HTTPException(status_code=500, detail="Ragie API key not configured")
         
         # Make request to Ragie's document source endpoint with partition
+        request_url = f"https://api.ragie.ai/documents/{citation_id}/source"
+        request_params = {"partition": ragie_partition}
+        
+        logger.info(f"🌐 Making request to: {request_url}")
+        logger.info(f"📋 Request params: {request_params}")
+        
         async with httpx.AsyncClient(follow_redirects=True) as client:
             response = await client.get(
-                f"https://api.ragie.ai/documents/{citation_id}/source",
+                request_url,
                 headers={
                     "accept": "application/octet-stream",
                     "authorization": f"Bearer {ragie_api_key}"
                 },
-                params={"partition": ragie_partition},
+                params=request_params,
                 timeout=30.0
             )
             
             # Log response details for debugging
-            logger.info(f"Ragie API response: {response.status_code}")
-            logger.info(f"Response headers: {dict(response.headers)}")
-            logger.info(f"Final URL: {response.url}")
+            logger.info(f"📡 Ragie API response: {response.status_code}")
+            logger.info(f"📋 Response headers: {dict(response.headers)}")
+            logger.info(f"🔗 Final URL: {response.url}")
+            
+            if response.status_code != 200:
+                response_text = response.text if hasattr(response, 'text') else 'No response text'
+                logger.error(f"❌ Ragie API error details: {response_text}")
+            else:
+                content_length = len(response.content)
+                logger.info(f"✅ Success! Content length: {content_length} bytes")
             
             if response.status_code == 404:
                 raise HTTPException(status_code=404, detail="Document not found in Ragie")
@@ -5167,8 +5186,11 @@ async def get_citation_content(citation_id: str):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Citation content retrieval failed: {e}")
-        raise HTTPException(status_code=500, detail="Failed to retrieve citation content")
+        logger.error(f"❌ Citation content retrieval failed: {type(e).__name__}: {e}")
+        logger.error(f"📍 Citation ID: {citation_id}")
+        import traceback
+        logger.error(f"🔍 Full traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve citation content: {str(e)}")
 
 @app.post("/test-multimodal-citations")
 async def test_multimodal_citations():
