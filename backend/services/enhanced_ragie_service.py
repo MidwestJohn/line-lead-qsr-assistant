@@ -132,7 +132,9 @@ class EnhancedRagieService:
             
         try:
             # Sanitize query to prevent encoding issues
+            logger.info(f"🔤 Original query: {repr(query)}")
             sanitized_query = self._sanitize_query(query)
+            logger.info(f"🧹 Sanitized query: {repr(sanitized_query)}")
             
             # Check cache first
             cache_key = f"{sanitized_query}:{hash(str(qsr_context))}"
@@ -147,6 +149,11 @@ class EnhancedRagieService:
             
             # Build search filters
             filters = self._build_search_filters(qsr_context)
+            
+            # Log request details before making API call
+            logger.info(f"🌐 Making Ragie API request with query: {repr(sanitized_query)}")
+            logger.info(f"📁 Partition: {self.partition}")
+            logger.info(f"🔢 Top K: {top_k}")
             
             # Perform Ragie search with sanitized query
             response = self.client.retrievals.retrieve(request={
@@ -183,6 +190,40 @@ class EnhancedRagieService:
             logger.info(f"📚 Retrieved {len(results)} QSR-optimized chunks for: {sanitized_query[:50]}...")
             return results
             
+        except UnicodeEncodeError as e:
+            logger.error(f"❌ Unicode encoding error in Ragie search: {e}")
+            logger.error(f"🔤 Problematic query: {repr(query)}")
+            logger.error(f"🧹 Sanitized query: {repr(sanitized_query if 'sanitized_query' in locals() else 'Not set')}")
+            # Try with super-safe ASCII-only query
+            try:
+                safe_query = ''.join(c for c in query if ord(c) < 128)
+                logger.info(f"🔒 Retrying with ASCII-only query: {repr(safe_query)}")
+                response = self.client.retrievals.retrieve(request={
+                    "query": safe_query,
+                    "partition": self.partition,
+                    "top_k": top_k,
+                    "filter": {},
+                    "mode": "hybrid"
+                })
+                logger.info(f"✅ ASCII-only retry successful")
+                # Process response normally...
+                results = []
+                for chunk in response.scored_chunks:
+                    result = RagieSearchResult(
+                        text=chunk.text,
+                        score=chunk.score,
+                        document_id=getattr(chunk, 'document_id', 'unknown'),
+                        chunk_id=getattr(chunk, 'chunk_id', getattr(chunk, 'id', 'unknown')),
+                        metadata=getattr(chunk, 'metadata', {}) or {},
+                        equipment_context=qsr_context.equipment_type if qsr_context else None,
+                        procedure_context=qsr_context.procedure_type if qsr_context else None,
+                        safety_level=qsr_context.safety_level if qsr_context else None
+                    )
+                    results.append(result)
+                return results
+            except Exception as retry_error:
+                logger.error(f"❌ ASCII-only retry also failed: {retry_error}")
+                return []
         except Exception as e:
             logger.error(f"Enhanced Ragie search failed: {e}")
             return []

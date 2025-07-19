@@ -911,9 +911,10 @@ async def health_check(request: Request):
             ragie_start = time.time()
             from services.safe_ragie_enhancement import safe_ragie_enhancement
             
-            # Test Ragie enhancement (proven working)
+            # Test Ragie enhancement (proven working) with ASCII-safe query
+            test_query = "health check fryer test"
             ragie_result = await safe_ragie_enhancement.enhance_query_safely(
-                "health check fryer test"
+                test_query.encode('ascii', 'ignore').decode('ascii')
             )
             
             ragie_response_time = (time.time() - ragie_start) * 1000
